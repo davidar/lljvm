@@ -1,0 +1,41 @@
+LLJVM provides a set of tools and libraries for running comparatively low level
+languages (such as C) on the JVM.
+
+RUNTIME
+The LLVJM Runtime contains 3 classes:
+- Memory, which provides an emulated virtual memory, allowing pointers to be
+  used within the JVM
+- Instruction, which emulates several LLVM instructions, providing support
+  for, among other things, unsigned arithmetic operations
+- System, which provides methods for interacting with the system
+
+LINKER
+The LLJVM Linker qualifies references to external methods and fields in Jasmin
+assembly code. At the top of the code (before any .method directives), external
+references should be specified through the .extern pseudo-directive, such as:
+
+    .extern field foo I
+    .extern method bar(I)V
+
+Then the linker can be invoked by
+
+    java -jar lljvm.jar ld LIBRARY... < INPUT.j > OUTPUT.j
+
+
+For example, the following assembly code
+
+    .extern method cos(D)D
+    .extern field NULL I
+    ...
+    invokestatic cos(D)D
+    getstatic NULL I
+
+linked with the command
+
+    java -jar lljvm.jar ld java.lang.Math lljvm.runtime.Memory
+
+would produce
+
+    ...
+    invokestatic java/lang/Math/cos(D)D
+    getstatic lljvm/runtime/Memory/NULL I

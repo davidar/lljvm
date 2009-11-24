@@ -1,0 +1,148 @@
+/*
+* Copyright (c) 2009 David Roberts <d@vidr.cc>
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in
+* all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+* THE SOFTWARE.
+*/
+
+package lljvm.tools.ld;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Class for linking assembly files.
+ * 
+ * @author  David Roberts
+ */
+public class AsmLinker {
+    /** The reader to read input assembly code */
+    private BufferedReader in;
+    /** The writer to write linked assembly code */
+    private BufferedWriter out;
+    
+    /** External fields */
+    private List<String> externFields = new ArrayList<String>();
+    /** External methods */
+    private List<String> externMethods = new ArrayList<String>();
+    
+    /**
+     * Construct a new AsmLinker with the specified input and output sources.
+     * 
+     * @param in   the reader to read input assembly code
+     * @param out  the writer to write linked assembly code
+     */
+    public AsmLinker(BufferedReader in, BufferedWriter out) {
+        this.in = in;
+        this.out = out;
+    }
+    
+    /**
+     * Read external reference directives from the input reader.
+     * 
+     * @throws IOException  if there is a problem reading or writing
+     */
+    private void readExtern() throws IOException {
+        String line;
+        while((line = in.readLine()) != null) {
+            String[] args = line.trim().split("\\s+");
+            if(args[0].equals(".method")) {
+                out.write(line);
+                out.write('\n');
+                break;
+            } else if(args[0].equals(".extern")) {
+                if(args[1].equals("field"))
+                    externFields.add(args[2] + " " + args[3]);
+                else if(args[1].equals("method"))
+                    externMethods.add(args[2]);
+                out.write(';');
+                out.write(line);
+                out.write('\n');
+            } else {
+                out.write(line);
+                out.write('\n');
+            }
+        }
+    }
+    
+    /**
+     * Link references to static methods and fields in the input to the
+     * classes specified in the given maps.
+     * 
+     * @param methodMap     Mapping of external methods to classes.
+     * @param fieldMap      Mapping of external fields to classes.
+     * @throws IOException  if there is a problem reading or writing
+     * @throws LinkError    if there is a problem linking external references
+     */
+    private void linkStatic(Map<String, String> methodMap,
+                            Map<String, String> fieldMap)
+    throws IOException, LinkError {
+        String line;
+        while((line = in.readLine()) != null) {
+            String[] args = line.trim().split("\\s+");
+            if(args[0].equals("invokestatic")
+               && externMethods.contains(args[1])) {
+                String methodName = args[1];
+                String className = methodMap.get(methodName);
+                if(className == null)
+                    throw new LinkError(
+                            "Unable to find external method " + methodName);
+                out.write("\tinvokestatic ");
+                out.write(className);
+                out.write('/');
+                out.write(methodName);
+                out.write('\n');
+            } else if(args[0].equals("getstatic")
+                      && externFields.contains(args[1] + " " + args[2])) {
+                String fieldName = args[1] + " " + args[2];
+                String className = fieldMap.get(fieldName);
+                if(className == null)
+                    throw new LinkError(
+                            "Unable to find external field " + fieldName);
+                out.write("\tgetstatic ");
+                out.write(className);
+                out.write('/');
+                out.write(fieldName);
+                out.write('\n');
+            } else {
+                out.write(line);
+                out.write('\n');
+            }
+        }
+    }
+    
+    /**
+     * Link references to methods and fields in the input to the classes
+     * specified in the given maps.
+     * 
+     * @param methodMap     Mapping of external methods to classes.
+     * @param fieldMap      Mapping of external fields to classes.
+     * @throws IOException  if there is a problem reading or writing
+     * @throws LinkError    if there is a problem linking external references
+     */
+    public void link(Map<String, String> methodMap,
+                     Map<String, String> fieldMap)
+    throws IOException, LinkError {
+        readExtern();
+        linkStatic(methodMap, fieldMap);
+    }
+}
