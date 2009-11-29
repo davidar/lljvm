@@ -1,6 +1,18 @@
 LLJVM provides a set of tools and libraries for running comparatively low level
 languages (such as C) on the JVM.
 
+BACKEND
+The LLJVM Backend transforms LLVM IR into Jasmin assembly code.
+It can be invoked by
+
+    lljvm-backend foo.bc > foo.j
+
+The output file should then be linked by the LLJVM Linker (see below), and
+assembled into a class file by Jasmin[1]:
+
+    java -jar jasmin.jar foo.j # assemble foo.class
+
+
 RUNTIME
 The LLVJM Runtime contains 3 classes:
 - Memory, which provides an emulated virtual memory, allowing pointers to be
@@ -8,6 +20,7 @@ The LLVJM Runtime contains 3 classes:
 - Instruction, which emulates several LLVM instructions, providing support
   for, among other things, unsigned arithmetic operations
 - System, which provides methods for interacting with the system
+
 
 LINKER
 The LLJVM Linker qualifies references to external methods and fields in Jasmin
@@ -39,3 +52,5 @@ would produce
     ...
     invokestatic java/lang/Math/cos(D)D
     getstatic lljvm/runtime/Memory/NULL I
+
+[1] http://jasmin.sf.net/
