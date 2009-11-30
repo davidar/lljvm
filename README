@@ -16,7 +16,7 @@ jasmin.jar for it to function. For example:
 or
     CLASSPATH=/path/to/jasmin.jar:. lljvm-cc foo.c
 
-Then to run the resulting jar file:
+Then to run the resulting class file:
 
     CLASSPATH=/path/to/lljvm.jar:. java foo
 
