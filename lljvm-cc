@@ -1,0 +1,20 @@
+#!/bin/sh
+
+DIR="`dirname "$0"`"
+export PATH="$DIR:$PATH"
+
+if   which clang    >/dev/null; then CC=clang
+elif which llvm-gcc >/dev/null; then CC=llvm-gcc
+else echo "Error: either clang or llvm-gcc must be installed" && exit 1
+fi
+
+LIBS="lljvm.util.BasicIO java.lang.Math"
+
+SOURCE="$1"
+BASENAME="`dirname "$SOURCE"`/`basename "$SOURCE" .c`"
+
+$CC "$SOURCE" -emit-llvm -c -o "$BASENAME.bc"
+lljvm-backend "$BASENAME.bc" \
+    | java -jar "$DIR/lljvm.jar" ld $LIBS \
+    > "$BASENAME.j"
+java jasmin.Main "$BASENAME.j"

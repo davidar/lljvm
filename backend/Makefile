@@ -7,3 +7,6 @@ OPTS := $(shell llvm-config --cxxflags --ldflags \
 
 all:
 	$(CXX) ${SRCS} ${OPTS} -o lljvm-backend
+
+clean:
+	rm -f lljvm-backend

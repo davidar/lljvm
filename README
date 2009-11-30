@@ -1,6 +1,26 @@
 LLJVM provides a set of tools and libraries for running comparatively low level
 languages (such as C) on the JVM.
 
+Homepage: http://da.vidr.cc/projects/lljvm/
+
+To compile LLJVM, simply call `make` in the project root directory.
+LLVM[1] 2.6 must be installed to compile and run LLJVM.
+
+
+C COMPILER
+The LLJVM-CC frontend is a simple script that ties together several components
+to compile C source code to a JVM class file. The classpath must contain
+jasmin.jar for it to function. For example:
+
+    lljvm-cc foo.c # compile foo.c to foo.class
+or
+    CLASSPATH=/path/to/jasmin.jar:. lljvm-cc foo.c
+
+Then to run the resulting jar file:
+
+    CLASSPATH=/path/to/lljvm.jar:. java foo
+
+
 BACKEND
 The LLJVM Backend transforms LLVM IR into Jasmin assembly code.
 It can be invoked by
@@ -8,7 +28,7 @@ It can be invoked by
     lljvm-backend foo.bc > foo.j
 
 The output file should then be linked by the LLJVM Linker (see below), and
-assembled into a class file by Jasmin[1]:
+assembled into a class file by Jasmin[2]:
 
     java -jar jasmin.jar foo.j # assemble foo.class
 
@@ -53,4 +73,6 @@ would produce
     invokestatic java/lang/Math/cos(D)D
     getstatic lljvm/runtime/Memory/NULL I
 
-[1] http://jasmin.sf.net/
+
+[1] http://llvm.org/
+[2] http://jasmin.sf.net/
