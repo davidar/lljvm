@@ -26,6 +26,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import lljvm.util.ReflectionUtils;
+
 /**
  * Virtual memory, with methods for storing/loading values to/from
  * specified addresses.
@@ -188,6 +190,16 @@ public final class Memory {
     }
     
     /**
+     * Store a boolean value at the given address.
+     * 
+     * @param addr   the address at which to store the value
+     * @param value  the value to be stored
+     */
+    public static void store(int addr, boolean value) {
+        getPage(addr).put(getOffset(addr), (byte) (value ? 1 : 0));
+    }
+    
+    /**
      * Store a byte at the given address.
      * 
      * @param addr   the address at which to store the value
@@ -269,6 +281,19 @@ public final class Memory {
         final byte[] bytes = string.getBytes();
         store(addr, bytes);
         Memory.store(addr + bytes.length, (byte)0);
+    }
+    
+    /**
+     * Store a boolean value in the data segment, returning a pointer to the
+     * value.
+     * 
+     * @param value  the value to be stored
+     * @return       a pointer to the value
+     */
+    public static int storeData(boolean value) {
+        final int addr = allocateData(1);
+        store(addr, value);
+        return addr;
     }
     
     /**
@@ -376,6 +401,18 @@ public final class Memory {
     }
     
     /**
+     * Store a boolean value in the stack, returning a pointer to the value.
+     * 
+     * @param value  the value to be stored
+     * @return       a pointer to the value
+     */
+    public static int storeStack(boolean value) {
+        final int addr = allocateStack(1);
+        store(addr, value);
+        return addr;
+    }
+    
+    /**
      * Store a byte in the stack, returning a pointer to the value.
      * 
      * @param value  the value to be stored
@@ -476,6 +513,16 @@ public final class Memory {
     }
     
     /**
+     * Load a boolean value from the given address.
+     * 
+     * @param addr  the address from which to load the value
+     * @return      the value at the given address
+     */
+    public static boolean load_i1(int addr) {
+        return getPage(addr).get(getOffset(addr)) != 0;
+    }
+    
+    /**
      * Load a byte from the given address.
      * 
      * @param addr  the address from which to load the value
@@ -547,6 +594,25 @@ public final class Memory {
         while((bytes[i++] = load_i8(addr++)) != 0)
             if(i >= bytes.length) bytes = Arrays.copyOf(bytes, i*2);
         return new String(Arrays.copyOf(bytes, i));
+    }
+    
+    /**
+     * Load a value of the given type from the given address.
+     * 
+     * @param addr  the address from which to load the value
+     * @param type  the type of value to load. Must be a primitive type other
+     *              than char.
+     * @return      the value at the given address
+     */
+    public static Object load(int addr, Class<?> type) {
+        if(type == boolean.class) return load_i1(addr);
+        if(type == byte.class)    return load_i8(addr);
+        if(type == short.class)   return load_i16(addr);
+        if(type == int.class)     return load_i32(addr);
+        if(type == long.class)    return load_i64(addr);
+        if(type == float.class)   return load_f32(addr);
+        if(type == double.class)  return load_f64(addr);
+        throw new IllegalArgumentException("Unrecognised type");
     }
     
     /**
@@ -636,5 +702,26 @@ public final class Memory {
         addr = alignOffsetUp(addr, 4);
         store(addr, value);
         return addr + 8;
+    }
+    
+    /**
+     * Unpack a packed list of values from the given address, according to
+     * the given list of types.
+     * 
+     * @param addr   the address from which to load the values
+     * @param types  the array of types. All elements must be primitive types
+     *               other than char.
+     * @return       an array of unpacked values
+     */
+    public static Object[] unpack(int addr, Class<?>[] types) {
+        Object[] values = new Number[types.length];
+        for(int i = 0; i < types.length; i++) {
+            final Class<?> type = types[i];
+            final int size = ReflectionUtils.sizeOf(type);
+            addr = alignOffsetUp(addr, Math.min(size, 4));
+            values[i] = load(addr, type);
+            addr += size;
+        }
+        return values;
     }
 }

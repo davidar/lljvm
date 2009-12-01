@@ -81,6 +81,18 @@ public final class BasicIO {
                 case 's':
                     System.out.print(Memory.load_string(
                             Memory.load_i32(args))); args += 4; break;
+                case 'l':
+                    switch(fmt.charAt(++i)) {
+                    case 'l':
+                        switch(fmt.charAt(++i)) {
+                        case 'd':
+                        case 'i':
+                            System.out.print(Memory.load_i64(args)); args += 8;
+                            break;
+                        }
+                        break;
+                    }
+                    break;
                 case '%':
                     System.out.print('%'); break;
                 }

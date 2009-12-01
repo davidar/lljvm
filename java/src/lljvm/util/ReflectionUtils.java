@@ -109,28 +109,18 @@ public final class ReflectionUtils {
      * @return     the type descriptor of the specified type
      */
     public static String getDescriptor(Class<?> cls) {
-        if(cls == void.class)
-            return "V";
-        else if(cls == boolean.class)
-            return "Z";
-        else if(cls == byte.class)
-            return "B";
-        else if(cls == char.class)
-            return "C";
-        else if(cls == short.class)
-            return "S";
-        else if(cls == int.class)
-            return "I";
-        else if(cls == long.class)
-            return "J";
-        else if(cls == float.class)
-            return "F";
-        else if(cls == double.class)
-            return "D";
-        else if(cls.isArray())
+        if(cls == void.class)    return "V";
+        if(cls == boolean.class) return "Z";
+        if(cls == byte.class)    return "B";
+        if(cls == char.class)    return "C";
+        if(cls == short.class)   return "S";
+        if(cls == int.class)     return "I";
+        if(cls == long.class)    return "J";
+        if(cls == float.class)   return "F";
+        if(cls == double.class)  return "D";
+        if(cls.isArray())
             return cls.getName().replace('.', '/');
-        else
-            return "L"+cls.getName().replace('.', '/')+";";
+        return "L"+cls.getName().replace('.', '/')+";";
     }
     
     /**
@@ -148,6 +138,18 @@ public final class ReflectionUtils {
         builder.append(")");
         builder.append(getDescriptor(method.getReturnType()));
         return builder.toString();
+    }
+    
+    /**
+     * Returns the qualified signature (i.e. including the name of the parent
+     * class) of the given method.
+     * 
+     * @param method  the given method
+     * @return        the qualified signature of the given method
+     */
+    public static String getQualifiedSignature(Method method) {
+        return method.getClass().getName().replace('.', '/')
+                + "/" + getSignature(method);
     }
     
     /**
@@ -208,5 +210,18 @@ public final class ReflectionUtils {
             }
         }
         return map;
+    }
+    
+    public static int sizeOf(Class<?> cls) {
+        if(cls == boolean.class) return 1;
+        if(cls == byte.class)    return 1;
+        if(cls == char.class)    return 2;
+        if(cls == short.class)   return 2;
+        if(cls == int.class)     return 4;
+        if(cls == long.class)    return 8;
+        if(cls == float.class)   return 4;
+        if(cls == double.class)  return 8;
+        throw new IllegalArgumentException(
+                "Cannot request size of non-primitive type");
     }
 }
