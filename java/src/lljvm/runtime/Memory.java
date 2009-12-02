@@ -742,4 +742,55 @@ public final class Memory {
         }
         return values;
     }
+    
+    /**
+     * Copy len bytes from memory area src to memory area dest. The memory
+     * areas should not overlap.
+     * 
+     * @param dest   the destination memory area
+     * @param src    the source memory area
+     * @param len    the number of bytes to copy
+     * @param align  the alignment of the source and destination pointers,
+     *               unless align is equal to 0 or 1
+     */
+    public static void memcpy(int dest, int src, int len, int align) {
+        // TODO: make more efficient by using put(ByteBuffer)
+        for(int i = 0; i < len; i++)
+            store(dest + i, load_i8(src + i));
+    }
+    
+    /**
+     * Copy len bytes from memory area src to memory area dest. The memory
+     * areas may overlap.
+     * 
+     * @param dest   the destination memory area
+     * @param src    the source memory area
+     * @param len    the number of bytes to copy
+     * @param align  the alignment of the source and destination pointers,
+     *               unless align is equal to 0 or 1
+     */
+    public static void memmove(int dest, int src, int len, int align) {
+        // TODO: make more efficient by using put(ByteBuffer)
+        if(dest < src)
+            for(int i = 0; i < len; i++)
+                store(dest + i, load_i8(src + i));
+        else
+            for(int i = len - 1; i >= 0; i--)
+                store(dest + i, load_i8(src + i));
+    }
+    
+    /**
+     * Fill the first len bytes of memory area dest with the constant byte val.
+     * 
+     * @param dest   the destination memory area
+     * @param val    the constant byte fill value
+     * @param len    the number of bytes to set
+     * @param align  the alignment of the source and destination pointers,
+     *               unless align is equal to 0 or 1
+     */
+    public static void memset(int dest, byte val, int len, int align) {
+        // TODO: make more efficient by setting larger blocks at a time
+        for(int i = dest; i < dest + len; i++)
+            store(i, val);
+    }
 }

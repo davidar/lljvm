@@ -205,6 +205,20 @@ void JVMWriter::printGepInstruction(const Value *v,
     }
 }
 
+void JVMWriter::printAllocaInstruction(const AllocaInst *inst) {
+    uint64_t size = targetData->getTypeAllocSize(inst->getAllocatedType());
+    if(const ConstantInt *c = dyn_cast<ConstantInt>(inst->getOperand(0))) {
+        // constant optimization
+        printPtrLoad(c->getZExtValue() * size);
+    } else {
+        printPtrLoad(size);
+        printValueLoad(inst->getOperand(0));
+        printSimpleInstruction("imul");
+    }
+    printSimpleInstruction("invokestatic",
+                           "lljvm/runtime/Memory/allocateStack(I)I");
+}
+
 void JVMWriter::printVAArgInstruction(const VAArgInst *inst) {
     printIndirectLoad(inst->getOperand(0));
     printSimpleInstruction("dup");
@@ -218,16 +232,44 @@ void JVMWriter::printVAArgInstruction(const VAArgInst *inst) {
     printIndirectLoad(inst->getType());
 }
 
-void JVMWriter::printAllocaInstruction(const AllocaInst *inst) {
-    uint64_t size = targetData->getTypeAllocSize(inst->getAllocatedType());
-    if(const ConstantInt *c = dyn_cast<ConstantInt>(inst->getOperand(0))) {
-        // constant optimization
-        printPtrLoad(c->getZExtValue() * size);
-    } else {
-        printPtrLoad(size);
-        printValueLoad(inst->getOperand(0));
-        printSimpleInstruction("imul");
+void JVMWriter::printVAIntrinsic(const IntrinsicInst *inst) {
+    const Type *valistTy = PointerType::getUnqual(
+        IntegerType::get(inst->getContext(), 8));
+    switch(inst->getIntrinsicID()) {
+    case Intrinsic::vastart:
+        printValueLoad(inst->getOperand(1));
+        printSimpleInstruction("iload", utostr(vaArgNum) + " ; varargptr");
+        printIndirectStore(valistTy);
+        break;
+    case Intrinsic::vacopy:
+        printValueLoad(inst->getOperand(1));
+        printValueLoad(inst->getOperand(2));
+        printIndirectLoad(valistTy);
+        printIndirectStore(valistTy);
+        break;
+    case Intrinsic::vaend:
+        break;
     }
-    printSimpleInstruction("invokestatic",
-                           "lljvm/runtime/Memory/allocateStack(I)I");
+}
+
+void JVMWriter::printMemIntrinsic(const MemIntrinsic *inst) {
+    if(getBitWidth(inst->getLength()->getType(), true) > 32)
+        llvm_unreachable("64-bit len arg not supported in mem intrinsics");
+        
+    printValueLoad(inst->getDest());
+    if(const MemTransferInst *minst = dyn_cast<MemTransferInst>(inst))
+        printValueLoad(minst->getSource());
+    else if(const MemSetInst *minst = dyn_cast<MemSetInst>(inst))
+        printValueLoad(minst->getValue());
+    printValueLoad(inst->getLength());
+    printConstLoad(inst->getAlignmentCst());
+    
+    switch(inst->getIntrinsicID()) {
+    case Intrinsic::memcpy:
+        printSimpleInstruction("invokestatic", "lljvm/Memory/memcpy(IIII)V");
+    case Intrinsic::memmove:
+        printSimpleInstruction("invokestatic", "lljvm/Memory/memmove(IIII)V");
+    case Intrinsic::memset:
+        printSimpleInstruction("invokestatic", "lljvm/Memory/memset(IBII)V");
+    }
 }

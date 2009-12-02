@@ -113,8 +113,10 @@ private:
     void printGepInstruction(const Value *v,
                              gep_type_iterator i,
                              gep_type_iterator e);
-    void printVAArgInstruction(const VAArgInst *inst);
     void printAllocaInstruction(const AllocaInst *inst);
+    void printVAArgInstruction(const VAArgInst *inst);
+    void printVAIntrinsic(const IntrinsicInst *inst);
+    void printMemIntrinsic(const MemIntrinsic *inst);
     
     // loadstore.cpp
     void printValueLoad(const Value *v);

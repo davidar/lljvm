@@ -90,24 +90,17 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
 }
 
 void JVMWriter::printIntrinsicCall(const IntrinsicInst *inst) {
-    const Type *valistTy = PointerType::getUnqual(
-        IntegerType::get(inst->getContext(), 8));
     switch(inst->getIntrinsicID()) {
     case Intrinsic::vastart:
-        printValueLoad(inst->getOperand(1));
-        printSimpleInstruction("iload", utostr(vaArgNum) + " ; varargptr");
-        printIndirectStore(valistTy);
-        break;
     case Intrinsic::vacopy:
-        printValueLoad(inst->getOperand(1));
-        printValueLoad(inst->getOperand(2));
-        printIndirectLoad(valistTy);
-        printIndirectStore(valistTy);
-        break;    
     case Intrinsic::vaend:
-        break;    
+        printVAIntrinsic(inst); break;
+    case Intrinsic::memcpy:
+    case Intrinsic::memmove:
+    case Intrinsic::memset:
+        printMemIntrinsic(cast<MemIntrinsic>(inst)); break;
     default:
-    errs() << "Intrinsic ID = " << inst->getIntrinsicID() << '\n';
+    errs() << "Intrinsic = " << *inst << '\n';
     llvm_unreachable("Invalid intrinsic function");
   }
 }
