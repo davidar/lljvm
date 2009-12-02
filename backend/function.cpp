@@ -33,24 +33,21 @@ std::string JVMWriter::getCallSignature(const FunctionType *ty) {
     return sig;
 }
 
-void JVMWriter::printVarargPack(const Function *f, const Instruction *inst) {
-    const FunctionType *ty = f->getFunctionType();
-    unsigned int origin = isa<InvokeInst>(inst) ? 3 : 1;
-    unsigned int numParams = ty->getNumParams();
-    unsigned int numOperands = inst->getNumOperands() - origin;
-    
-    unsigned int valistSize = 0;
-    for(unsigned int i = numParams; i < numOperands; i++)
-        valistSize += targetData->getTypeAllocSize(
-            inst->getOperand(i + origin)->getType());
+void JVMWriter::printOperandPack(const Instruction *inst,
+                                 unsigned int minOperand,
+                                 unsigned int maxOperand) {
+    unsigned int size = 0;
+    for(unsigned int i = minOperand; i < maxOperand; i++)
+        size += targetData->getTypeAllocSize(
+            inst->getOperand(i)->getType());
 
-    printSimpleInstruction("bipush", utostr(valistSize));
+    printSimpleInstruction("bipush", utostr(size));
     printSimpleInstruction("invokestatic",
                            "lljvm/runtime/Memory/allocateStack(I)I");
     printSimpleInstruction("dup");
 
-    for(unsigned int i = numParams; i < numOperands; i++) {
-        const Value *v = inst->getOperand(i + origin);
+    for(unsigned int i = minOperand; i < maxOperand; i++) {
+        const Value *v = inst->getOperand(i);
         printValueLoad(v);
         printSimpleInstruction("invokestatic",
             "lljvm/runtime/Memory/pack(I"
@@ -61,9 +58,9 @@ void JVMWriter::printVarargPack(const Function *f, const Instruction *inst) {
 
 void JVMWriter::printFunctionCall(const Value *functionVal,
                                   const Instruction *inst) {
+    unsigned int origin = isa<InvokeInst>(inst) ? 3 : 1;
     if(const Function *f = dyn_cast<Function>(functionVal)) { // direct call
         const FunctionType *ty = f->getFunctionType();
-        unsigned int origin = isa<InvokeInst>(inst) ? 3 : 1;
         
         //for(unsigned int i = origin, e = inst->getNumOperands(); i < e; i++)
         //    printValueLoad(inst->getOperand(i));
@@ -71,7 +68,8 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
         for(unsigned int i = 0, e = ty->getNumParams(); i < e; i++)
             printValueLoad(inst->getOperand(i + origin));
         if(ty->isVarArg() && inst)
-            printVarargPack(f, inst);
+            printOperandPack(inst, ty->getNumParams() + origin,
+                                   inst->getNumOperands());
         
         if(externRefs.count(f))
             printSimpleInstruction("invokestatic",
@@ -83,10 +81,11 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
         printValueLoad(functionVal);
         const FunctionType *ty = cast<FunctionType>(
             cast<PointerType>(functionVal->getType())->getElementType());
-        std::string sig = getCallSignature(ty);
-        // TODO: indirectly invoke function
-        errs() << "TypeSig = " << sig << '\n';
-        llvm_unreachable("Indirect function calls not yet supported");
+        printOperandPack(inst, origin, inst->getNumOperands());
+        printSimpleInstruction("invokestatic",
+            "lljvm/runtime/Function/invoke_"
+            + getTypePostfix(ty->getReturnType()) + "(II)"
+            + getTypeDescriptor(ty->getReturnType()));
     }
 }
 

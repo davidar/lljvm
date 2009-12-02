@@ -24,10 +24,16 @@
 
 void JVMWriter::printValueLoad(const Value *v) {
     if(const Function *f = dyn_cast<Function>(v)) {
-        std::string name = getValueName(f)
-                         + getCallSignature(f->getFunctionType());
-        // TODO: push pointer to function onto stack
-        llvm_unreachable("Function pointers not yet supported");
+        std::string sig = getValueName(f)
+                        + getCallSignature(f->getFunctionType());
+        if(externRefs.count(v))
+            printSimpleInstruction("CLASSFORMETHOD", sig);
+        else
+            printSimpleInstruction("ldc", '"' + classname + '"');
+        printSimpleInstruction("ldc", '"' + sig + '"');
+        printSimpleInstruction("invokestatic",
+            "lljvm/runtime/Function/getFunctionPointer"
+            "(Ljava/lang/String;Ljava/lang/String;)I");
     } else if(isa<GlobalVariable>(v)) {
         const Type *ty = cast<PointerType>(v->getType())->getElementType();
         if(externRefs.count(v))

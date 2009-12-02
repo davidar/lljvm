@@ -87,7 +87,9 @@ private:
     
     // function.cpp
     std::string getCallSignature(const FunctionType *ty);
-    void printVarargPack(const Function *f, const Instruction *inst);
+    void printOperandPack(const Instruction *inst,
+                          unsigned int minOperand,
+                          unsigned int maxOperand);
     void printFunctionCall(const Value *functionVal, const Instruction *inst);
     void printIntrinsicCall(const IntrinsicInst *inst);
     void printCallInstruction(const Instruction *inst);

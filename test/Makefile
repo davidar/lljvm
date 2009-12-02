@@ -1,10 +1,22 @@
-check: clean argv.class factorial.class fp.class primes.class staticvar.class \
-       struct.class switch.class va.class
+TESTS := argv.test factorial.test fnptr.test fp.test primes.test \
+         staticvar.test struct.test switch.test va.test
+
+.PHONY: check clean
+
+check: clean ${TESTS}
+
+%.bin: %.c
+	cc $*.c -lm -o $*.bin
 
 %.class: %.c
 	../lljvm-cc $*.c
+
+%.test: %.bin %.class
+	echo EXPECTED
+	./$*.bin foo bar baz
+	echo ACTUAL
 	java -classpath ../lljvm.jar:. $* foo bar baz
 	echo
 
 clean:
-	rm -f *.bc *.j *.class
+	rm -f *.bc *.j *.class *.bin

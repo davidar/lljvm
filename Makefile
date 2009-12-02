@@ -1,3 +1,5 @@
+.PHONY: all check clean
+
 all:
 	cd java && $(MAKE) all
 	cd backend && $(MAKE) all

@@ -88,6 +88,8 @@ std::string JVMWriter::getTypeDescriptor(const Type *ty, bool expand) {
 
 std::string JVMWriter::getTypePostfix(const Type *ty, bool expand) {
     switch(ty->getTypeID()) {
+    case Type::VoidTyID:
+        return "void";
     case Type::IntegerTyID:
         return "i" + utostr(getBitWidth(ty, expand));
     case Type::FloatTyID:

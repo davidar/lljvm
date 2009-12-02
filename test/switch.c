@@ -14,4 +14,5 @@ int main() {
     int x = 5, y = 7;
     printf("sw(%d) = %s\n", x, sw(x));
     printf("sw(%d) = %s\n", y, sw(y));
+    return 0;
 }

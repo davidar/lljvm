@@ -59,7 +59,7 @@ public final class Memory {
     private static int stackPointer = framePointer;
     
     /** The null pointer */
-    public static final int NULL = allocateData(1);
+    public static final int NULL = allocateData();
     
     static {
         final int DATA_BOTTOM = 0>>>PAGE_SHIFT;
@@ -159,6 +159,15 @@ public final class Memory {
     }
     
     /**
+     * Allocate one byte within the data segment.
+     * 
+     * @return  a pointer to the allocated byte
+     */
+    public static int allocateData() {
+        return allocateData(1);
+    }
+    
+    /**
      * Allocate a block of the given size within the stack.
      * 
      * @param size  the size of the block to allocate
@@ -167,6 +176,15 @@ public final class Memory {
     public static int allocateStack(int size) {
         stackPointer = alignOffsetDown(stackPointer - size, ALIGNMENT);
         return stackPointer;
+    }
+    
+    /**
+     * Allocate one byte within the stack.
+     * 
+     * @return  a pointer to the allocated byte
+     */
+    public static int allocateStack() {
+        return allocateStack(1);
     }
     
     /**

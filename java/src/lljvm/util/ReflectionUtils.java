@@ -148,7 +148,7 @@ public final class ReflectionUtils {
      * @return        the qualified signature of the given method
      */
     public static String getQualifiedSignature(Method method) {
-        return method.getClass().getName().replace('.', '/')
+        return method.getDeclaringClass().getName().replace('.', '/')
                 + "/" + getSignature(method);
     }
     

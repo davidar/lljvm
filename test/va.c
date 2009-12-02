@@ -15,4 +15,5 @@ int sum(int n, ...) {
 
 int main() {
     printf("sum(1..5) = %d\n", sum(5, 1, 2, 3, 4, 5));
+    return 0;
 }

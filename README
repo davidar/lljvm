@@ -34,12 +34,13 @@ assembled into a class file by Jasmin[2]:
 
 
 RUNTIME
-The LLVJM Runtime contains 3 classes:
+The LLVJM Runtime contains 4 classes:
 - Memory, which provides an emulated virtual memory, allowing pointers to be
   used within the JVM
 - Instruction, which emulates several LLVM instructions, providing support
   for, among other things, unsigned arithmetic operations
 - System, which provides methods for interacting with the system
+- Function, which provides function pointers for methods
 
 
 LINKER
@@ -62,6 +63,7 @@ For example, the following assembly code
     ...
     invokestatic cos(D)D
     getstatic NULL I
+    CLASSFORMETHOD cos(D)D
 
 linked with the command
 
@@ -72,6 +74,7 @@ would produce
     ...
     invokestatic java/lang/Math/cos(D)D
     getstatic lljvm/runtime/Memory/NULL I
+    ldc "java/lang/Math"
 
 
 [1] http://llvm.org/

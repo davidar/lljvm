@@ -65,23 +65,83 @@ public class AsmLinker {
         String line;
         while((line = in.readLine()) != null) {
             String[] args = line.trim().split("\\s+");
-            if(args[0].equals(".method")) {
-                out.write(line);
-                out.write('\n');
-                break;
-            } else if(args[0].equals(".extern")) {
+            if(args[0].equals(".extern")) {
                 if(args[1].equals("field"))
                     externFields.add(args[2] + " " + args[3]);
                 else if(args[1].equals("method"))
                     externMethods.add(args[2]);
                 out.write(';');
-                out.write(line);
-                out.write('\n');
-            } else {
-                out.write(line);
-                out.write('\n');
             }
+            out.write(line);
+            out.write('\n');
+            if(args[0].equals(".method"))
+                break;
         }
+    }
+    
+    /**
+     * Print an invokestatic instruction for the given method.
+     * 
+     * @param methodName    Operand of the instruction.
+     * @param methodMap     Mapping of external methods to classes.
+     * @throws IOException  if there is a problem reading or writing
+     * @throws LinkError    if there is a problem linking external references
+     */
+    private void printInvokeStatic(String methodName,
+                                   Map<String, String> methodMap)
+    throws IOException, LinkError {
+        String className = methodMap.get(methodName);
+        if(className == null)
+            throw new LinkError(
+                    "Unable to find external method " + methodName);
+        out.write("\tinvokestatic ");
+        out.write(className);
+        out.write('/');
+        out.write(methodName);
+        out.write('\n');
+    }
+    
+    /**
+     * Print an getstatic instruction for the given method.
+     * 
+     * @param fieldName     Operand of the instruction.
+     * @param fieldMap      Mapping of external fields to classes.
+     * @throws IOException  if there is a problem reading or writing
+     * @throws LinkError    if there is a problem linking external references
+     */
+    private void printGetStatic(String fieldName,
+                                Map<String, String> fieldMap)
+    throws IOException, LinkError {
+        String className = fieldMap.get(fieldName);
+        if(className == null)
+            throw new LinkError(
+                    "Unable to find external field " + fieldName);
+        out.write("\tgetstatic ");
+        out.write(className);
+        out.write('/');
+        out.write(fieldName);
+        out.write('\n');
+    }
+    
+    /**
+     * Print an ldc instruction to load the binary name of the parent class
+     * of the given method.
+     * 
+     * @param methodName    the method whose parent class to load
+     * @param methodMap     Mapping of external methods to classes.
+     * @throws IOException  if there is a problem reading or writing
+     * @throws LinkError    if there is a problem linking external references
+     */
+    private void printClassForMethod(String methodName,
+                                     Map<String, String> methodMap)
+    throws IOException, LinkError {
+        String className = methodMap.get(methodName);
+        if(className == null)
+            throw new LinkError(
+                    "Unable to find external method " + methodName);
+        out.write("\tldc \"");
+        out.write(className);
+        out.write("\"\n");
     }
     
     /**
@@ -100,33 +160,16 @@ public class AsmLinker {
         while((line = in.readLine()) != null) {
             String[] args = line.trim().split("\\s+");
             if(args[0].equals("invokestatic")
-               && externMethods.contains(args[1])) {
-                String methodName = args[1];
-                String className = methodMap.get(methodName);
-                if(className == null)
-                    throw new LinkError(
-                            "Unable to find external method " + methodName);
-                out.write("\tinvokestatic ");
-                out.write(className);
-                out.write('/');
-                out.write(methodName);
-                out.write('\n');
-            } else if(args[0].equals("getstatic")
-                      && externFields.contains(args[1] + " " + args[2])) {
-                String fieldName = args[1] + " " + args[2];
-                String className = fieldMap.get(fieldName);
-                if(className == null)
-                    throw new LinkError(
-                            "Unable to find external field " + fieldName);
-                out.write("\tgetstatic ");
-                out.write(className);
-                out.write('/');
-                out.write(fieldName);
-                out.write('\n');
-            } else {
-                out.write(line);
-                out.write('\n');
-            }
+                    && externMethods.contains(args[1]))
+                printInvokeStatic(args[1], methodMap);
+            else if(args[0].equals("getstatic")
+                    && externFields.contains(args[1] + " " + args[2]))
+                printGetStatic(args[1] + " " + args[2], fieldMap);
+            else if(args[0].equals("CLASSFORMETHOD")
+                    && externMethods.contains(args[1]))
+                printClassForMethod(args[1], methodMap);
+            else
+                out.write(line + '\n');
         }
     }
     
