@@ -25,9 +25,8 @@
 #include <llvm/Support/Mangler.h>
 
 std::string JVMWriter::sanitizeName(std::string name) {
-    // TODO: replace all illegal characters
     for(std::string::iterator i = name.begin(), e = name.end(); i != e; i++)
-        if(*i == '.' || *i == ' ')
+        if(!isalnum(*i))
             *i = '_';
     return name;
 }
@@ -36,11 +35,10 @@ std::string JVMWriter::getValueName(const Value *v) {
     if(const GlobalValue *gv = dyn_cast<GlobalValue>(v))
         return sanitizeName(Mangler(*module).getMangledName(gv));
     if(v->hasName())
-        return sanitizeName(v->getName());
-    
-    if(!anonValues.count(v))
-        anonValues[v] = anonValues.size() + 1;
-    return sanitizeName("tmp" + utostr(anonValues[v]));
+        return '_' + sanitizeName(v->getName());
+    if(localVars.count(v))
+        return '_' + utostr(getLocalVarNumber(v));
+    return "_";
 }
 
 std::string JVMWriter::getLabelName(const Value *v) {

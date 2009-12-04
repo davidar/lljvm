@@ -105,12 +105,6 @@ void JVMWriter::printConstLoad(const Constant *c) {
 
 void JVMWriter::printStaticConstant(const Constant *c) {
     std::string typeDescriptor = getTypeDescriptor(c->getType());
-    if(isa<ConstantAggregateZero>(c) || c->isNullValue()) {
-        printSimpleInstruction("iconst_0");
-        printSimpleInstruction("invokestatic",
-            "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
-        return;
-    }
     switch(c->getType()->getTypeID()) {
     case Type::IntegerTyID:
     case Type::FloatTyID:
@@ -126,27 +120,21 @@ void JVMWriter::printStaticConstant(const Constant *c) {
             printStaticConstant(cast<Constant>(c->getOperand(i)));
         break;
     case Type::PointerTyID:
-        if(const GlobalVariable *g = dyn_cast<GlobalVariable>(c)) {
+        if(const Function *f = dyn_cast<Function>(c))
+            printValueLoad(f);
+        else if(const GlobalVariable *g = dyn_cast<GlobalVariable>(c))
             // initialise with address of global variable
-            if(externRefs.count(g))
-                printSimpleInstruction("getstatic", getValueName(g) + " I");
-            else
-                printSimpleInstruction("getstatic",
-                    classname + "/" + getValueName(g) + " I");
-            printSimpleInstruction("invokestatic",
-                "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
-        } else if(isa<ConstantPointerNull>(c) || c->isNullValue()) {
+            printValueLoad(g);
+        else if(isa<ConstantPointerNull>(c) || c->isNullValue())
             printSimpleInstruction("iconst_0");
-            printSimpleInstruction("invokestatic",
-                "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
-        } else if(const ConstantExpr *ce = dyn_cast<ConstantExpr>(c)) {
+        else if(const ConstantExpr *ce = dyn_cast<ConstantExpr>(c))
             printConstantExpr(ce);
-            printSimpleInstruction("invokestatic",
-                "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
-        } else {
+        else {
             errs() << "Constant = " << *c << '\n';
             llvm_unreachable("Invalid static initializer");
         }
+        printSimpleInstruction("invokestatic",
+            "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
         break;
     default:
         errs() << "TypeID = " << c->getType()->getTypeID() << '\n';

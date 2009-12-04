@@ -196,8 +196,11 @@ public final class Memory {
      */
     public static int sbrk(int increment) {
         final int prevHeapEnd = heapEnd;
-        if(heapEnd + increment > MEM_SIZE - STACK_SIZE)
+        if(heapEnd + increment > MEM_SIZE - STACK_SIZE
+        || heapEnd + increment < DATA_SIZE) {
+            Error.errno(Error.ENOMEM);
             return -1;
+        }
         heapEnd += increment;
         final int HEAP_BOTTOM = prevHeapEnd>>>PAGE_SHIFT;
         final int HEAP_END = (heapEnd - 1)>>>PAGE_SHIFT;
@@ -631,6 +634,21 @@ public final class Memory {
         if(type == float.class)   return load_f32(addr);
         if(type == double.class)  return load_f64(addr);
         throw new IllegalArgumentException("Unrecognised type");
+    }
+    
+    /**
+     * Store a boolean value at the given address, inserting any required
+     * padding before the value, returning the first address following the
+     * value.
+     * 
+     * @param addr   the address at which to store the value
+     * @param value  the value to be stored
+     * @return       the first address following the value
+     */
+    public static int pack(int addr, boolean value) {
+        addr = alignOffsetUp(addr, 1);
+        store(addr, value);
+        return addr + 1;
     }
     
     /**

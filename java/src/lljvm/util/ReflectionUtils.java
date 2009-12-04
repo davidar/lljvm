@@ -67,6 +67,21 @@ public final class ReflectionUtils {
     }
     
     /**
+     * Returns a list of the static methods contained in the given array of
+     * methods.
+     * 
+     * @param allMethods  the array of methods to filter
+     * @return            the list of static methods
+     */
+    private static List<Method> getStaticMethods(Method[] allMethods) {
+        List<Method> methods = new ArrayList<Method>();
+        for(Method method : allMethods)
+            if(Modifier.isStatic(method.getModifiers()))
+                methods.add(method);
+        return methods;
+    }
+    
+    /**
      * Returns a list of the public static methods provided by the specified
      * class.
      * 
@@ -75,13 +90,17 @@ public final class ReflectionUtils {
      *             specified class
      */
     public static List<Method> getPublicStaticMethods(Class<?> cls) {
-        List<Method> methods = new ArrayList<Method>();
-        for(Method method : cls.getMethods()) {
-            int modifiers = method.getModifiers();
-            if(Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers))
-                methods.add(method);
-        }
-        return methods;
+        return getStaticMethods(cls.getMethods());
+    }
+    
+    /**
+     * Returns a list of the static methods provided by the specified class.
+     * 
+     * @param cls  the class providing the methods
+     * @return     a list of the static methods provided by the specified class
+     */
+    public static List<Method> getStaticMethods(Class<?> cls) {
+        return getStaticMethods(cls.getDeclaredMethods());
     }
 
     /**
@@ -158,7 +177,7 @@ public final class ReflectionUtils {
      * @param field  the given field
      * @return       the type signature of the given field
      */
-    private static String getSignature(Field field) {
+    public static String getSignature(Field field) {
         return field.getName() + " " + getDescriptor(field.getType());
     }
     

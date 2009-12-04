@@ -106,6 +106,7 @@ private:
     void printArithmeticInstruction(unsigned int op,
                                     const Value *left,
                                     const Value *right);
+    void printBitCastInstruction(const Type *ty, const Type *srcTy);
     void printCastInstruction(const std::string &typePrefix,
                               const std::string &srcTypePrefix);
     void printCastInstruction(unsigned int op, const Value *v,

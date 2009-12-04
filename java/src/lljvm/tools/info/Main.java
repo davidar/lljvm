@@ -20,12 +20,15 @@
 * THE SOFTWARE.
 */
 
-package lljvm.tools;
+package lljvm.tools.info;
 
-import java.util.Arrays;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
+import lljvm.util.ReflectionUtils;
 
 /**
- * Main class for executing the LLJVM tools.
+ * Main class for executing the LLJVM info utility.
  * 
  * @author  David Roberts
  */
@@ -36,15 +39,22 @@ public class Main {
      * @param args  Command line arguments.
      */
     public static void main(String[] args) {
-        if(args.length < 1) {
-            System.err.println("Missing command name");
-            System.exit(1);
+        for(String classname : args) {
+            Class<?> cls;
+            try {
+                cls = ReflectionUtils.getClass(classname);
+            } catch (ClassNotFoundException e) {
+                System.out.println("Unable to find class " + classname);
+                continue;
+            }
+            System.out.println(classname);
+            System.out.println("\nFields");
+            for(Field field : ReflectionUtils.getPublicStaticFields(cls))
+                System.out.println(ReflectionUtils.getSignature(field));
+            System.out.println("\nMethods");
+            for(Method method : ReflectionUtils.getPublicStaticMethods(cls))
+                System.out.println(ReflectionUtils.getSignature(method));
+            System.out.println("\n\n");
         }
-        String cmd = args[0];
-        args = Arrays.copyOfRange(args, 1, args.length);
-        if(cmd.equals("ld"))
-            lljvm.tools.ld.Main.main(args);
-        else if(cmd.equals("info"))
-            lljvm.tools.info.Main.main(args);
     }
 }

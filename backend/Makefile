@@ -12,7 +12,7 @@ lljvm-backend: ${OBJS}
 	$(CXX) ${OBJS} ${CFLAGS} -o lljvm-backend
 
 clean:
-	rm -f lljvm-backend
+	rm -f *.o lljvm-backend
 
 .cpp.o:
 	$(CXX) ${CFLAGS} -c $<

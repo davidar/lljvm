@@ -94,13 +94,24 @@ void JVMWriter::printSelectInstruction(const Value *cond,
 }
 
 void JVMWriter::printSwitchInstruction(const SwitchInst *inst) {
+    // TODO: This method does not handle switch statements when the
+    // successor contains phi instructions (the value of the phi instruction
+    // should be set before branching to the successor). Therefore, it has
+    // been replaced by the switch lowering pass. Once this method is
+    // fixed the switch lowering pass should be removed.
+    
+    std::map<int, unsigned int> cases;
+    for(unsigned int i = 1, e = inst->getNumCases(); i < e; i++)
+        cases[(int) inst->getCaseValue(i)->getValue().getSExtValue()] = i;
+    
     // TODO: tableswitch in cases where it won't increase the size of the
     //       class file
     printValueLoad(inst->getCondition());
     out << "\tlookupswitch\n";
-    for(unsigned int i = 1, e = inst->getNumCases(); i < e; i++)
-        out << "\t\t" << inst->getCaseValue(i)->getValue().getSExtValue()
-            << " : " << getLabelName(inst->getSuccessor(i)) << '\n';
+    for(std::map<int, unsigned int>::const_iterator
+        i = cases.begin(), e = cases.end(); i != e; i++)
+        out << "\t\t" << i->first << " : "
+            << getLabelName(inst->getSuccessor(i->second)) << '\n';
     out << "\t\tdefault : " << getLabelName(inst->getDefaultDest()) << '\n';
 }
 

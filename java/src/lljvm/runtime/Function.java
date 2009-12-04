@@ -65,7 +65,7 @@ public final class Function {
         if(registeredClasses.contains(classname))
             return;
         Class<?> cls = ReflectionUtils.getClass(classname);
-        for(Method method : ReflectionUtils.getPublicStaticMethods(cls)) {
+        for(Method method : ReflectionUtils.getStaticMethods(cls)) {
             final int addr = Memory.allocateData();
             final String sig = ReflectionUtils.getQualifiedSignature(method);
             functionPointers.put(sig, addr);
@@ -89,7 +89,11 @@ public final class Function {
         } catch(ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-        return functionPointers.get(classname+"/"+methodSignature);
+        final String sig = classname + "/" + methodSignature;
+        if(!functionPointers.containsKey(sig))
+            throw new IllegalArgumentException(
+                    "Unable to get function pointer for "+sig);
+        return functionPointers.get(sig);
     }
     
     /**

@@ -1,5 +1,5 @@
-TESTS := argv.test factorial.test fnptr.test fp.test primes.test \
-         staticvar.test struct.test switch.test va.test
+TESTS := argv.test cast.test factorial.test fnptr.test fp.test hello.test \
+         primes.test staticvar.test struct.test switch.test va.test
 
 .PHONY: check clean
 

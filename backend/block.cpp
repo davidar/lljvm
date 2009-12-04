@@ -26,13 +26,17 @@ void JVMWriter::printBasicBlock(const BasicBlock *block) {
     printLabel(getLabelName(block));
     for(BasicBlock::const_iterator i = block->begin(), e = block->end();
         i != e; i++) {
+#ifdef DEBUG
         // print current instruction as comment
+        // note that enabling this block of code significantly increases
+        // code generation time
         std::string str;
         raw_string_ostream ss(str); ss << *i;
         std::string::size_type pos = 0;
         while ((pos = str.find("\n", pos)) != std::string::npos)
             str.replace(pos++, 1, "\n;");
         out << ';' << str << '\n';
+#endif
         printSimpleInstruction(".line", utostr(++instNum));
         
         if(i->getOpcode() == Instruction::PHI)

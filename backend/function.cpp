@@ -99,6 +99,8 @@ void JVMWriter::printIntrinsicCall(const IntrinsicInst *inst) {
     case Intrinsic::memmove:
     case Intrinsic::memset:
         printMemIntrinsic(cast<MemIntrinsic>(inst)); break;
+    case Intrinsic::flt_rounds:
+        printSimpleInstruction("iconst_m1"); break;
     default:
     errs() << "Intrinsic = " << *inst << '\n';
     llvm_unreachable("Invalid intrinsic function");
@@ -130,24 +132,21 @@ void JVMWriter::printInvokeInstruction(const InvokeInst *inst) {
 
 void JVMWriter::printLocalVariable(const Function &f,
                                    const Instruction *inst) {
-    const AllocaInst *ai = dyn_cast<AllocaInst>(inst);
-    if(ai && !isa<GlobalVariable>(ai)) {
+    const Type *ty;
+    if(isa<AllocaInst>(inst) && !isa<GlobalVariable>(inst))
         // local variable allocation
-        const Type *ty = PointerType::getUnqual(ai->getAllocatedType());
-        printSimpleInstruction(".var " + utostr(getLocalVarNumber(ai)),
-            "is " + getValueName(ai) + ' ' + getTypeDescriptor(ty)
-            + " from begin_method to end_method");
-        // initialise local variable
-        printSimpleInstruction(getTypePrefix(ty, true) + "const_0");
-        printSimpleInstruction(getTypePrefix(ty, true) + "store",
-            utostr(getLocalVarNumber(ai)));
-    } else if(inst->getType() != Type::getVoidTy(f.getContext())) {
-        // operation result
-        printSimpleInstruction(".var " + utostr(getLocalVarNumber(inst)),
-            "is " + getValueName(inst) + ' '
-            + getTypeDescriptor(inst->getType())
-            + " from begin_method to end_method");
-    }
+        ty = PointerType::getUnqual(
+                 cast<AllocaInst>(inst)->getAllocatedType());
+    else // operation result
+        ty = inst->getType();
+    // getLocalVarNumber must be called at least once in this method
+    unsigned int varNum = getLocalVarNumber(inst);
+    printSimpleInstruction(".var " + utostr(varNum),
+        "is " + getValueName(inst) + ' ' + getTypeDescriptor(ty)
+        + " from begin_method to end_method");
+    // initialise variable to avoid class verification errors
+    printSimpleInstruction(getTypePrefix(ty, true) + "const_0");
+    printSimpleInstruction(getTypePrefix(ty, true) + "store", utostr(varNum));
 }
 
 void JVMWriter::printFunctionBody(const Function &f) {
@@ -199,7 +198,8 @@ void JVMWriter::printFunction(const Function &f) {
         i != e; i++) {
         if(stackDepth < i->getNumOperands())
             stackDepth = i->getNumOperands();
-        printLocalVariable(f, &*i);
+        if(i->getType() != Type::getVoidTy(f.getContext()))
+            printLocalVariable(f, &*i);
     }
     printSimpleInstruction(".limit stack", utostr(stackDepth * 2));
     printSimpleInstruction(".limit locals", utostr(usedRegisters));

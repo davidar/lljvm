@@ -61,6 +61,8 @@ int main(int argc, char **argv) {
     pm.add(new TargetData(td));
     pm.add(createVerifierPass());
     pm.add(createGCLoweringPass());
+    // TODO: fix switch generation so the following pass is not needed
+    pm.add(createLowerSwitchPass());
     pm.add(createCFGSimplificationPass());
     pm.add(new JVMWriter(&td, fouts()));
     pm.add(createGCInfoDeleter());

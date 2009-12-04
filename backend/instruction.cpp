@@ -69,45 +69,67 @@ void JVMWriter::printCmpInstruction(unsigned int predicate,
 void JVMWriter::printArithmeticInstruction(unsigned int op,
                                            const Value *left,
                                            const Value *right) {
+    printValueLoad(left);
+    printValueLoad(right);
     std::string typePrefix = getTypePrefix(left->getType(), true);
     std::string typeDescriptor = getTypeDescriptor(left->getType());
     switch(op) {
     case Instruction::Add:
     case Instruction::FAdd:
-        printBinaryInstruction(typePrefix + "add",  left, right); break;
+        printSimpleInstruction(typePrefix + "add"); break;
     case Instruction::Sub:
     case Instruction::FSub:
-        printBinaryInstruction(typePrefix + "sub",  left, right); break;
+        printSimpleInstruction(typePrefix + "sub"); break;
     case Instruction::Mul:
     case Instruction::FMul:
-        printBinaryInstruction(typePrefix + "mul",  left, right); break;
+        printSimpleInstruction(typePrefix + "mul"); break;
     case Instruction::SDiv:
     case Instruction::FDiv:
-        printBinaryInstruction(typePrefix + "div",  left, right); break;
+        printSimpleInstruction(typePrefix + "div"); break;
     case Instruction::SRem:
     case Instruction::FRem:
-        printBinaryInstruction(typePrefix + "rem",  left, right); break;
+        printSimpleInstruction(typePrefix + "rem"); break;
     case Instruction::And:
-        printBinaryInstruction(typePrefix + "and",  left, right); break;
+        printSimpleInstruction(typePrefix + "and"); break;
     case Instruction::Or:
-        printBinaryInstruction(typePrefix + "or",   left, right); break;
+        printSimpleInstruction(typePrefix + "or"); break;
     case Instruction::Xor:
-        printBinaryInstruction(typePrefix + "xor",  left, right); break;
+        printSimpleInstruction(typePrefix + "xor"); break;
     case Instruction::Shl:
-        printBinaryInstruction(typePrefix + "shl",  left, right); break;
+        if(getBitWidth(right->getType()) == 64) printSimpleInstruction("l2i");
+        printSimpleInstruction(typePrefix + "shl"); break;
     case Instruction::LShr:
-        printBinaryInstruction(typePrefix + "ushr", left, right); break;
+        if(getBitWidth(right->getType()) == 64) printSimpleInstruction("l2i");
+        printSimpleInstruction(typePrefix + "ushr"); break;
     case Instruction::AShr:
-        printBinaryInstruction(typePrefix + "shr",  left, right); break;
+        if(getBitWidth(right->getType()) == 64) printSimpleInstruction("l2i");
+        printSimpleInstruction(typePrefix + "shr"); break;
     case Instruction::UDiv:
-        printVirtualInstruction("udiv(" + typeDescriptor + typeDescriptor + ")"
-            + typeDescriptor, left, right);
+        printVirtualInstruction(
+            "udiv(" + typeDescriptor + typeDescriptor + ")" + typeDescriptor);
         break;
     case Instruction::URem:
-        printVirtualInstruction("urem(" + typeDescriptor + typeDescriptor + ")"
-            + typeDescriptor, left, right);
+        printVirtualInstruction(
+            "urem(" + typeDescriptor + typeDescriptor + ")" + typeDescriptor);
         break;
     }
+}
+
+void JVMWriter::printBitCastInstruction(const Type *ty, const Type *srcTy) {
+    char typeID = getTypeID(ty);
+    char srcTypeID = getTypeID(srcTy);
+    if(srcTypeID == 'J' && typeID == 'D')
+        printSimpleInstruction("invokestatic",
+                               "java/lang/Double/longBitsToDouble(J)D");
+    else if(srcTypeID == 'I' && typeID == 'F')
+        printSimpleInstruction("invokestatic",
+                               "java/lang/Float/intBitsToFloat(I)F");
+    if(srcTypeID == 'D' && typeID == 'J')
+        printSimpleInstruction("invokestatic",
+                               "java/lang/Double/doubleToRawLongBits(D)J");
+    else if(srcTypeID == 'F' && typeID == 'I')
+        printSimpleInstruction("invokestatic",
+                               "java/lang/Float/floatToRawIntBits(F)I");
 }
 
 void JVMWriter::printCastInstruction(const std::string &typePrefix,
@@ -125,11 +147,18 @@ void JVMWriter::printCastInstruction(unsigned int op, const Value *v,
     case Instruction::FPTrunc:
     case Instruction::FPExt:
     case Instruction::SExt:
+        if(getBitWidth(srcTy) < 32)
+            printCastInstruction(getTypePrefix(srcTy), "i");
         printCastInstruction(getTypePrefix(ty, true),
                              getTypePrefix(srcTy, true)); break;
     case Instruction::Trunc:
-        printCastInstruction(getTypePrefix(ty),
-                             getTypePrefix(srcTy, true)); break;
+        if(getBitWidth(srcTy) == 64 && getBitWidth(ty) < 32) {
+            printSimpleInstruction("l2i");
+            printCastInstruction(getTypePrefix(ty), "i");
+        } else
+            printCastInstruction(getTypePrefix(ty),
+                                 getTypePrefix(srcTy, true));
+        break;
     case Instruction::IntToPtr:
         printCastInstruction("i", getTypePrefix(srcTy, true)); break;
     case Instruction::PtrToInt:
@@ -148,7 +177,7 @@ void JVMWriter::printCastInstruction(unsigned int op, const Value *v,
             + "(" + getTypeDescriptor(srcTy) + ")" + getTypeDescriptor(ty));
         break;
     case Instruction::BitCast:
-        break;
+        printBitCastInstruction(ty, srcTy); break;
     default:
         errs() << "Opcode = " << op << '\n';
         llvm_unreachable("Invalid cast instruction");
@@ -266,10 +295,13 @@ void JVMWriter::printMemIntrinsic(const MemIntrinsic *inst) {
     
     switch(inst->getIntrinsicID()) {
     case Intrinsic::memcpy:
-        printSimpleInstruction("invokestatic", "lljvm/Memory/memcpy(IIII)V");
+        printSimpleInstruction("invokestatic",
+                               "lljvm/runtime/Memory/memcpy(IIII)V"); break;
     case Intrinsic::memmove:
-        printSimpleInstruction("invokestatic", "lljvm/Memory/memmove(IIII)V");
+        printSimpleInstruction("invokestatic",
+                               "lljvm/runtime/Memory/memmove(IIII)V"); break;
     case Intrinsic::memset:
-        printSimpleInstruction("invokestatic", "lljvm/Memory/memset(IBII)V");
+        printSimpleInstruction("invokestatic",
+                               "lljvm/runtime/Memory/memset(IBII)V"); break;
     }
 }

@@ -39,8 +39,8 @@ void JVMWriter::printFields() {
             out << ".field "
                 << (i->hasLocalLinkage() ? "private " : "public ")
                 << "static ";
-        out << getValueName(i) << ' '
-            << getTypeDescriptor(i->getType()) << '\n';
+        out << getValueName(i) << ' ' << getTypeDescriptor(i->getType())
+            << " ; " << *i;
     }
     out << '\n';
 }
@@ -51,8 +51,9 @@ void JVMWriter::printExternalMethods() {
                                e = module->end(); i != e; i++) {
         if(i->isDeclaration() && !i->isIntrinsic()) {
             const Function *f = i;
+            const FunctionType *ty = f->getFunctionType();
             out << ".extern method " << getValueName(f)
-                << getCallSignature(f->getFunctionType()) << '\n';
+                << getCallSignature(ty) << " ; " << *ty << '\n';
             externRefs.insert(f);
         }
     }
@@ -83,8 +84,7 @@ void JVMWriter::printClInit() {
             printSimpleInstruction("invokestatic",
                                    "lljvm/runtime/Memory/allocateData(I)I");
             printSimpleInstruction("putstatic",
-                classname + "/" + getValueName(g)
-                + ' ' + getTypeDescriptor(c->getType()));
+                classname + "/" + getValueName(g) + " I");
         }
     }
     
@@ -95,8 +95,7 @@ void JVMWriter::printClInit() {
             const GlobalVariable *g = i;
             const Constant *c = g->getInitializer();
             printSimpleInstruction("getstatic",
-                classname + "/" + getValueName(g)
-                + ' ' + getTypeDescriptor(c->getType()));
+                classname + "/" + getValueName(g) + " I");
             printStaticConstant(c);
             printSimpleInstruction("pop");
             out << '\n';
