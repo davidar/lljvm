@@ -25,10 +25,12 @@
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/Analysis/ConstantsScanner.h>
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/IntrinsicInst.h>
 #include <llvm/Module.h>
+#include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/GetElementPtrTypeIterator.h>
 #include <llvm/Target/TargetData.h>

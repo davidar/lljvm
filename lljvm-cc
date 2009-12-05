@@ -10,7 +10,7 @@ elif which llvm-gcc >/dev/null; then CC=llvm-gcc
 else echo "Error: either clang or llvm-gcc must be installed" && exit 1
 fi
 
-LIBS="lljvm.util.BasicIO java.lang.Math"
+LIBS="libc java.lang.Math"
 
 SOURCE="$1"
 BASENAME="`dirname "$SOURCE"`/`basename "$SOURCE" .c`"

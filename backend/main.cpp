@@ -27,11 +27,12 @@
 #include <llvm/Analysis/Verifier.h>
 #include <llvm/Bitcode/ReaderWriter.h>
 #include <llvm/CodeGen/Passes.h>
+#include <llvm/LLVMContext.h>
+#include <llvm/PassManager.h>
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Target/TargetData.h>
 #include <llvm/Transforms/Scalar.h>
-#include <llvm/PassManager.h>
 
 using namespace llvm;
 

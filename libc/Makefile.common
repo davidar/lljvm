@@ -1,0 +1,20 @@
+SOURCE_DIR := ${LEVEL}/../thirdparty/newlib/newlib/libc
+
+CC := llvm-gcc
+CFLAGS := -emit-llvm -D__LLJVM__ -DMISSING_SYSCALL_NAMES \
+          -I${SOURCE_DIR}/include -I${SOURCE_DIR}/${DIR}
+
+all: ${LEVEL}/${DIR}.o
+
+${LEVEL}/${DIR}.o: ${OBJS}
+	llvm-ld -link-as-library ${OBJS} -o ${LEVEL}/${DIR}.o
+
+clean:
+	rm -f ${OBJS} ${LEVEL}/${DIR}.o
+
+%.o: ${SOURCE_DIR}/${DIR}/%.c
+	$(CC) ${CFLAGS} -c $< -o $@
+
+${OBJS}: ${SOURCE_DIR}/include/*.h \
+         ${SOURCE_DIR}/include/machine/*.h \
+         ${SOURCE_DIR}/include/sys/*.h

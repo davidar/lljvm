@@ -1,0 +1,41 @@
+diff -ur a/newlib-1.17.0/newlib/libc/include/sys/config.h b/newlib-1.17.0/newlib/libc/include/sys/config.h
+--- a/newlib-1.17.0/newlib/libc/include/sys/config.h	2008-11-20 07:05:31.000000000 +1000
++++ b/newlib-1.17.0/newlib/libc/include/sys/config.h	2009-12-05 13:30:43.000000000 +1000
+@@ -135,6 +135,11 @@
+ #define __CUSTOM_FILE_IO__
+ #endif
+ 
++#ifdef __LLJVM__
++#define _LONG_DOUBLE double
++#undef __LARGE64_FILES
++#endif
++
+ /* This block should be kept in sync with GCC's limits.h.  The point
+    of having these definitions here is to not include limits.h, which
+    would pollute the user namespace, while still using types of the
+diff -ur a/newlib-1.17.0/newlib/libc/include/sys/signal.h b/newlib-1.17.0/newlib/libc/include/sys/signal.h
+--- a/newlib-1.17.0/newlib/libc/include/sys/signal.h	2006-04-19 06:06:09.000000000 +1000
++++ b/newlib-1.17.0/newlib/libc/include/sys/signal.h	2009-12-05 11:52:03.000000000 +1000
+@@ -187,6 +187,10 @@
+ 
+ #endif /* defined(__CYGWIN__) || defined(__rtems__) */
+ 
++#ifdef __LLJVM__
++int _EXFUN(kill, (int, int));
++#endif
++
+ /* #endif __STRICT_ANSI__ */
+ 
+ #if defined(___AM29K__)
+diff -ur a/newlib-1.17.0/newlib/libc/reent/reent.c b/newlib-1.17.0/newlib/libc/reent/reent.c
+--- a/newlib-1.17.0/newlib/libc/reent/reent.c	2006-10-11 18:04:50.000000000 +1000
++++ b/newlib-1.17.0/newlib/libc/reent/reent.c	2009-12-05 13:37:02.000000000 +1000
+@@ -23,7 +23,7 @@
+ 
+ /* We use the errno variable used by the system dependent layer.  */
+ #undef errno
+-int errno;
++extern int errno;
+ 
+ #endif
+ 
