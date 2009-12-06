@@ -197,10 +197,8 @@ public final class Memory {
     public static int sbrk(int increment) {
         final int prevHeapEnd = heapEnd;
         if(heapEnd + increment > MEM_SIZE - STACK_SIZE
-        || heapEnd + increment < DATA_SIZE) {
-            Error.errno(Error.ENOMEM);
-            return -1;
-        }
+        || heapEnd + increment < DATA_SIZE)
+            return Error.errno(Error.ENOMEM);
         heapEnd += increment;
         final int HEAP_BOTTOM = prevHeapEnd>>>PAGE_SHIFT;
         final int HEAP_END = (heapEnd - 1)>>>PAGE_SHIFT;

@@ -54,8 +54,7 @@ public final class Posix {
      * @return    0 on success, -1 on error
      */
     public static int gettimeofday(int tv, int tz) {
-        Error.errno(Error.EINVAL);
-        return -1;
+        return Error.errno(Error.EINVAL);
     }
     
     /**
@@ -67,8 +66,7 @@ public final class Posix {
      * @return        0 on success, -1 on error
      */
     public static int sigprocmask(int how, int set, int oldset) {
-        Error.errno(Error.EINVAL);
-        return -1;
+        return Error.errno(Error.EINVAL);
     }
     
     /**
@@ -78,7 +76,6 @@ public final class Posix {
      * @return      the value of the system resource on success, -1 on error
      */
     public static int sysconf(int name) {
-        Error.errno(Error.EINVAL);
-        return -1;
+        return Error.errno(Error.EINVAL);
     }
 }

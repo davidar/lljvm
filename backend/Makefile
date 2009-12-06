@@ -1,8 +1,19 @@
 CXX := c++
-OBJS := main.o backend.o block.o branch.o const.o function.o instruction.o \
-        loadstore.o name.o printinst.o sections.o types.o
 CFLAGS := $(shell llvm-config --cxxflags --ldflags \
                               --libs bitreader codegen selectiondag)
+OBJS := \
+    main.o \
+    backend.o \
+    block.o \
+    branch.o \
+    const.o \
+    function.o \
+    instruction.o \
+    loadstore.o \
+    name.o \
+    printinst.o \
+    sections.o \
+    types.o
 
 .PHONY: all clean
 

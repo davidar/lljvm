@@ -301,8 +301,10 @@ public final class Error {
      * Sets the value of errno.
      * 
      * @param value  the new value of errno
+     * @return       -1
      */
-    public static void errno(int value) {
+    public static int errno(int value) {
         Memory.store(errno, value);
+        return -1;
     }
 }

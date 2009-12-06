@@ -5,17 +5,18 @@ set -e
 DIR="`dirname "$0"`"
 export PATH="$DIR:$PATH"
 
-if   which clang    >/dev/null; then CC=clang
-elif which llvm-gcc >/dev/null; then CC=llvm-gcc
-else echo "Error: either clang or llvm-gcc must be installed" && exit 1
+if   which llvm-gcc >/dev/null; then CC=llvm-gcc
+elif which clang    >/dev/null; then CC=clang
+else echo "Error: either llvm-gcc or clang must be installed" && exit 1
 fi
 
-LIBS="libc java.lang.Math"
+CFLAGS="-emit-llvm -I$DIR/thirdparty/newlib/newlib/libc/include"
+LIBS="libc java.lang.Math lljvm.runtime.System lljvm.runtime.Posix"
 
 SOURCE="$1"
 BASENAME="`dirname "$SOURCE"`/`basename "$SOURCE" .c`"
 
-$CC "$SOURCE" -emit-llvm -c -o "$BASENAME.bc"
+$CC $CFLAGS -c "$SOURCE" -o "$BASENAME.bc"
 lljvm-backend "$BASENAME.bc" \
     | java -jar "$DIR/lljvm.jar" ld $LIBS \
     > "$BASENAME.j"

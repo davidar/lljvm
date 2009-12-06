@@ -57,10 +57,11 @@ public final class System {
      */
     public static int argv(String arg0, String[] args) {
         final int argc = args.length + 1;
-        final int argv = Memory.allocateStack(argc*4);
+        final int argv = Memory.allocateStack((argc+1)*4);
         Memory.store(argv, Memory.storeStack(arg0));
         for(int i = 1; i < argc; i++)
             Memory.store(argv + i*4, Memory.storeStack(args[i-1]));
+        Memory.store(argv + argc*4, Memory.NULL);
         return argv;
     }
     
@@ -71,6 +72,7 @@ public final class System {
      * @param status  the exit status code
      */
     public static void _exit(int status) {
+        IO.close();
         java.lang.System.exit(status);
     }
     
@@ -81,7 +83,7 @@ public final class System {
      * @return    0 on success, -1 on error
      */
     public static int close(int fd) {
-        return -1;
+        return IO.close(fd);
     }
     
     /**
@@ -93,8 +95,7 @@ public final class System {
      * @return          does not return on success, -1 on error
      */
     public static int execve(int filename, int argv, int envp) {
-        Error.errno(Error.ENOMEM);
-        return -1;
+        return Error.errno(Error.ENOMEM);
     }
     
     /**
@@ -103,8 +104,7 @@ public final class System {
      * @return  the PID of the child process on success, -1 on error
      */
     public static int fork() {
-        Error.errno(Error.EAGAIN);
-        return -1;
+        return Error.errno(Error.EAGAIN);
     }
     
     /**
@@ -135,7 +135,7 @@ public final class System {
      * @return    1 if fd refers to a terminal, 0 otherwise
      */
     public static int isatty(int fd) {
-        return 1;
+        return IO.isatty(fd) ? 1 : 0;
     }
     
     /**
@@ -146,8 +146,7 @@ public final class System {
      * @return     0 on success, -1 on error
      */
     public static int kill(int pid, int sig) {
-        Error.errno(Error.EINVAL);
-        return -1;
+        return Error.errno(Error.EINVAL);
     }
     
     /**
@@ -158,8 +157,7 @@ public final class System {
      * @return         0 on success, -1 on error
      */
     public static int link(int oldpath, int newpath) {
-        Error.errno(Error.EMLINK);
-        return -1;
+        return Error.errno(Error.EMLINK);
     }
     
     /**
@@ -172,7 +170,7 @@ public final class System {
      * @return        the resulting offset on success, -1 on error
      */
     public static int lseek(int fd, int offset, int whence) {
-        return 0;
+        return IO.getFileHandle(fd).seek(offset, whence);
     }
     
     /**
@@ -200,7 +198,7 @@ public final class System {
      * @return          the new file descriptor on success, -1 on error
      */
     private static int _open(int pathname, int flags) {
-        return -1;
+        return IO.open(Memory.load_string(pathname), flags);
     }
     
     /**
@@ -212,7 +210,7 @@ public final class System {
      * @return          the new file descriptor on success, -1 on error
      */
     private static int _open(int pathname, int flags, int mode) {
-        return -1;
+        return Error.errno(Error.EACCES);
     }
     
     /**
@@ -224,7 +222,7 @@ public final class System {
      * @return       the number of bytes read on success, -1 on error
      */
     public static int read(int fd, int buf, int count) {
-        return 0;
+        return IO.getFileHandle(fd).read(buf, count);
     }
     
     /**
@@ -269,8 +267,7 @@ public final class System {
      * @return          0 on success, -1 on error
      */
     public static int unlink(int pathname) {
-        Error.errno(Error.ENOENT);
-        return -1;
+        return Error.errno(Error.ENOENT);
     }
     
     /**
@@ -281,8 +278,7 @@ public final class System {
      * @return        the PID of the terminated child on success, -1 on error
      */
     public static int wait(int status) {
-        Error.errno(Error.ECHILD);
-        return -1;
+        return Error.errno(Error.ECHILD);
     }
     
     /**
@@ -294,8 +290,6 @@ public final class System {
      * @return       the number of bytes written on success, -1 on error
      */
     public static int write(int fd, int buf, int count) {
-        for(int i = 0; i < count; i++)
-            java.lang.System.out.write(Memory.load_i8(buf++));
-        return count;
+        return IO.getFileHandle(fd).write(buf, count);
     }
 }
