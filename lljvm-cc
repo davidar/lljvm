@@ -1,23 +1,94 @@
-#!/bin/sh
+#!/usr/bin/python
+# Copyright (c) 2009 David Roberts <d@vidr.cc>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
-set -e
+import os
+import sys
+import subprocess
 
-DIR="`dirname "$0"`"
-export PATH="$DIR:$PATH"
+def die(message):
+    sys.stderr.write(message)
+    sys.exit(1)
 
-if   which llvm-gcc >/dev/null; then CC=llvm-gcc
-elif which clang    >/dev/null; then CC=clang
-else echo "Error: either llvm-gcc or clang must be installed" && exit 1
-fi
+def command_exists(name):
+    return subprocess.call(['which', name], stdout=open('/dev/null', 'w')) == 0
 
-CFLAGS="-emit-llvm -I$DIR/thirdparty/newlib/newlib/libc/include"
-LIBS="libc java.lang.Math lljvm.runtime.System lljvm.runtime.Posix"
+def call_e(*popenargs, **kwargs):
+    p = subprocess.Popen(*popenargs, **kwargs)
+    returncode = p.wait()
+    if returncode != 0:
+        sys.exit(returncode)
 
-SOURCE="$1"
-BASENAME="`dirname "$SOURCE"`/`basename "$SOURCE" .c`"
+def main():
+    dir = os.path.dirname(sys.argv.pop(0))
+    
+    if command_exists('llvm-gcc'):
+        cc = 'llvm-gcc'
+    elif command_exists('clang'):
+        cc = 'clang'
+    else:
+        die("Error: either llvm-gcc or clang must be installed")
 
-$CC $CFLAGS -c "$SOURCE" -o "$BASENAME.bc"
-lljvm-backend "$BASENAME.bc" \
-    | java -jar "$DIR/lljvm.jar" ld $LIBS \
-    > "$BASENAME.j"
-java jasmin.Main "$BASENAME.j"
+    cflags = ['-emit-llvm', '-c',
+              '-I' + dir + '/thirdparty/newlib/newlib/libc/include']
+    libs = ['libc', 'java.lang.Math',
+            'lljvm.runtime.System', 'lljvm.runtime.Posix']
+
+    output = None
+    srcs = []
+    objs = []
+
+    while sys.argv:
+        arg = sys.argv.pop(0)
+        if arg == '-o':
+            output = sys.argv.pop(0)
+        elif arg[0] != '-':
+            srcs.append(arg)
+            objs.append(os.path.basename(arg)[:-2] + '.o')
+        else:
+            cflags.append(arg)
+
+    if not output:
+        die("Error: must provide output name (-o)")
+
+    call_e([cc] + cflags + srcs)
+    call_e(['llvm-ld', '-link-as-library'] + objs + ['-o', output + '.bc'])
+
+    output_j = open(output + '.j', 'w')
+    p1 = subprocess.Popen(
+        [os.path.join(dir, 'lljvm-backend'), output + '.bc'],
+        stdout=subprocess.PIPE)
+    p2 = subprocess.Popen(
+        ['java', '-jar', os.path.join(dir, 'lljvm.jar'), 'ld'] + libs,
+        stdin=p1.stdout, stdout=output_j)
+    r2 = p2.wait()
+    r1 = p1.wait()
+    output_j.close()
+    if r1 != 0 or r2 != 0:
+        sys.exit(r1 or r2)
+
+    call_e(['java', 'jasmin.Main', output + '.j'])
+    
+    os.unlink(output + '.bc')
+    os.unlink(output + '.j')
+    for obj in objs:
+        os.unlink(obj)
+
+if __name__ == '__main__': main()

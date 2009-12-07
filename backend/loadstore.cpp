@@ -37,12 +37,10 @@ void JVMWriter::printValueLoad(const Value *v) {
     } else if(isa<GlobalVariable>(v)) {
         const Type *ty = cast<PointerType>(v->getType())->getElementType();
         if(externRefs.count(v))
-            printSimpleInstruction("getstatic",
-                getValueName(v) + ' ' + getTypeDescriptor(ty));
+            printSimpleInstruction("getstatic", getValueName(v) + " I");
         else
             printSimpleInstruction("getstatic",
-                classname + "/" + getValueName(v)
-                + ' ' + getTypeDescriptor(ty));
+                classname + "/" + getValueName(v) + " I");
     } else if(isa<ConstantPointerNull>(v)) {
         printPtrLoad(0);
     } else if(const ConstantExpr *ce = dyn_cast<ConstantExpr>(v)) {

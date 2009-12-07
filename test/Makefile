@@ -14,13 +14,13 @@ TESTS := \
 
 .PHONY: check clean
 
-check: clean ${TESTS}
+check: ${TESTS}
 
 %.bin: %.c
 	cc $*.c -lm -o $*.bin
 
 %.class: %.c
-	../lljvm-cc $*.c
+	../lljvm-cc $*.c -o $*
 
 %.test: %.bin %.class
 	echo EXPECTED
@@ -30,4 +30,4 @@ check: clean ${TESTS}
 	echo
 
 clean:
-	rm -f *.bc *.j *.class *.bin
+	cd bsd-games && $(MAKE) clean

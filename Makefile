@@ -1,7 +1,6 @@
-.PHONY: all check clean
+.PHONY: all check bsd-games clean distclean
 
 all:
-	cd thirdparty && $(MAKE) all
 	cd java && $(MAKE) all
 	cp java/dist/lljvm.jar .
 	cd backend && $(MAKE) all
@@ -11,6 +10,9 @@ all:
 
 check: all
 	cd test && $(MAKE) -s check
+
+bsd-games: all
+	cd test/bsd-games && $(MAKE) all
 
 clean:
 	cd thirdparty && $(MAKE) clean

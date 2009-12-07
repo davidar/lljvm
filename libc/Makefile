@@ -14,26 +14,15 @@ OBJS := \
     string.o \
     time.o
 
-DIRS := \
-    argz \
-    ctype \
-    errno \
-    iconv \
-    locale \
-    math \
-    misc \
-    reent \
-    search \
-    signal \
-    stdio \
-    stdlib \
-    string \
-    time
+DIRS := ${OBJS:.o=}
 
 LLJVM_LD := java -jar ../lljvm.jar ld
 JAVA_LIBS := lljvm.runtime.System lljvm.runtime.Posix lljvm.runtime.Error
 
-all: libc.class
+all: ../thirdparty/newlib libc.class
+
+../thirdparty/newlib:
+	cd ../thirdparty && $(MAKE) newlib
 
 libc.class: libc.o
 	../lljvm-backend libc.o | $(LLJVM_LD) ${JAVA_LIBS} > libc.j
