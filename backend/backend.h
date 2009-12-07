@@ -84,6 +84,7 @@ private:
     void printConstLoad(float f);
     void printConstLoad(double d);
     void printConstLoad(const Constant *c);
+    void printConstLoad(const std::string &str);
     void printStaticConstant(const Constant *c);
     void printConstantExpr(const ConstantExpr *ce);
     

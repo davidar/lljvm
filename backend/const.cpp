@@ -103,6 +103,24 @@ void JVMWriter::printConstLoad(const Constant *c) {
     }
 }
 
+void JVMWriter::printConstLoad(const std::string &str) {
+    out << "\tldc \"";
+    for(std::string::const_iterator i = str.begin(),
+                                    e = str.end()-1; i != e; i++)
+        switch(*i) {
+        case '\\': out << "\\\\"; break;
+        case '\b': out << "\\b";  break;
+        case '\t': out << "\\t";  break;
+        case '\n': out << "\\n";  break;
+        case '\f': out << "\\f";  break;
+        case '\r': out << "\\r";  break;
+        case '\"': out << "\\\""; break;
+        case '\'': out << "\\\'"; break;
+        default:   out << *i;     break;
+        }
+    out << "\"\n";
+}
+
 void JVMWriter::printStaticConstant(const Constant *c) {
     std::string typeDescriptor = getTypeDescriptor(c->getType());
     switch(c->getType()->getTypeID()) {
@@ -114,6 +132,14 @@ void JVMWriter::printStaticConstant(const Constant *c) {
             "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
         break;
     case Type::ArrayTyID:
+        if(const ConstantArray *ca = dyn_cast<ConstantArray>(c))
+            if(ca->isCString()) {
+                printConstLoad(ca->getAsString());
+                printSimpleInstruction("invokestatic",
+                    "lljvm/runtime/Memory/pack(ILjava/lang/String;)I");
+                break;
+            }
+        // else fall through
     case Type::VectorTyID:
     case Type::StructTyID:
         for(unsigned int i = 0, e = c->getNumOperands(); i < e; i++)

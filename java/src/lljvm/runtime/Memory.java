@@ -739,6 +739,21 @@ public final class Memory {
     }
     
     /**
+     * Store a string at the given address, returning the first address
+     * following the null terminator.
+     * 
+     * @param addr    the address at which to store the string
+     * @param string  the string to be stored
+     * @return        the first address following the null terminator
+     */
+    public static int pack(int addr, String string) {
+        final byte[] bytes = string.getBytes();
+        store(addr, bytes);
+        Memory.store(addr + bytes.length, (byte)0);
+        return addr + bytes.length + 1;
+    }
+    
+    /**
      * Unpack a packed list of values from the given address, according to
      * the given list of types.
      * 

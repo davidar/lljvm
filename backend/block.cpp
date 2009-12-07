@@ -33,7 +33,7 @@ void JVMWriter::printBasicBlock(const BasicBlock *block) {
         std::string str;
         raw_string_ostream ss(str); ss << *i;
         std::string::size_type pos = 0;
-        while ((pos = str.find("\n", pos)) != std::string::npos)
+        while((pos = str.find("\n", pos)) != std::string::npos)
             str.replace(pos++, 1, "\n;");
         out << ';' << str << '\n';
 #endif

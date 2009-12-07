@@ -141,9 +141,11 @@ void JVMWriter::printLocalVariable(const Function &f,
         ty = inst->getType();
     // getLocalVarNumber must be called at least once in this method
     unsigned int varNum = getLocalVarNumber(inst);
+#ifdef DEBUG
     printSimpleInstruction(".var " + utostr(varNum),
         "is " + getValueName(inst) + ' ' + getTypeDescriptor(ty)
         + " from begin_method to end_method");
+#endif
     // initialise variable to avoid class verification errors
     printSimpleInstruction(getTypePrefix(ty, true) + "const_0");
     printSimpleInstruction(getTypePrefix(ty, true) + "store", utostr(varNum));

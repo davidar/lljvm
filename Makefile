@@ -12,7 +12,7 @@ check: all
 	cd test && $(MAKE) -s check
 
 bsd-games: all
-	cd test/bsd-games && $(MAKE) all
+	cd test/bsd-games && $(MAKE) clean all
 
 clean:
 	cd thirdparty && $(MAKE) clean
