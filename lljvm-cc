@@ -46,8 +46,7 @@ def main():
     else:
         die("Error: either llvm-gcc or clang must be installed")
 
-    cflags = ['-emit-llvm', '-c',
-              '-I' + dir + '/thirdparty/newlib/newlib/libc/include']
+    cflags = ['-emit-llvm', '-c', '-I' + os.path.join(dir, 'include')]
     libs = ['libc', 'java.lang.Math',
             'lljvm.runtime.System', 'lljvm.runtime.Posix']
 
