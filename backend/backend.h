@@ -53,7 +53,8 @@ class JVMWriter : public FunctionPass {
     unsigned int instNum;
 
 public:
-    JVMWriter(const TargetData *td, formatted_raw_ostream &o);
+    JVMWriter(const TargetData *td, formatted_raw_ostream &o,
+              const std::string &cls);
 
 private:
     // backend.cpp

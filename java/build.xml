@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<project name="LLJVM" default="dist" basedir=".">
+<project name="LLJVM" default="compile" basedir=".">
     <property name="src"   location="src"/>
     <property name="build" location="build"/>
     <property name="dist"  location="dist"/>

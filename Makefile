@@ -1,12 +1,12 @@
 .PHONY: all check bsd-games clean distclean
 
 all: include
-	cd java && $(MAKE) all
-	cp java/dist/lljvm.jar .
 	cd backend && $(MAKE) all
 	cp backend/lljvm-backend .
+	cd java && $(MAKE) all
 	cd libc && $(MAKE) all
-	cp libc/libc.class .
+	cd java && $(MAKE) dist
+	cp java/dist/lljvm.jar .
 
 include: thirdparty/newlib
 	rm -rf include

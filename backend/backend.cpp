@@ -24,8 +24,9 @@
 
 char JVMWriter::id = 0;
 
-JVMWriter::JVMWriter(const TargetData *td, formatted_raw_ostream &o)
-    : FunctionPass(&id), targetData(td), out(o) {}
+JVMWriter::JVMWriter(const TargetData *td, formatted_raw_ostream &o,
+                     const std::string &cls)
+    : FunctionPass(&id), targetData(td), out(o), classname(cls) {}
 
 void JVMWriter::getAnalysisUsage(AnalysisUsage &au) const {
     au.addRequired<LoopInfo>();
@@ -48,7 +49,13 @@ bool JVMWriter::doInitialization(Module &m) {
         sourcename = modID;
     else
         sourcename = modID.substr(slashPos + 1);
-    classname = sourcename.substr(0, sourcename.find('.'));
+    
+    if(!classname.empty()) {
+        for(std::string::iterator i = classname.begin(),
+                                  e = classname.end(); i != e; i++)
+            if(*i == '.') *i = '/';
+    } else
+        classname = sourcename.substr(0, sourcename.find('.'));
     
     printHeader();
     printFields();

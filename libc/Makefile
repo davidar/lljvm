@@ -13,29 +13,27 @@ OBJS := \
     stdlib.o \
     string.o \
     time.o
-
 DIRS := ${OBJS:.o=}
 
-LLJVM_LD := java -jar ../lljvm.jar ld
+BFLAGS := -classname=lljvm.lib.c
+LLJVM_LD := java -classpath ../java/build lljvm.tools.ld.Main
 JAVA_LIBS := lljvm.runtime.System lljvm.runtime.Posix lljvm.runtime.Error
 
-all: ../thirdparty/newlib libc.class
+all: ../thirdparty/newlib ../java/build/lljvm/lib/c.class
 
 ../thirdparty/newlib:
 	cd ../thirdparty && $(MAKE) newlib
 
-libc.class: libc.o
-	../lljvm-backend libc.o | $(LLJVM_LD) ${JAVA_LIBS} > libc.j
-	java jasmin.Main libc.j
+../java/build/lljvm/lib/c.class: libc.bc
+	../lljvm-backend ${BFLAGS} $< | $(LLJVM_LD) ${JAVA_LIBS} > libc.j
+	java jasmin.Main -d ../java/build libc.j
 
-libc.o: ${OBJS}
-	llvm-ld -link-as-library ${OBJS} -o libc.o
+libc.bc: ${OBJS}
+	for d in ${DIRS}; do (cd $$d && $(MAKE) all); done
+	llvm-ld -link-as-library $^ -o $@
 
 clean:
 	for d in ${DIRS}; do (cd $$d && $(MAKE) clean); done
-	rm -f libc.o libc.j libc.class
+	rm -f libc.bc libc.j
 
-${OBJS}: FORCE
-	cd $* && $(MAKE) all
-
-FORCE:
+${OBJS}: ; @true

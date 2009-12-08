@@ -29,6 +29,7 @@
 #include <llvm/CodeGen/Passes.h>
 #include <llvm/LLVMContext.h>
 #include <llvm/PassManager.h>
+#include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Target/TargetData.h>
@@ -36,14 +37,16 @@
 
 using namespace llvm;
 
+static cl::opt<std::string> input(
+    cl::Positional, cl::desc("<input bitcode>"), cl::init("-"));
+static cl::opt<std::string> classname(
+    "classname", cl::desc("Binary name of the generated class"));
+
 int main(int argc, char **argv) {
-    if(argc < 2) {
-        std::cerr << "Must specify a bitcode file" << std::endl;
-        return 1;
-    }
-    
+    cl::ParseCommandLineOptions(argc, argv, "LLJVM Backend\n");
     std::string err;
-    MemoryBuffer *buf = MemoryBuffer::getFileOrSTDIN(argv[1], &err);
+    
+    MemoryBuffer *buf = MemoryBuffer::getFileOrSTDIN(input, &err);
     if(!buf) {
         std::cerr << "Unable to open bitcode file: " << err << std::endl;
         return 1;
@@ -65,7 +68,7 @@ int main(int argc, char **argv) {
     // TODO: fix switch generation so the following pass is not needed
     pm.add(createLowerSwitchPass());
     pm.add(createCFGSimplificationPass());
-    pm.add(new JVMWriter(&td, fouts()));
+    pm.add(new JVMWriter(&td, fouts(), classname));
     pm.add(createGCInfoDeleter());
     pm.run(*mod);
     return 0;
