@@ -111,7 +111,7 @@ public class NativeFileSystem implements FileSystem {
         return false;
     }
     
-    public boolean unlink(String file) {
+    public boolean unlink(String pathname) {
         return false;
     }
     

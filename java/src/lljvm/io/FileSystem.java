@@ -71,7 +71,7 @@ public interface FileSystem {
      * @param pathname  the name to delete
      * @return          true on success
      */
-    public boolean unlink(String file);
+    public boolean unlink(String pathname);
     
     /**
      * Change the working directory.

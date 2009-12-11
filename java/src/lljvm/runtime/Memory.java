@@ -587,8 +587,8 @@ public final class Memory {
     /**
      * Store a string in the stack, returning a pointer to the string.
      * 
-     * @param bytes  the string to be stored
-     * @return       a pointer to the string
+     * @param string  the string to be stored
+     * @return        a pointer to the string
      */
     public static int storeStack(String string) {
         final byte[] bytes = string.getBytes();

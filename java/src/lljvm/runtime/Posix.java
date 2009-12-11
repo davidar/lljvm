@@ -40,7 +40,7 @@ public final class Posix {
      * @param cmd   specifies the operation to perform
      * @param args  a pointer to the packed list of varargs
      *              i.e. a pointer to the arg argument (if applicable)
-     * @return
+     * @return      the appropriate value on success, -1 on error
      */
     public static int fcntl(int fd, int cmd, int args) {
         return -1;

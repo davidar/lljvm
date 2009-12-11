@@ -1,4 +1,4 @@
-.PHONY: all check bsd-games clean distclean
+.PHONY: all doc check bsd-games clean distclean
 
 all:
 	cd include && $(MAKE) all
@@ -8,6 +8,9 @@ all:
 	cd libc && $(MAKE) all
 	cd java && $(MAKE) dist
 	cp java/dist/lljvm.jar .
+
+doc:
+	cd java && $(MAKE) doc
 
 check: all
 	cd test && $(MAKE) -s check

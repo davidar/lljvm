@@ -3,10 +3,13 @@
     <property name="src"   location="src"/>
     <property name="build" location="build"/>
     <property name="dist"  location="dist"/>
+    <property name="doc"   location="doc"/>
 
     <target name="init">
         <tstamp/> <!-- create the time stamp -->
         <mkdir dir="${build}"/>
+        <mkdir dir="${dist}"/>
+        <mkdir dir="${doc}"/>
     </target>
 
     <target name="compile" depends="init">
@@ -14,7 +17,6 @@
     </target>
 
     <target name="dist" depends="compile">
-        <mkdir dir="${dist}"/>
         <jar jarfile="${dist}/lljvm.jar" basedir="${build}">
             <manifest>
                 <attribute name="Main-Class" value="lljvm.tools.Main"/>
@@ -22,9 +24,15 @@
             </manifest>
         </jar>
     </target>
+    
+    <target name="doc" depends="init">
+        <javadoc sourcepath="${src}" destdir="${doc}"
+                 author="true" use="true"/>
+    </target>
 
     <target name="clean">
         <delete dir="${build}"/>
         <delete dir="${dist}"/>
+        <delete dir="${doc}"/>
     </target>
 </project>
