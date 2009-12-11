@@ -46,5 +46,9 @@ public class Main {
             lljvm.tools.ld.Main.main(args);
         else if(cmd.equals("info"))
             lljvm.tools.info.Main.main(args);
+        else {
+            System.err.println("Unrecognised command name");
+            System.exit(1);
+        }
     }
 }

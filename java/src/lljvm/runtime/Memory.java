@@ -71,6 +71,17 @@ public final class Memory {
         for(int i = STACK_BOTTOM; i <= STACK_END; i++)
             pages[i] = createPage();
     }
+    
+    /**
+     * Thrown if an application tries to access an invalid memory address, or
+     * tries to write to a read-only location.
+     */
+    @SuppressWarnings("serial")
+    public static class SegmentationFault extends IllegalArgumentException {
+        public SegmentationFault(int addr) {
+            super("Address = "+addr+" (0x"+Integer.toHexString(addr)+")");
+        }
+    }
 
     /**
      * Prevent this class from being instantiated.
@@ -92,7 +103,11 @@ public final class Memory {
      * @return      the page of the given virtual memory address
      */
     private static ByteBuffer getPage(int addr) {
-        return pages[addr>>>PAGE_SHIFT];
+        try {
+            return pages[addr>>>PAGE_SHIFT];
+        } catch(ArrayIndexOutOfBoundsException e) {
+            throw new SegmentationFault(addr);
+        }
     }
 
     /**
@@ -215,7 +230,11 @@ public final class Memory {
      * @param value  the value to be stored
      */
     public static void store(int addr, boolean value) {
-        getPage(addr).put(getOffset(addr), (byte) (value ? 1 : 0));
+        try {
+            getPage(addr).put(getOffset(addr), (byte) (value ? 1 : 0));
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -225,7 +244,11 @@ public final class Memory {
      * @param value  the value to be stored
      */
     public static void store(int addr, byte value) {
-        getPage(addr).put(getOffset(addr), value);
+        try {
+            getPage(addr).put(getOffset(addr), value);
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -235,7 +258,11 @@ public final class Memory {
      * @param value  the value to be stored
      */
     public static void store(int addr, short value) {
-        getPage(addr).putShort(getOffset(addr), value);
+        try {
+            getPage(addr).putShort(getOffset(addr), value);
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -245,7 +272,11 @@ public final class Memory {
      * @param value  the value to be stored
      */
     public static void store(int addr, int value) {
-        getPage(addr).putInt(getOffset(addr), value);
+        try {
+            getPage(addr).putInt(getOffset(addr), value);
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -255,7 +286,11 @@ public final class Memory {
      * @param value  the value to be stored
      */
     public static void store(int addr, long value) {
-        getPage(addr).putLong(getOffset(addr), value);
+        try {
+            getPage(addr).putLong(getOffset(addr), value);
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -265,7 +300,11 @@ public final class Memory {
      * @param value  the value to be stored
      */
     public static void store(int addr, float value) {
-        getPage(addr).putFloat(getOffset(addr), value);
+        try {
+            getPage(addr).putFloat(getOffset(addr), value);
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -275,7 +314,11 @@ public final class Memory {
      * @param value  the value to be stored
      */
     public static void store(int addr, double value) {
-        getPage(addr).putDouble(getOffset(addr), value);
+        try {
+            getPage(addr).putDouble(getOffset(addr), value);
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -285,9 +328,13 @@ public final class Memory {
      * @param bytes  the bytes to be stored
      */
     public static void store(int addr, byte[] bytes) {
-        final ByteBuffer page = getPage(addr);
-        page.position(getOffset(addr));
-        page.put(bytes);
+        try {
+            final ByteBuffer page = getPage(addr);
+            page.position(getOffset(addr));
+            page.put(bytes);
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -299,7 +346,27 @@ public final class Memory {
     public static void store(int addr, String string) {
         final byte[] bytes = string.getBytes();
         store(addr, bytes);
-        Memory.store(addr + bytes.length, (byte)0);
+        Memory.store(addr + bytes.length, (byte) 0);
+    }
+    
+    /**
+     * Store a string at the given address, unless the string would occupy more
+     * than size bytes (including the null terminator).
+     * 
+     * @param addr    the address at which to store the string
+     * @param string  the string to be stored
+     * @param size    the maximum size of the string
+     * @return        addr on success, NULL on error
+     */
+    public static int store(int addr, String string, int size) {
+        final byte[] bytes = string.getBytes();
+        if(bytes.length + 1 > size) {
+            Error.errno(Error.ERANGE);
+            return NULL;
+        }
+        store(addr, bytes);
+        Memory.store(addr + bytes.length, (byte) 0);
+        return addr;
     }
     
     /**
@@ -415,7 +482,7 @@ public final class Memory {
         final byte[] bytes = string.getBytes();
         final int addr = allocateData(bytes.length+1);
         store(addr, bytes);
-        Memory.store(addr + bytes.length, (byte)0);
+        Memory.store(addr + bytes.length, (byte) 0);
         return addr;
     }
     
@@ -527,7 +594,7 @@ public final class Memory {
         final byte[] bytes = string.getBytes();
         final int addr = allocateStack(bytes.length+1);
         store(addr, bytes);
-        Memory.store(addr + bytes.length, (byte)0);
+        Memory.store(addr + bytes.length, (byte) 0);
         return addr;
     }
     
@@ -538,7 +605,11 @@ public final class Memory {
      * @return      the value at the given address
      */
     public static boolean load_i1(int addr) {
-        return getPage(addr).get(getOffset(addr)) != 0;
+        try {
+            return getPage(addr).get(getOffset(addr)) != 0;
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -548,7 +619,11 @@ public final class Memory {
      * @return      the value at the given address
      */
     public static byte load_i8(int addr) {
-        return getPage(addr).get(getOffset(addr));
+        try {
+            return getPage(addr).get(getOffset(addr));
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -558,7 +633,11 @@ public final class Memory {
      * @return      the value at the given address
      */
     public static short load_i16(int addr) {
-        return getPage(addr).getShort(getOffset(addr));
+        try {
+            return getPage(addr).getShort(getOffset(addr));
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -568,7 +647,11 @@ public final class Memory {
      * @return      the value at the given address
      */
     public static int load_i32(int addr) {
-        return getPage(addr).getInt(getOffset(addr));
+        try {
+            return getPage(addr).getInt(getOffset(addr));
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -578,7 +661,11 @@ public final class Memory {
      * @return      the value at the given address
      */
     public static long load_i64(int addr) {
-        return getPage(addr).getLong(getOffset(addr));
+        try {
+            return getPage(addr).getLong(getOffset(addr));
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -588,7 +675,11 @@ public final class Memory {
      * @return      the value at the given address
      */
     public static float load_f32(int addr) {
-        return getPage(addr).getFloat(getOffset(addr));
+        try {
+            return getPage(addr).getFloat(getOffset(addr));
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -598,7 +689,11 @@ public final class Memory {
      * @return      the value at the given address
      */
     public static double load_f64(int addr) {
-        return getPage(addr).getDouble(getOffset(addr));
+        try {
+            return getPage(addr).getDouble(getOffset(addr));
+        } catch(NullPointerException e) {
+            throw new SegmentationFault(addr);
+        }
     }
     
     /**
@@ -749,7 +844,7 @@ public final class Memory {
     public static int pack(int addr, String string) {
         final byte[] bytes = string.getBytes();
         store(addr, bytes);
-        Memory.store(addr + bytes.length, (byte)0);
+        Memory.store(addr + bytes.length, (byte) 0);
         return addr + bytes.length + 1;
     }
     
@@ -823,5 +918,17 @@ public final class Memory {
         // TODO: make more efficient by setting larger blocks at a time
         for(int i = dest; i < dest + len; i++)
             store(i, val);
+    }
+    
+    /**
+     * Fill the first len bytes of memory area dest with 0.
+     * 
+     * @param dest  the destination memory area
+     * @param len   the number of bytes to set
+     * @return      the address of the first byte following the block
+     */
+    public static int zero(int dest, int len) {
+        memset(dest, (byte) 0, len, 1);
+        return dest + len;
     }
 }

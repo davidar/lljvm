@@ -122,6 +122,13 @@ void JVMWriter::printConstLoad(const std::string &str) {
 }
 
 void JVMWriter::printStaticConstant(const Constant *c) {
+    if(isa<ConstantAggregateZero>(c) || c->isNullValue()) {
+        // zero initialised constant
+        printPtrLoad(targetData->getTypeAllocSize(c->getType()));
+        printSimpleInstruction("invokestatic",
+                               "lljvm/runtime/Memory/zero(II)I");
+        return;
+    }
     std::string typeDescriptor = getTypeDescriptor(c->getType());
     switch(c->getType()->getTypeID()) {
     case Type::IntegerTyID:

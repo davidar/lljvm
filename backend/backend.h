@@ -122,6 +122,7 @@ private:
     void printVAArgInstruction(const VAArgInst *inst);
     void printVAIntrinsic(const IntrinsicInst *inst);
     void printMemIntrinsic(const MemIntrinsic *inst);
+    void printMallocInstruction(const MallocInst *inst);
     
     // loadstore.cpp
     void printValueLoad(const Value *v);

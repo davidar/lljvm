@@ -9,6 +9,7 @@ TESTS := \
     primes.test \
     staticvar.test \
     struct.test \
+    struct2.test \
     switch.test \
     va.test
 
@@ -26,7 +27,8 @@ check: ${TESTS}
 	echo EXPECTED
 	./$*.bin foo bar baz
 	echo ACTUAL
-	java -classpath ../lljvm.jar:. $* foo bar baz
+	./$* foo bar baz
+	rm -f $*
 	echo
 
 clean:

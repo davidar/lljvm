@@ -54,8 +54,12 @@ bool JVMWriter::doInitialization(Module &m) {
         for(std::string::iterator i = classname.begin(),
                                   e = classname.end(); i != e; i++)
             if(*i == '.') *i = '/';
-    } else
-        classname = sourcename.substr(0, sourcename.find('.'));
+    } else {
+        classname = sourcename.substr(0, sourcename.rfind('.'));
+        for(std::string::iterator i = classname.begin(),
+                                  e = classname.end(); i != e; i++)
+            if(*i == '.') *i = '_';
+    }
     
     printHeader();
     printFields();

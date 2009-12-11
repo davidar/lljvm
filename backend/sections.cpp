@@ -40,7 +40,11 @@ void JVMWriter::printFields() {
                 << (i->hasLocalLinkage() ? "private " : "public ")
                 << "static ";
         out << getValueName(i) << ' ' << getTypeDescriptor(i->getType())
+#ifdef DEBUG
             << " ; " << *i;
+#else
+            << '\n';
+#endif
     }
     out << '\n';
 }
@@ -52,8 +56,11 @@ void JVMWriter::printExternalMethods() {
         if(i->isDeclaration() && !i->isIntrinsic()) {
             const Function *f = i;
             const FunctionType *ty = f->getFunctionType();
-            out << ".extern method " << getValueName(f)
-                << getCallSignature(ty) << " ; " << *ty << '\n';
+            out << ".extern method " << getValueName(f) << getCallSignature(ty)
+#ifdef DEBUG
+            << " ; " << *ty
+#endif
+            << '\n';
             externRefs.insert(f);
         }
     }

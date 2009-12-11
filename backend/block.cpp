@@ -73,6 +73,7 @@ void JVMWriter::printInstruction(const Instruction *inst) {
         printSimpleInstruction("invokespecial",
                                "lljvm/runtime/System$Unwind/<init>()V");
         printSimpleInstruction("athrow");
+        // TODO: need to destroy stack frames
         break;
     case Instruction::Unreachable:
         printSimpleInstruction("new", "lljvm/runtime/System$Unreachable");
@@ -80,6 +81,10 @@ void JVMWriter::printInstruction(const Instruction *inst) {
         printSimpleInstruction("invokespecial",
                                "lljvm/runtime/System$Unreachable/<init>()V");
         printSimpleInstruction("athrow");
+        break;
+    case Instruction::Free:
+        printValueLoad(inst->getOperand(0));
+        printSimpleInstruction("invokestatic", "lljvm/lib/c/free(I)V");
         break;
     case Instruction::Add:
     case Instruction::FAdd:
@@ -120,6 +125,8 @@ void JVMWriter::printInstruction(const Instruction *inst) {
     case Instruction::FCmp:
         printCmpInstruction(cast<CmpInst>(inst)->getPredicate(),
                             left, right); break;
+    case Instruction::Malloc:
+        printMallocInstruction(cast<MallocInst>(inst)); break;
     case Instruction::Br:
         printBranchInstruction(cast<BranchInst>(inst)); break;
     case Instruction::Select:
@@ -145,7 +152,7 @@ void JVMWriter::printInstruction(const Instruction *inst) {
     case Instruction::VAArg:
         printVAArgInstruction(cast<VAArgInst>(inst)); break;
     default:
-        errs() << "Instruction = " << inst->getName() << '\n';
+        errs() << "Instruction = " << *inst << '\n';
         llvm_unreachable("Unsupported instruction");
     }
 }

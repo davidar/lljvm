@@ -70,6 +70,7 @@ public final class Function {
             final String sig = ReflectionUtils.getQualifiedSignature(method);
             functionPointers.put(sig, addr);
             functionObjects.put(addr, method);
+            method.setAccessible(true);
         }
         registeredClasses.add(classname);
     }
@@ -106,16 +107,19 @@ public final class Function {
      */
     private static Object invoke(int f, int args) {
         final Method method = functionObjects.get(f);
+        if(method == null)
+            throw new IllegalArgumentException("Invalid function pointer: "+f);
         final Class<?>[] paramTypes = method.getParameterTypes();
         final Object[] params = Memory.unpack(args, paramTypes);
         try {
             return method.invoke(null, params);
-        } catch(IllegalArgumentException e) {
-            throw new RuntimeException(e);
         } catch(IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch(InvocationTargetException e) {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException)
+                throw (RuntimeException) cause;
+            throw new RuntimeException(cause);
         }
     }
     

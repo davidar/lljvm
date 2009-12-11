@@ -305,3 +305,10 @@ void JVMWriter::printMemIntrinsic(const MemIntrinsic *inst) {
                                "lljvm/runtime/Memory/memset(IBII)V"); break;
     }
 }
+
+void JVMWriter::printMallocInstruction(const MallocInst *inst) {
+    printPtrLoad(targetData->getTypeAllocSize(inst->getAllocatedType()));
+    printValueLoad(inst->getArraySize());
+    printSimpleInstruction("imul");
+    printSimpleInstruction("invokestatic", "lljvm/lib/c/malloc(I)I");
+}

@@ -101,6 +101,13 @@ void JVMWriter::printIntrinsicCall(const IntrinsicInst *inst) {
         printMemIntrinsic(cast<MemIntrinsic>(inst)); break;
     case Intrinsic::flt_rounds:
         printSimpleInstruction("iconst_m1"); break;
+    case Intrinsic::dbg_declare:
+    case Intrinsic::dbg_func_start:
+    case Intrinsic::dbg_region_end:
+    case Intrinsic::dbg_region_start:
+    case Intrinsic::dbg_stoppoint:
+        // ignore debugging intrinsics
+        break;
     default:
     errs() << "Intrinsic = " << *inst << '\n';
     llvm_unreachable("Invalid intrinsic function");
@@ -142,8 +149,8 @@ void JVMWriter::printLocalVariable(const Function &f,
     // getLocalVarNumber must be called at least once in this method
     unsigned int varNum = getLocalVarNumber(inst);
 #ifdef DEBUG
-    printSimpleInstruction(".var " + utostr(varNum),
-        "is " + getValueName(inst) + ' ' + getTypeDescriptor(ty)
+    printSimpleInstruction(".var " + utostr(varNum) + " is "
+        + getValueName(inst) + ' ' + getTypeDescriptor(ty)
         + " from begin_method to end_method");
 #endif
     // initialise variable to avoid class verification errors
@@ -184,14 +191,21 @@ void JVMWriter::printFunction(const Function &f) {
     out << ')' << getTypeDescriptor(f.getReturnType()) << '\n';
     
     for(Function::const_arg_iterator i = f.arg_begin(), e = f.arg_end();
-        i != e; i++)
-            printSimpleInstruction(".var " + utostr(getLocalVarNumber(i)),
-                "is " + getValueName(i) + ' ' + getTypeDescriptor(i->getType())
-                + " from begin_method to end_method");
+        i != e; i++) {
+        // getLocalVarNumber must be called at least once in each iteration
+        unsigned int varNum = getLocalVarNumber(i);
+#ifdef DEBUG
+        printSimpleInstruction(".var " + utostr(varNum) + " is "
+            + getValueName(i) + ' ' + getTypeDescriptor(i->getType())
+            + " from begin_method to end_method");
+#endif
+    }
     if(f.isVarArg()) {
         vaArgNum = usedRegisters++;
-        printSimpleInstruction(".var " + utostr(vaArgNum),
-            "is varargptr I from begin_method to end_method");
+#ifdef DEBUG
+        printSimpleInstruction(".var " + utostr(vaArgNum)
+            + " is varargptr I from begin_method to end_method");
+#endif
     }
     
     // TODO: better stack depth analysis

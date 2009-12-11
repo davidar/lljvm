@@ -77,16 +77,6 @@ public final class System {
     }
     
     /**
-     * Close the specified file descriptor.
-     * 
-     * @param fd  the file descriptor to close
-     * @return    0 on success, -1 on error
-     */
-    public static int close(int fd) {
-        return IO.close(fd);
-    }
-    
-    /**
      * Execute the program pointed to by filename.
      * 
      * @param filename  the name of the executable
@@ -108,34 +98,12 @@ public final class System {
     }
     
     /**
-     * Stats the file specified by the given file descriptor and fills in buf.
-     * 
-     * @param fd   the file descriptor to be stat-ed
-     * @param buf  a pointer to the stat structure to be filled in
-     * @return     0 on success, -1 on error
-     */
-    public static int fstat(int fd, int buf) {
-        // TODO: buf->st_mode = S_IFCHR;
-        return 0;
-    }
-    
-    /**
      * Returns to process ID of the calling process.
      * 
      * @return  the PID of the calling process
      */
     public static int getpid() {
         return 1;
-    }
-    
-    /**
-     * Test whether the given file descriptor refers to a terminal.
-     * 
-     * @param fd  the file descriptor to test
-     * @return    1 if fd refers to a terminal, 0 otherwise
-     */
-    public static int isatty(int fd) {
-        return IO.isatty(fd) ? 1 : 0;
     }
     
     /**
@@ -150,82 +118,6 @@ public final class System {
     }
     
     /**
-     * Create a new (hard) link to an existing file.
-     * 
-     * @param oldpath  the existing file
-     * @param newpath  the link to be created, unless newpath already exists
-     * @return         0 on success, -1 on error
-     */
-    public static int link(int oldpath, int newpath) {
-        return Error.errno(Error.EMLINK);
-    }
-    
-    /**
-     * Reposition file offset.
-     * 
-     * @param fd      the file descriptor whose offset to reposition
-     * @param offset  where to reposition the offset according to the directive
-     *                whence
-     * @param whence  specifies the reference point to which offset refers
-     * @return        the resulting offset on success, -1 on error
-     */
-    public static int lseek(int fd, int offset, int whence) {
-        return IO.getFileHandle(fd).seek(offset, whence);
-    }
-    
-    /**
-     * Open and possibly create a file or device.
-     * 
-     * @param pathname  the pathname of the file
-     * @param flags     specifies the access mode
-     * @param args      a pointer to the packed list of varargs
-     *                  i.e. a pointer to the mode argument, the permissions
-     *                  for the newly created file (if applicable)
-     * @return          the new file descriptor on success, -1 on error
-     */
-    public static int open(int pathname, int flags, int args) {
-        if((flags & IO.O_CREAT) != 0)
-            return _open(pathname, flags, Memory.load_i32(args));
-        else
-            return _open(pathname, flags);
-    }
-    
-    /**
-     * Open a file or device.
-     * 
-     * @param pathname  the pathname of the file
-     * @param flags     specifies the access mode
-     * @return          the new file descriptor on success, -1 on error
-     */
-    private static int _open(int pathname, int flags) {
-        return IO.open(Memory.load_string(pathname), flags);
-    }
-    
-    /**
-     * Open and create a file or device.
-     * 
-     * @param pathname  the pathname of the file
-     * @param flags     specifies the access mode
-     * @param mode      the permissions for the newly created file
-     * @return          the new file descriptor on success, -1 on error
-     */
-    private static int _open(int pathname, int flags, int mode) {
-        return Error.errno(Error.EACCES);
-    }
-    
-    /**
-     * Read from a file descriptor.
-     * 
-     * @param fd     the file descriptor to be read
-     * @param buf    the buffer to read the bytes into
-     * @param count  the maximum number of bytes to read
-     * @return       the number of bytes read on success, -1 on error
-     */
-    public static int read(int fd, int buf, int count) {
-        return IO.getFileHandle(fd).read(buf, count);
-    }
-    
-    /**
      * Increase the size of the heap by the specified amount.
      * 
      * @param increment  the amount to increment the heap size
@@ -234,18 +126,6 @@ public final class System {
      */
     public static int sbrk(int increment) {
         return Memory.sbrk(increment);
-    }
-    
-    /**
-     * Stats the file pointed to by path and fills in buf.
-     * 
-     * @param path  the path of the file to be stat-ed
-     * @param buf   a pointer to the stat structure to be filled in
-     * @return      0 on success, -1 on error
-     */
-    public static int stat(int path, int buf) {
-        // TODO: st->st_mode = S_IFCHR;
-        return 0;
     }
     
     /**
@@ -261,16 +141,6 @@ public final class System {
     }
     
     /**
-     * Delete a name from the file system.
-     * 
-     * @param pathname  the name to delete
-     * @return          0 on success, -1 on error
-     */
-    public static int unlink(int pathname) {
-        return Error.errno(Error.ENOENT);
-    }
-    
-    /**
      * Wait for a process to change state.
      * 
      * @param status  a pointer to the int in which status information is to be
@@ -279,17 +149,5 @@ public final class System {
      */
     public static int wait(int status) {
         return Error.errno(Error.ECHILD);
-    }
-    
-    /**
-     * Write to a file descriptor.
-     * 
-     * @param fd     the file descriptor to be written to
-     * @param buf    the buffer of bytes to be written
-     * @param count  the maximum number of bytes to write
-     * @return       the number of bytes written on success, -1 on error
-     */
-    public static int write(int fd, int buf, int count) {
-        return IO.getFileHandle(fd).write(buf, count);
     }
 }

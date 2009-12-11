@@ -23,71 +23,159 @@ import os
 import sys
 import subprocess
 
-def die(message):
-    sys.stderr.write(message)
-    sys.exit(1)
+# LLJVM root directory
+lljvm_dir = os.path.dirname(sys.argv.pop(0))
+
+# dummy file
+# TODO: make system-independent
+fnull = open('/dev/null', 'w')
 
 def command_exists(name):
-    return subprocess.call(['which', name], stdout=open('/dev/null', 'w')) == 0
+    """Returns true iff a command with the given name exists."""
+    # TODO: make system-independent
+    return subprocess.call(['which', name], stdout=fnull) == 0
+
+# C Compiler
+if command_exists('llvm-gcc'): cc = 'llvm-gcc'
+elif command_exists('clang'):  cc = 'clang'
+else:                          cc = None
+
+# default flags to pass to the compiler
+default_cflags = (
+    '-D__LLJVM__',
+    '-I' + os.path.join(lljvm_dir, 'include', 'lljvm'),
+    '-I' + os.path.join(lljvm_dir, 'include', 'newlib'),
+    '-fno-builtin-rintl', '-fno-builtin-lrintl', '-fno-builtin-llrintl',
+)
+
+# command for executing the LLJVM linker
+lljvm_ld_cmd = ('java', '-jar', os.path.join(lljvm_dir, 'lljvm.jar'), 'ld')
+
+# default java classes to link against
+default_java_libs = (
+    'lljvm.lib.c',
+    'lljvm.runtime.System',
+    'lljvm.runtime.IO',
+    'lljvm.runtime.Posix',
+    'java.lang.Math',
+)
+
+# (partial) list of flags that take an argument
+# TODO: complete list
+takes_argument = ('-MF', '-MT', '-MQ', '-include')
+
+# (partial) list of flags not recognised by llvm-ld
+# TODO: need a better way of filtering out invalid flags
+invalid_ld_flags = ('-g', '-D', '-pthread', '-shared', '-nostdlib', '-lgcc',
+                    '-static-libgcc')
+
+# template for the launcher script
+script_template = """#!/bin/sh
+export CLASSPATH="""+os.path.join(lljvm_dir, 'lljvm.jar')+""":${CLASSPATH-.}
+exec java '%s' ${1+"$@"}
+"""
+
+def die(message, status=1):
+    """Print the given message to stderr and terminate with the given
+    status."""
+    sys.stderr.write(message)
+    sys.exit(status)
+
+def element_startswith(l, s):
+    """Returns true iff any of the elements in the given list begin with the
+    given string."""
+    return reduce(lambda x, y: x or y.startswith(s), l, False)
+
+def remove_filext(s):
+    """Remove the file extension from the given string."""
+    dot = s.rfind('.')
+    if dot == -1: return s
+    return s[:dot]
 
 def call_e(*popenargs, **kwargs):
+    """Call the given command, exiting if it has a non-zero return code."""
     p = subprocess.Popen(*popenargs, **kwargs)
-    returncode = p.wait()
-    if returncode != 0:
-        sys.exit(returncode)
+    if p.wait() != 0: sys.exit(p.returncode)
 
-def main():
-    dir = os.path.dirname(sys.argv.pop(0))
-    
-    if command_exists('llvm-gcc'):
-        cc = 'llvm-gcc'
-    elif command_exists('clang'):
-        cc = 'clang'
-    else:
-        die("Error: either llvm-gcc or clang must be installed")
-
-    cflags = ['-emit-llvm', '-c', '-I' + os.path.join(dir, 'include')]
-    libs = ['lljvm.lib.c', 'java.lang.Math',
-            'lljvm.runtime.System', 'lljvm.runtime.Posix']
-
-    output = None
-    srcs = []
-    objs = []
+def parse_argv(separate_sources=True):
+    """Parse sys.argv, returning the flags and the output file, and separating
+    the sources from the flags if required."""
+    flags = []
+    output = 'a.out'
+    if separate_sources: srcs = []
 
     while sys.argv:
         arg = sys.argv.pop(0)
-        if arg == '-o':
-            output = sys.argv.pop(0)
-        elif arg[0] != '-':
+        if separate_sources and arg[0] != '-':
             srcs.append(arg)
-            objs.append(os.path.basename(arg)[:-2] + '.o')
+        elif arg == '-o':
+            output = sys.argv.pop(0)
+        elif arg in takes_argument:
+            flags.append(arg)
+            flags.append(sys.argv.pop(0))
         else:
-            cflags.append(arg)
-
-    if not output:
-        die("Error: must provide output name (-o)")
-
-    call_e([cc] + cflags + srcs)
-    call_e(['llvm-ld', '-link-as-library'] + objs + ['-o', output + '.bc'])
-
-    output_j = open(output + '.j', 'w')
-    p1 = subprocess.Popen(
-        [os.path.join(dir, 'lljvm-backend'), output + '.bc'],
-        stdout=subprocess.PIPE)
-    p2 = subprocess.Popen(
-        ['java', '-jar', os.path.join(dir, 'lljvm.jar'), 'ld'] + libs,
-        stdin=p1.stdout, stdout=output_j)
-    r2 = p2.wait()
-    r1 = p1.wait()
-    output_j.close()
-    if r1 != 0 or r2 != 0:
-        sys.exit(r1 or r2)
-
-    call_e(['java', 'jasmin.Main', output + '.j'])
+            flags.append(arg)
     
-    os.unlink(output + '.bc')
-    os.unlink(output + '.j')
-    for obj in objs:
-        os.unlink(obj)
+    if separate_sources:
+        return flags, output, srcs
+    return flags, output
 
+def bc2class(output):
+    """Generate {output}.class from {output}.bc and unlink {output}.bc"""
+    output_j = open(output + '.j', 'w')
+    backend_process = subprocess.Popen(
+        [os.path.join(lljvm_dir, 'lljvm-backend'), output + '.bc'],
+        stdout=subprocess.PIPE)
+    linker_returncode = subprocess.Popen(
+        lljvm_ld_cmd + default_java_libs,
+        stdin=backend_process.stdout, stdout=output_j).wait()
+    output_j.close()
+    
+    if linker_returncode != 0:
+        backend_process.kill()
+        sys.exit(linker_returncode)
+    if backend_process.wait() != 0:
+        sys.exit(backend_process.returncode)
+    os.unlink(output + '.bc')
+    
+    call_e(['java', 'jasmin.Main', output + '.j'])
+    os.unlink(output + '.j')
+    
+    script = open(output, 'w')
+    script.write(script_template % output.replace('.', '_'))
+    script.close()
+    os.chmod(output, 0755)
+
+def remove_non_ld_args(args):
+    """Remove arguments not recognised by llvm-ld from the given list, and
+    return the new list of arguments."""
+    return filter(
+        lambda arg:
+            arg not in invalid_ld_flags
+            and not arg.startswith('-f')
+            and not arg.startswith('-D')
+            and not arg.startswith('-O')
+            and not arg.startswith('-W'),
+        args)
+
+def link(ldflags, output):
+    """Call llvm-ld with the given flags, and call bc2class on the output."""
+    call_e(['llvm-ld', '-o', output] + remove_non_ld_args(ldflags))
+    os.unlink(output)
+    bc2class(output)
+
+def main():
+    if not cc: die("Error: either llvm-gcc or clang must be installed")
+    if sys.argv[0] == '-link':
+        sys.argv.pop(0)
+        link(*parse_argv(False))
+        return
+    if '-c' in sys.argv or '-E' in sys.argv:
+        call_e([cc, '-emit-llvm'] + list(default_cflags) + sys.argv)
+        return
+    cflags, output, srcs = parse_argv()
+    objs = map(lambda src: remove_filext(os.path.basename(src)) + '.o', srcs)
+    call_e([cc, '-emit-llvm', '-c'] + list(default_cflags) + cflags + srcs)
+    link(objs, output)
+    map(os.unlink, objs)
 if __name__ == '__main__': main()

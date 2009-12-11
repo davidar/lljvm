@@ -9,7 +9,7 @@ ${SOURCE_DIR}:
 	cd ../../thirdparty && $(MAKE) bsd-games
 
 banner.class: ${SOURCE_DIR}/banner/banner.c err.c
-	$(CC) ${CFLAGS} -includesys/types.h $^ -o banner
+	$(CC) ${CFLAGS} -include sys/types.h $^ -o banner
 
 number.class: ${SOURCE_DIR}/number/number.c err.c
 	$(CC) ${CFLAGS} $^ -o number
