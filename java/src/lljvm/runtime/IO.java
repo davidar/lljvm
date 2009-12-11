@@ -22,14 +22,14 @@
 
 package lljvm.runtime;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.System;
 
 import lljvm.io.FileHandle;
+import lljvm.io.FileSystem;
 import lljvm.io.InputStreamFileHandle;
+import lljvm.io.NativeFileSystem;
 import lljvm.io.OutputStreamFileHandle;
-import lljvm.io.RandomAccessFileHandle;
 
 /**
  * Provides methods and constants related to I/O.
@@ -99,16 +99,14 @@ public final class IO {
     /** Number of file descriptors that have been opened */
     private static int numFileDescriptors = 0;
     
-    static {
-        open(new InputStreamFileHandle(System.in));
-        open(new OutputStreamFileHandle(System.out));
-        open(new OutputStreamFileHandle(System.err));
-    }
+    /** The file system interface */
+    private static FileSystem fileSystem = new NativeFileSystem();
     
-    /** User working directory system property */
-    private static final String USER_DIR = System.getProperty("user.dir");
-    /** Current working directory */
-    private static File cwd = USER_DIR == null ? null : new File(USER_DIR);
+    static {
+        putFileHandle(new InputStreamFileHandle(System.in));
+        putFileHandle(new OutputStreamFileHandle(System.out));
+        putFileHandle(new OutputStreamFileHandle(System.err));
+    }
     
     /**
      * Prevent this class from being instantiated.
@@ -116,76 +114,23 @@ public final class IO {
     private IO() {}
     
     /**
-     * Return the File object representing the file with the given name,
-     * relative to the current working directory if applicable.
-     * 
-     * @param name  the name of the file
-     * @return      the File object representing the file
-     */
-    private static File newFile(String name) {
-        File file = new File(name);
-        if(!file.isAbsolute())
-            file = new File(cwd, name);
-        return file;
-    }
-    
-    /**
      * Open and possibly create a file or device.
      * 
      * @param pathname  the pathname of the file
-     * @param flags     specifies the access mode
+     * @param flags     the file status flags
      * @param args      a pointer to the packed list of varargs
      *                  i.e. a pointer to the mode argument, the permissions
      *                  for the newly created file (if applicable)
      * @return          the new file descriptor on success, -1 on error
      */
     public static int open(int pathname, int flags, int args) {
-        File file = newFile(Memory.load_string(pathname));
-        return ((flags & O_CREAT) != 0)
-            ? open(file, flags, Memory.load_i32(args))
-            : open(file, flags);
-    }
-    
-    /**
-     * Create and open a file or device.
-     * 
-     * @param file   the File object representing the file
-     * @param flags  specifies the access mode
-     * @param mode   the permissions for the newly created file
-     * @return       the new file descriptor on success, -1 on error
-     */
-    private static int open(File file, int flags, int mode) {
-        try {
-            if(file.createNewFile()) {
-                file.setReadable(  (mode & (S_IRUSR|S_IRGRP|S_IROTH)) != 0,
-                                   (mode & (S_IRGRP|S_IROTH)) == 0);
-                file.setWritable(  (mode & (S_IWUSR|S_IWGRP|S_IWOTH)) != 0,
-                                   (mode & (S_IWGRP|S_IWOTH)) == 0);
-                file.setExecutable((mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0,
-                                   (mode & (S_IXGRP|S_IXOTH)) == 0);
-            } else { // file already exists
-                if((flags & O_EXCL) != 0)
-                    return Error.errno(Error.EEXIST);
-            }
-        } catch(IOException e) {
-            return Error.errno(Error.EACCES);
-        }
-        return open(file, flags);
-    }
-    
-    /**
-     * Create a new file descriptor for the given file, with the given flags.
-     * 
-     * @param file   the File object representing the file
-     * @param flags  the file status flags
-     * @return       the new file descriptor on success, -1 on error
-     */
-    private static int open(File file, int flags) {
-        try {
-            return open(new RandomAccessFileHandle(file, flags));
-        } catch(IOException e) {
-            return Error.errno(Error.EACCES);
-        }
+        String name = Memory.load_string(pathname);
+        FileHandle fileHandle = ((flags & O_CREAT) != 0)
+            ? fileSystem.open(name, flags, Memory.load_i32(args))
+            : fileSystem.open(name, flags);
+        if(fileHandle == null)
+            return -1;
+        return putFileHandle(fileHandle);
     }
     
     /**
@@ -194,7 +139,7 @@ public final class IO {
      * @param fileHandle  the FileHandle
      * @return            the new file descriptor on success, -1 on error
      */
-    private static int open(FileHandle fileHandle) {
+    private static int putFileHandle(FileHandle fileHandle) {
         if(numFileDescriptors >= OPEN_MAX)
             return Error.errno(Error.ENFILE);
         int fd = numFileDescriptors++;
@@ -290,6 +235,20 @@ public final class IO {
     }
     
     /**
+     * Change the name or location of a file.
+     * 
+     * @param oldpath  the current path of the file
+     * @param newpath  the new path of the file
+     * @return         0 on success, -1 on error
+     */
+    public static int _rename(int oldpath, int newpath) {
+        if(!fileSystem.rename(Memory.load_string(oldpath),
+                              Memory.load_string(newpath)))
+            return Error.errno(Error.EACCES);
+        return 0;
+    }
+    
+    /**
      * Create a new (hard) link to an existing file.
      * 
      * @param oldpath  the existing file
@@ -297,9 +256,10 @@ public final class IO {
      * @return         0 on success, -1 on error
      */
     public static int link(int oldpath, int newpath) {
-        // TODO: Java 7: <http://java.sun.com/docs/books/tutorial/essential/
-        //                                              io/links.html#hardLink>
-        return Error.errno(Error.EMLINK);
+        if(!fileSystem.link(Memory.load_string(oldpath),
+                            Memory.load_string(newpath)))
+            return Error.errno(Error.EMLINK);
+        return 0;
     }
     
     /**
@@ -309,7 +269,9 @@ public final class IO {
      * @return          0 on success, -1 on error
      */
     public static int unlink(int pathname) {
-        return Error.errno(Error.ENOENT);
+        if(!fileSystem.unlink(Memory.load_string(pathname)))
+            return Error.errno(Error.ENOENT);
+        return 0;
     }
     
     /**
@@ -337,43 +299,26 @@ public final class IO {
     }
     
     /**
-     * Change the name or location of a file.
-     * 
-     * @param oldpath  the current path of the file
-     * @param newpath  the new path of the file
-     * @return         0 on success, -1 on error
-     */
-    public static int _rename(int oldpath, int newpath) {
-        File oldfile = newFile(Memory.load_string(oldpath));
-        File newfile = newFile(Memory.load_string(newpath));
-        if(!oldfile.renameTo(newfile))
-            return Error.errno(Error.EACCES);
-        return 0;
-    }
-    
-    /**
      * Change the working directory.
      * 
      * @param path  the new working directory
      * @return      0 on success, -1 on error
      */
     public static int chdir(int path) {
-        File newCWD = newFile(Memory.load_string(path));
-        if(!newCWD.exists())
+        if(!fileSystem.chdir(Memory.load_string(path)))
             return Error.errno(Error.ENOENT);
-        cwd = newCWD;
         return 0;
     }
     
     /**
      * Copy the absolute pathname of the current working directory into the
-     * given buffer
+     * given buffer.
      * 
      * @param buf   the result buffer
      * @param size  the size of the buffer
      * @return      buf on success, NULL on error
      */
     public static int getcwd(int buf, int size) {
-        return Memory.store(buf, cwd.getAbsolutePath(), size);
+        return Memory.store(buf, fileSystem.getcwd(), size);
     }
 }
