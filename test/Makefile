@@ -11,6 +11,7 @@ TESTS := \
     struct.test \
     struct2.test \
     switch.test \
+    unreachable.test \
     va.test
 
 .PHONY: check clean

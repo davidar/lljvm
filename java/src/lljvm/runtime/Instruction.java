@@ -31,6 +31,28 @@ package lljvm.runtime;
  */
 public final class Instruction {
     /**
+     * Thrown by the unwind instruction, caught by the invoke instruction.
+     */
+    @SuppressWarnings("serial")
+    public static class Unwind extends RuntimeException {
+        /** Pre-allocate exception for efficiency */
+        public static final Unwind instance = new Unwind();
+        private Unwind() {}
+    }
+    
+    /**
+     * Thrown at the beginning of any blocks of unreachable code.
+     * Therefore, control flow should never reach the point where this
+     * exception is thrown.
+     */
+    @SuppressWarnings("serial")
+    public static class Unreachable extends RuntimeException {
+        /** Pre-allocate exception for efficiency */
+        public static final Unreachable instance = new Unreachable();
+        private Unreachable() {}
+    }
+    
+    /**
      * Prevent this class from being instantiated.
      */
     private Instruction() {}

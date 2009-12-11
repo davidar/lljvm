@@ -68,18 +68,16 @@ void JVMWriter::printInstruction(const Instruction *inst) {
         }
         break;
     case Instruction::Unwind:
-        printSimpleInstruction("new", "lljvm/runtime/System$Unwind");
-        printSimpleInstruction("dup");
-        printSimpleInstruction("invokespecial",
-                               "lljvm/runtime/System$Unwind/<init>()V");
+        printSimpleInstruction("getstatic",
+            "lljvm/runtime/Instruction$Unwind/instance "
+            "Llljvm/runtime/Instruction$Unwind;");
         printSimpleInstruction("athrow");
         // TODO: need to destroy stack frames
         break;
     case Instruction::Unreachable:
-        printSimpleInstruction("new", "lljvm/runtime/System$Unreachable");
-        printSimpleInstruction("dup");
-        printSimpleInstruction("invokespecial",
-                               "lljvm/runtime/System$Unreachable/<init>()V");
+        printSimpleInstruction("getstatic",
+            "lljvm/runtime/Instruction$Unreachable/instance "
+            "Llljvm/runtime/Instruction$Unreachable;");
         printSimpleInstruction("athrow");
         break;
     case Instruction::Free:
