@@ -68,7 +68,7 @@ takes_argument = ('-MF', '-MT', '-MQ', '-include')
 # (partial) list of flags not recognised by llvm-ld
 # TODO: need a better way of filtering out invalid flags
 invalid_ld_flags = ('-g', '-D', '-pthread', '-shared', '-nostdlib', '-lgcc',
-                    '-static-libgcc')
+                    '-static-libgcc', '-link')
 
 # template for the launcher script
 script_template = """#!/bin/sh
@@ -167,13 +167,10 @@ def link(ldflags, output):
 
 def main():
     if not cc: die("Error: either llvm-gcc or clang must be installed")
-    if sys.argv[0] == '-link':
-        sys.argv.pop(0)
-        link(*parse_argv(False))
-        return
+    if '-link' in sys.argv:
+        link(*parse_argv(False)); return
     if '-c' in sys.argv or '-E' in sys.argv:
-        call_e([cc, '-emit-llvm'] + list(default_cflags) + sys.argv)
-        return
+        call_e([cc, '-emit-llvm'] + list(default_cflags) + sys.argv); return
     cflags, output, srcs = parse_argv()
     objs = map(lambda src: remove_filext(os.path.basename(src)) + '.o', srcs)
     call_e([cc, '-emit-llvm', '-c'] + list(default_cflags) + cflags + srcs)

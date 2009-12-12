@@ -282,9 +282,6 @@ void JVMWriter::printVAIntrinsic(const IntrinsicInst *inst) {
 }
 
 void JVMWriter::printMemIntrinsic(const MemIntrinsic *inst) {
-    if(getBitWidth(inst->getLength()->getType(), true) > 32)
-        llvm_unreachable("64-bit len arg not supported in mem intrinsics");
-        
     printValueLoad(inst->getDest());
     if(const MemTransferInst *minst = dyn_cast<MemTransferInst>(inst))
         printValueLoad(minst->getSource());
@@ -293,16 +290,18 @@ void JVMWriter::printMemIntrinsic(const MemIntrinsic *inst) {
     printValueLoad(inst->getLength());
     printConstLoad(inst->getAlignmentCst());
     
+    std::string lenDescriptor = getTypeDescriptor(
+        inst->getLength()->getType(), true);
     switch(inst->getIntrinsicID()) {
     case Intrinsic::memcpy:
         printSimpleInstruction("invokestatic",
-                               "lljvm/runtime/Memory/memcpy(IIII)V"); break;
+            "lljvm/runtime/Memory/memcpy(II" + lenDescriptor + "I)V"); break;
     case Intrinsic::memmove:
         printSimpleInstruction("invokestatic",
-                               "lljvm/runtime/Memory/memmove(IIII)V"); break;
+            "lljvm/runtime/Memory/memmove(II" + lenDescriptor + "I)V"); break;
     case Intrinsic::memset:
         printSimpleInstruction("invokestatic",
-                               "lljvm/runtime/Memory/memset(IBII)V"); break;
+            "lljvm/runtime/Memory/memset(IB" + lenDescriptor + "I)V"); break;
     }
 }
 

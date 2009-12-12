@@ -910,6 +910,20 @@ public final class Memory {
     
     /**
      * Copy len bytes from memory area src to memory area dest. The memory
+     * areas should not overlap.
+     * 
+     * @param dest   the destination memory area
+     * @param src    the source memory area
+     * @param len    the number of bytes to copy
+     * @param align  the alignment of the source and destination pointers,
+     *               unless align is equal to 0 or 1
+     */
+    public static void memcpy(int dest, int src, long len, int align) {
+        memcpy(dest, src, (int) len, align);
+    }
+    
+    /**
+     * Copy len bytes from memory area src to memory area dest. The memory
      * areas may overlap.
      * 
      * @param dest   the destination memory area
@@ -929,6 +943,20 @@ public final class Memory {
     }
     
     /**
+     * Copy len bytes from memory area src to memory area dest. The memory
+     * areas may overlap.
+     * 
+     * @param dest   the destination memory area
+     * @param src    the source memory area
+     * @param len    the number of bytes to copy
+     * @param align  the alignment of the source and destination pointers,
+     *               unless align is equal to 0 or 1
+     */
+    public static void memmove(int dest, int src, long len, int align) {
+        memmove(dest, src, (int) len, align);
+    }
+    
+    /**
      * Fill the first len bytes of memory area dest with the constant byte val.
      * 
      * @param dest   the destination memory area
@@ -941,6 +969,19 @@ public final class Memory {
         // TODO: make more efficient by setting larger blocks at a time
         for(int i = dest; i < dest + len; i++)
             store(i, val);
+    }
+    
+    /**
+     * Fill the first len bytes of memory area dest with the constant byte val.
+     * 
+     * @param dest   the destination memory area
+     * @param val    the constant byte fill value
+     * @param len    the number of bytes to set
+     * @param align  the alignment of the source and destination pointers,
+     *               unless align is equal to 0 or 1
+     */
+    public static void memset(int dest, byte val, long len, int align) {
+        memset(dest, val, (int) len, align);
     }
     
     /**
