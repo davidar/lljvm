@@ -76,7 +76,7 @@ script_template = \
     'export CLASSPATH="`dirname "$0"`:' \
     + os.path.join(lljvm_dir, 'lljvm.jar') + \
     ':${CLASSPATH-.}"\n' \
-    'exec java %s ${1+"$@"}\n'
+    'exec java %s "$0" ${1+"$@"}\n'
 
 def die(message, status=1):
     """Print the given message to stderr and terminate with the given

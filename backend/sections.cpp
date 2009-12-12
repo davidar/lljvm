@@ -131,13 +131,9 @@ void JVMWriter::printMainMethod() {
             llvm_unreachable("main function has invalid type signature");
         printSimpleInstruction("aload_0");
         printSimpleInstruction("arraylength");
-        printSimpleInstruction("iconst_1");
-        printSimpleInstruction("iadd");
-        printSimpleInstruction("ldc", '"' + classname + '"');
         printSimpleInstruction("aload_0");
         printSimpleInstruction("invokestatic",
-            "lljvm/runtime/System/argv"
-            "(Ljava/lang/String;[Ljava/lang/String;)I");
+            "lljvm/runtime/System/argv([Ljava/lang/String;)I");
         printSimpleInstruction("invokestatic", classname + "/main("
             + getTypeDescriptor(arg1->getType())
             + getTypeDescriptor(arg2->getType()) + ")I");

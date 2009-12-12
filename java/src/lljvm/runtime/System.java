@@ -36,17 +36,14 @@ public final class System {
     /**
      * Constructs an argument vector from the given arguments.
      * 
-     * @param arg0  the first argument i.e. the name of the command being
-     *              executed
-     * @param args  the rest of the arguments
+     * @param args  the array of arguments
      * @return      the argument vector
      */
-    public static int argv(String arg0, String[] args) {
-        final int argc = args.length + 1;
+    public static int argv(String[] args) {
+        final int argc = args.length;
         final int argv = Memory.allocateStack((argc+1)*4);
-        Memory.store(argv, Memory.storeStack(arg0));
-        for(int i = 1; i < argc; i++)
-            Memory.store(argv + i*4, Memory.storeStack(args[i-1]));
+        for(int i = 0; i < argc; i++)
+            Memory.store(argv + i*4, Memory.storeStack(args[i]));
         Memory.store(argv + argc*4, Memory.NULL);
         return argv;
     }
