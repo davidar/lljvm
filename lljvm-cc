@@ -141,7 +141,7 @@ def bc2class(output):
         sys.exit(backend_process.returncode)
     os.unlink(output + '.bc')
     
-    call_e(['java', 'jasmin.Main', output + '.j'])
+    call_e(['java', 'jasmin.Main', output + '.j'], stdout=fnull)
     os.unlink(output + '.j')
     
     script = open(output, 'w')

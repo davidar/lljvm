@@ -15,20 +15,17 @@ TESTS := \
     unreachable.test \
     va.test
 
-.PHONY: check clean
+.PHONY: check
 
 check: ${TESTS}
 
-%.bin: %.c
-	cc $*.c -lm -o $*.bin
-
-%.class: %.c
-	../lljvm-cc $*.c -o $*
-
-%.test: %.bin %.class
-	echo EXPECTED
-	./$*.bin foo bar baz
-	echo ACTUAL
-	./$* foo bar baz
+%.test:
+	echo -n "$*... "
+	cc -lm $*.c -o $*
+	./$* foo bar baz > $*.expected
 	rm -f $*
-	echo
+	../lljvm-cc $*.c -o $*
+	./$* foo bar baz > $*.actual
+	rm -f $* $*.class
+	diff -q $*.expected $*.actual >/dev/null && echo PASS || echo FAIL
+	rm -f $*.expected $*.actual
