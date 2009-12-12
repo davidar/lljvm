@@ -1,0 +1,7 @@
+build/
+*.class
+cjpeg
+djpeg
+jpegtran
+rdjpgcom
+wrjpgcom

@@ -24,7 +24,7 @@ import sys
 import subprocess
 
 # LLJVM root directory
-lljvm_dir = os.path.dirname(sys.argv.pop(0))
+lljvm_dir = os.path.abspath(os.path.dirname(sys.argv.pop(0)))
 
 # dummy file
 # TODO: make system-independent
@@ -71,10 +71,12 @@ invalid_ld_flags = ('-g', '-D', '-pthread', '-shared', '-nostdlib', '-lgcc',
                     '-static-libgcc', '-link')
 
 # template for the launcher script
-script_template = """#!/bin/sh
-export CLASSPATH="""+os.path.join(lljvm_dir, 'lljvm.jar')+""":${CLASSPATH-.}
-exec java '%s' ${1+"$@"}
-"""
+script_template = \
+    '#!/bin/sh\n' \
+    'export CLASSPATH="`dirname "$0"`:' \
+    + os.path.join(lljvm_dir, 'lljvm.jar') + \
+    ':${CLASSPATH-.}"\n' \
+    'exec java %s ${1+"$@"}\n'
 
 def die(message, status=1):
     """Print the given message to stderr and terminate with the given
@@ -161,7 +163,8 @@ def remove_non_ld_args(args):
 
 def link(ldflags, output):
     """Call llvm-ld with the given flags, and call bc2class on the output."""
-    call_e(['llvm-ld', '-o', output] + remove_non_ld_args(ldflags))
+    ldflags = remove_non_ld_args(ldflags)
+    call_e(['llvm-ld', '--disable-opt', '-o', output] + ldflags)
     os.unlink(output)
     bc2class(output)
 
