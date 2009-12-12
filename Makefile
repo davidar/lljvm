@@ -1,4 +1,4 @@
-.PHONY: all doc check bsd-games clean distclean
+.PHONY: all doc check clean distclean
 
 all:
 	cd include && $(MAKE) all
@@ -15,16 +15,12 @@ doc:
 check: all
 	cd test && $(MAKE) -s check
 
-bsd-games: all
-	cd test/bsd-games && $(MAKE) clean all
-
 clean:
 	cd include && $(MAKE) clean
 	cd thirdparty && $(MAKE) clean
 	cd java && $(MAKE) clean
 	cd backend && $(MAKE) clean
 	cd libc && $(MAKE) clean
-	cd test && $(MAKE) clean
 	rm -f lljvm.jar lljvm-backend
 
 distclean:

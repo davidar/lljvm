@@ -2,6 +2,7 @@ CC := ../../lljvm-cc
 CFLAGS := -Dlint -D'setregid(...)'
 SOURCE_DIR := ../../thirdparty/bsd-games
 CLASSES := banner.class number.class morse.class pig.class
+SCRIPTS := ${CLASSES:.class=}
 
 all: ${SOURCE_DIR} ${CLASSES}
 
@@ -21,4 +22,4 @@ pig.class: ${SOURCE_DIR}/pig/pig.c err.c
 	$(CC) ${CFLAGS} $^ -o pig
 
 clean:
-	rm -f ${CLASSES}
+	rm -f ${CLASSES} ${SCRIPTS}

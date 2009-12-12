@@ -32,6 +32,3 @@ check: ${TESTS}
 	./$* foo bar baz
 	rm -f $*
 	echo
-
-clean:
-	cd bsd-games && $(MAKE) clean
