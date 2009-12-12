@@ -57,6 +57,7 @@ default_java_libs = (
     'lljvm.runtime.System',
     'lljvm.runtime.IO',
     'lljvm.runtime.Posix',
+    'lljvm.runtime.Jump',
     'java.lang.Math',
 )
 

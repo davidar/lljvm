@@ -77,6 +77,13 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
         else
             printSimpleInstruction("invokestatic",
                 classname + "/" + getValueName(f) + getCallSignature(ty));
+        
+        if(getValueName(f) == "setjmp") {
+            unsigned int varNum = usedRegisters++;
+            printSimpleInstruction("istore", utostr(varNum));
+            printSimpleInstruction("iconst_0");
+            printLabel("setjmp$" + utostr(varNum));
+        }
     } else { // indirect call
         printValueLoad(functionVal);
         const FunctionType *ty = cast<FunctionType>(
@@ -176,6 +183,26 @@ unsigned int JVMWriter::getLocalVarNumber(const Value *v) {
     return localVars[v];
 }
 
+void JVMWriter::printCatchJump(unsigned int numJumps) {
+    unsigned int jumpVarNum = usedRegisters++;
+    printSimpleInstruction(".catch lljvm/runtime/Jump "
+        "from begin_method to catch_jump using catch_jump");
+    printLabel("catch_jump");
+    printSimpleInstruction("astore", utostr(jumpVarNum));
+    printSimpleInstruction("aload", utostr(jumpVarNum));
+    printSimpleInstruction("getfield", "lljvm/runtime/Jump/value I");
+    for(unsigned int i = usedRegisters-1 - numJumps,
+                     e = usedRegisters-1; i < e; i++) {
+        printSimpleInstruction("aload", utostr(jumpVarNum));
+        printSimpleInstruction("getfield", "lljvm/runtime/Jump/id I");
+        printSimpleInstruction("iload", utostr(i));
+        printSimpleInstruction("if_icmpeq", "setjmp$" + utostr(i));
+    }
+    printSimpleInstruction("pop");
+    printSimpleInstruction("aload", utostr(jumpVarNum));
+    printSimpleInstruction("athrow");
+}
+
 void JVMWriter::printFunction(const Function &f) {
     localVars.clear();
     usedRegisters = 0;
@@ -210,20 +237,32 @@ void JVMWriter::printFunction(const Function &f) {
     
     // TODO: better stack depth analysis
     unsigned int stackDepth = 8;
+    unsigned int numJumps = 0;
     for(const_inst_iterator i = inst_begin(&f), e = inst_end(&f);
         i != e; i++) {
         if(stackDepth < i->getNumOperands())
             stackDepth = i->getNumOperands();
         if(i->getType() != Type::getVoidTy(f.getContext()))
             printLocalVariable(f, &*i);
+        if(const CallInst *inst = dyn_cast<CallInst>(&*i))
+            if(!isa<IntrinsicInst>(inst)
+            && getValueName(inst->getOperand(0)) == "setjmp")
+                numJumps++;
     }
-    printSimpleInstruction(".limit stack", utostr(stackDepth * 2));
-    printSimpleInstruction(".limit locals", utostr(usedRegisters));
+    
+    for(unsigned int i = 0; i < numJumps; i++) {
+        // initialise jump IDs to prevent class verification errors
+        printSimpleInstruction("iconst_0");
+        printSimpleInstruction("istore", utostr(usedRegisters + i));
+    }
     
     printLabel("begin_method");
     printSimpleInstruction("invokestatic",
                            "lljvm/runtime/Memory/createStackFrame()V");
     printFunctionBody(f);
+    if(numJumps) printCatchJump(numJumps);
+    printSimpleInstruction(".limit stack", utostr(stackDepth * 2));
+    printSimpleInstruction(".limit locals", utostr(usedRegisters));
     printLabel("end_method");
     out << ".end method\n";
 }

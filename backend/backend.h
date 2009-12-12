@@ -101,6 +101,7 @@ private:
     void printLocalVariable(const Function &f, const Instruction *inst);
     void printFunctionBody(const Function &f);
     unsigned int getLocalVarNumber(const Value *v);
+    void printCatchJump(unsigned int numJumps);
     void printFunction(const Function &f);
     
     // instruction.cpp

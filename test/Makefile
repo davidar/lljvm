@@ -7,6 +7,7 @@ TESTS := \
     fp.test \
     hello.test \
     primes.test \
+    setjmp.test \
     staticvar.test \
     struct.test \
     struct2.test \

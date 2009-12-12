@@ -57,6 +57,8 @@ public final class Memory {
     private static int framePointer = MEM_SIZE;
     /** Current stack pointer */
     private static int stackPointer = framePointer;
+    /** Current number of frames on the stack */
+    private static int stackDepth = 0;
     
     /** The null pointer */
     public static final int NULL = allocateData();
@@ -151,6 +153,7 @@ public final class Memory {
         final int prevFramePointer = framePointer;
         framePointer = stackPointer;
         storeStack(prevFramePointer);
+        stackDepth++;
     }
     
     /**
@@ -159,6 +162,26 @@ public final class Memory {
     public static void destroyStackFrame() {
         stackPointer = framePointer;
         framePointer = load_i32(stackPointer - ALIGNMENT);
+        stackDepth--;
+    }
+    
+    /**
+     * Destroy the top n stack frames.
+     * 
+     * @param n  the number of stack frames to destroy
+     */
+    public static void destroyStackFrames(int n) {
+        for(int i = 0; i < n; i++)
+            destroyStackFrame();
+    }
+    
+    /**
+     * Return the number of stack frames currently on the stack.
+     * 
+     * @return  the number of stack frames currently on the stack
+     */
+    public static int getStackDepth() {
+        return stackDepth;
     }
     
     /**
