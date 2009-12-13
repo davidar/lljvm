@@ -21,6 +21,7 @@ clean:
 	cd java && $(MAKE) clean
 	cd backend && $(MAKE) clean
 	cd libc && $(MAKE) clean
+	cd demo && $(MAKE) clean
 	rm -f lljvm.jar lljvm-backend
 
 distclean:

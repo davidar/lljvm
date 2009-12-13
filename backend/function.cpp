@@ -115,10 +115,16 @@ void JVMWriter::printIntrinsicCall(const IntrinsicInst *inst) {
     case Intrinsic::dbg_stoppoint:
         // ignore debugging intrinsics
         break;
+    case Intrinsic::pow:
+    case Intrinsic::exp:
+    case Intrinsic::log10:
+    case Intrinsic::log:
+    case Intrinsic::sqrt:
+        printMathIntrinsic(inst); break;
     default:
-    errs() << "Intrinsic = " << *inst << '\n';
-    llvm_unreachable("Invalid intrinsic function");
-  }
+        errs() << "Intrinsic = " << *inst << '\n';
+        llvm_unreachable("Invalid intrinsic function");
+    }
 }
 
 void JVMWriter::printCallInstruction(const Instruction *inst) {

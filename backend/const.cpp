@@ -103,20 +103,27 @@ void JVMWriter::printConstLoad(const Constant *c) {
     }
 }
 
-void JVMWriter::printConstLoad(const std::string &str) {
+void JVMWriter::printConstLoad(const std::string &str, bool cstring) {
     out << "\tldc \"";
-    for(std::string::const_iterator i = str.begin(),
-                                    e = str.end()-1; i != e; i++)
-        switch(*i) {
-        case '\\': out << "\\\\"; break;
-        case '\b': out << "\\b";  break;
-        case '\t': out << "\\t";  break;
-        case '\n': out << "\\n";  break;
-        case '\f': out << "\\f";  break;
-        case '\r': out << "\\r";  break;
-        case '\"': out << "\\\""; break;
-        case '\'': out << "\\\'"; break;
-        default:   out << *i;     break;
+    if(cstring)
+        for(std::string::const_iterator i = str.begin(),
+                                        e = str.end()-1; i != e; i++)
+            switch(*i) {
+            case '\\': out << "\\\\"; break;
+            case '\b': out << "\\b";  break;
+            case '\t': out << "\\t";  break;
+            case '\n': out << "\\n";  break;
+            case '\f': out << "\\f";  break;
+            case '\r': out << "\\r";  break;
+            case '\"': out << "\\\""; break;
+            case '\'': out << "\\\'"; break;
+            default:   out << *i;     break;
+            }
+    else
+        for(std::string::const_iterator i = str.begin(),
+                                        e = str.end(); i != e; i++) {
+            const char c = *i;
+            out << "\\u00" << hexdigit((c>>4) & 0xf) << hexdigit(c & 0xf);
         }
     out << "\"\n";
 }
@@ -140,10 +147,18 @@ void JVMWriter::printStaticConstant(const Constant *c) {
         break;
     case Type::ArrayTyID:
         if(const ConstantArray *ca = dyn_cast<ConstantArray>(c))
-            if(ca->isCString()) {
-                printConstLoad(ca->getAsString());
-                printSimpleInstruction("invokestatic",
-                    "lljvm/runtime/Memory/pack(ILjava/lang/String;)I");
+            if(ca->isString()) {
+                bool cstring = ca->isCString();
+                printConstLoad(ca->getAsString(), cstring);
+                if(cstring)
+                    printSimpleInstruction("invokestatic",
+                        "lljvm/runtime/Memory/pack(ILjava/lang/String;)I");
+                else {
+                    printSimpleInstruction("invokevirtual", 
+                                           "java/lang/String/toCharArray()[C");
+                    printSimpleInstruction("invokestatic",
+                                           "lljvm/runtime/Memory/pack(I[C)I");
+                }
                 break;
             }
         // else fall through

@@ -85,7 +85,7 @@ private:
     void printConstLoad(float f);
     void printConstLoad(double d);
     void printConstLoad(const Constant *c);
-    void printConstLoad(const std::string &str);
+    void printConstLoad(const std::string &str, bool cstring);
     void printStaticConstant(const Constant *c);
     void printConstantExpr(const ConstantExpr *ce);
     
@@ -124,6 +124,7 @@ private:
     void printVAIntrinsic(const IntrinsicInst *inst);
     void printMemIntrinsic(const MemIntrinsic *inst);
     void printMallocInstruction(const MallocInst *inst);
+    void printMathIntrinsic(const IntrinsicInst *inst);
     
     // loadstore.cpp
     void printValueLoad(const Value *v);

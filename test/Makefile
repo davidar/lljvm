@@ -1,5 +1,6 @@
 TESTS := \
     argv.test \
+    array.test \
     cast.test \
     factorial.test \
     file.test \

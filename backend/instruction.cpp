@@ -311,3 +311,31 @@ void JVMWriter::printMallocInstruction(const MallocInst *inst) {
     printSimpleInstruction("imul");
     printSimpleInstruction("invokestatic", "lljvm/lib/c/malloc(I)I");
 }
+
+void JVMWriter::printMathIntrinsic(const IntrinsicInst *inst) {
+    bool f32 = (getBitWidth(inst->getOperand(1)->getType()) == 32);
+    printValueLoad(inst->getOperand(1));
+    if(f32) printSimpleInstruction("f2d");
+    if(inst->getNumOperands() >= 3) {
+        printValueLoad(inst->getOperand(2));
+        if(f32) printSimpleInstruction("f2d");
+    }
+    switch(inst->getIntrinsicID()) {
+    case Intrinsic::exp:
+        printSimpleInstruction("invokestatic", "java/lang/Math/exp(D)D");
+        break;
+    case Intrinsic::log:
+        printSimpleInstruction("invokestatic", "java/lang/Math/log(D)D");
+        break;
+    case Intrinsic::log10:
+        printSimpleInstruction("invokestatic", "java/lang/Math/log10(D)D");
+        break;
+    case Intrinsic::sqrt:
+        printSimpleInstruction("invokestatic", "java/lang/Math/sqrt(D)D");
+        break;
+    case Intrinsic::pow:
+        printSimpleInstruction("invokestatic", "java/lang/Math/pow(DD)D");
+        break;
+    }
+    if(f32) printSimpleInstruction("d2f");
+}

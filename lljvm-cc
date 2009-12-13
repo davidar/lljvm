@@ -59,6 +59,7 @@ default_java_libs = (
     'lljvm.runtime.Posix',
     'lljvm.runtime.Jump',
     'java.lang.Math',
+    'lljvm.runtime.Math',
 )
 
 # (partial) list of flags that take an argument
@@ -141,11 +142,12 @@ def bc2class(output):
         sys.exit(backend_process.returncode)
     os.unlink(output + '.bc')
     
-    call_e(['java', 'jasmin.Main', output + '.j'], stdout=fnull)
+    outpath = os.path.dirname(output) or '.'
+    call_e(['java', 'jasmin.Main', '-d', outpath, output + '.j'], stdout=fnull)
     os.unlink(output + '.j')
     
     script = open(output, 'w')
-    script.write(script_template % output.replace('.', '_'))
+    script.write(script_template % os.path.basename(output).replace('.', '_'))
     script.close()
     os.chmod(output, 0755)
 

@@ -22,6 +22,7 @@
 
 package lljvm.runtime;
 
+import java.lang.Math;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -869,6 +870,20 @@ public final class Memory {
         store(addr, bytes);
         Memory.store(addr + bytes.length, (byte) 0);
         return addr + bytes.length + 1;
+    }
+    
+    /**
+     * Store an array of chars at the given address, treating it as an array of
+     * bytes i.e. each char is cast to a byte before being stored.
+     * 
+     * @param addr   the address at which to store the array
+     * @param chars  the array of chars
+     * @return       the first address following the stored array
+     */
+    public static int pack(int addr, char[] chars) {
+        for(int i = 0; i < chars.length; i++)
+            Memory.store(addr + i, (byte) chars[i]);
+        return addr + chars.length;
     }
     
     /**
