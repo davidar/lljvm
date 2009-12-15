@@ -66,6 +66,16 @@ void JVMWriter::printValueStore(const Value *v) {
         errs() << "Value  = " << *v << '\n';
         llvm_unreachable("Invalid value");
     }
+    unsigned int bitWidth = getBitWidth(v->getType());
+    // truncate int
+    if(bitWidth == 16)
+        printSimpleInstruction("i2s");
+    else if(bitWidth == 8)
+        printSimpleInstruction("i2b");
+    else if(bitWidth == 1) {
+        printSimpleInstruction("iconst_1");
+        printSimpleInstruction("iand");
+    }
     if(getLocalVarNumber(v) <= 3)
         printSimpleInstruction(
             getTypePrefix(v->getType(), true) + "store_"

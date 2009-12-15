@@ -896,7 +896,7 @@ public final class Memory {
      * @return       an array of unpacked values
      */
     public static Object[] unpack(int addr, Class<?>[] types) {
-        Object[] values = new Number[types.length];
+        Object[] values = new Object[types.length];
         for(int i = 0; i < types.length; i++) {
             final Class<?> type = types[i];
             final int size = ReflectionUtils.sizeOf(type);
