@@ -1,3 +1,14 @@
+DIRS := \
+    newlib \
+    bsd-games \
+    jpeg \
+    lua
+ARCHIVES := \
+    newlib-1.17.0.tar.gz \
+    bsd-games-2.17.tar.gz \
+    jpeg-7.tar.gz \
+    lua-5.1.4.tar.gz
+
 newlib: newlib-1.17.0.tar.gz
 	tar -zxvf $<
 	patch -p1 < newlib-1.17.0.patch
@@ -37,7 +48,7 @@ lua-5.1.4.tar.gz:
 	mv -f $@.part $@
 
 clean:
-	rm -rf newlib bsd-games jpeg
+	rm -rf ${DIRS}
 
 distclean:
-	rm -f newlib-1.17.0.tar.gz bsd-games-2.17.tar.gz jpeg-7.tar.gz
+	rm -f ${ARCHIVES}
