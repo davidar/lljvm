@@ -50,5 +50,5 @@ lua-5.1.4.tar.gz:
 clean:
 	rm -rf ${DIRS}
 
-distclean:
+distclean: clean
 	rm -f ${ARCHIVES}

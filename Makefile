@@ -24,5 +24,5 @@ clean:
 	cd demo && $(MAKE) clean
 	rm -f lljvm.jar lljvm-backend
 
-distclean:
+distclean: clean
 	cd thirdparty && $(MAKE) distclean
