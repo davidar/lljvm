@@ -1,5 +1,3 @@
-all: newlib bsd-games
-
 newlib: newlib-1.17.0.tar.gz
 	tar -zxvf $<
 	patch -p1 < newlib-1.17.0.patch
@@ -26,6 +24,16 @@ jpeg: jpeg-7.tar.gz
 
 jpeg-7.tar.gz:
 	wget -c http://ijg.org/files/jpegsrc.v7.tar.gz -O $@.part
+	mv -f $@.part $@
+
+lua: lua-5.1.4.tar.gz
+	tar -zxvf $<
+	patch -p1 < lua-5.1.4.patch
+	rm -rf lua
+	mv -f lua-5.1.4 lua
+
+lua-5.1.4.tar.gz:
+	wget -c http://www.lua.org/ftp/$@ -O $@.part
 	mv -f $@.part $@
 
 clean:
