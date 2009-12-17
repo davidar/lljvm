@@ -141,7 +141,7 @@ void JVMWriter::printMainMethod() {
         llvm_unreachable("main function has invalid number of arguments");
     }
 
-    printSimpleInstruction("invokestatic","lljvm/runtime/System/_exit(I)V");
+    printSimpleInstruction("invokestatic", "lljvm/lib/c/exit(I)V");
     printSimpleInstruction("return");
     out << ".end method\n";
 }

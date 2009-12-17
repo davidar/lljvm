@@ -2,12 +2,14 @@ DIRS := \
     newlib \
     bsd-games \
     jpeg \
-    lua
+    lua \
+    datalog
 ARCHIVES := \
     newlib-1.17.0.tar.gz \
     bsd-games-2.17.tar.gz \
     jpeg-7.tar.gz \
-    lua-5.1.4.tar.gz
+    lua-5.1.4.tar.gz \
+    datalog-1.4.tar.gz
 
 newlib: newlib-1.17.0.tar.gz
 	tar -zxvf $<
@@ -45,6 +47,15 @@ lua: lua-5.1.4.tar.gz
 
 lua-5.1.4.tar.gz:
 	wget -c http://www.lua.org/ftp/$@ -O $@.part
+	mv -f $@.part $@
+
+datalog: datalog-1.4.tar.gz
+	tar -zxvf $<
+	rm -rf datalog
+	mv -f datalog-1.4 datalog
+
+datalog-1.4.tar.gz:
+	wget -c http://www.ccs.neu.edu/home/ramsdell/tools/datalog/$@ -O $@.part
 	mv -f $@.part $@
 
 clean:
