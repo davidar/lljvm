@@ -25,8 +25,8 @@
 char JVMWriter::id = 0;
 
 JVMWriter::JVMWriter(const TargetData *td, formatted_raw_ostream &o,
-                     const std::string &cls)
-    : FunctionPass(&id), targetData(td), out(o), classname(cls) {}
+                     const std::string &cls, unsigned int dbg)
+    : FunctionPass(&id), targetData(td), out(o), classname(cls), debug(dbg) {}
 
 void JVMWriter::getAnalysisUsage(AnalysisUsage &au) const {
     au.addRequired<LoopInfo>();

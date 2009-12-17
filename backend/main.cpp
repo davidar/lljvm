@@ -42,6 +42,16 @@ static cl::opt<std::string> input(
 static cl::opt<std::string> classname(
     "classname", cl::desc("Binary name of the generated class"));
 
+enum DebugLevel {g0 = 0, g1 = 1, g2 = 2, g3 = 3};
+cl::opt<DebugLevel> debugLevel(cl::desc("Debugging level:"), cl::init(g1),
+    cl::values(
+    clEnumValN(g2, "g", "Same as -g2"),
+    clEnumVal(g0, "No debugging information"),
+    clEnumVal(g1, "Source file and line number information (default)"),
+    clEnumVal(g2, "-g1 + Local variable information"),
+    clEnumVal(g3, "-g2 + Commented LLVM assembly"),
+    clEnumValEnd));
+
 int main(int argc, char **argv) {
     cl::ParseCommandLineOptions(argc, argv, "LLJVM Backend\n");
     std::string err;
@@ -68,7 +78,7 @@ int main(int argc, char **argv) {
     // TODO: fix switch generation so the following pass is not needed
     pm.add(createLowerSwitchPass());
     pm.add(createCFGSimplificationPass());
-    pm.add(new JVMWriter(&td, fouts(), classname));
+    pm.add(new JVMWriter(&td, fouts(), classname, debugLevel));
     pm.add(createGCInfoDeleter());
     pm.run(*mod);
     return 0;

@@ -12,5 +12,5 @@ ${SOURCE_DIR}:
 	cd ../../thirdparty && $(MAKE) lua
 
 clean:
-	cd ${SOURCE_DIR} && $(MAKE) clean
+	-cd ${SOURCE_DIR} && $(MAKE) clean
 	rm -f ${CLASSES} ${SCRIPTS}

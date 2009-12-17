@@ -41,6 +41,7 @@ class JVMWriter : public FunctionPass {
     formatted_raw_ostream &out;
     std::string sourcename;
     std::string classname;
+    unsigned int debug;
     Module *module;
     const TargetData *targetData;
     static char id;
@@ -54,7 +55,7 @@ class JVMWriter : public FunctionPass {
 
 public:
     JVMWriter(const TargetData *td, formatted_raw_ostream &o,
-              const std::string &cls);
+              const std::string &cls, unsigned int dbg);
 
 private:
     // backend.cpp

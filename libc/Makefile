@@ -15,7 +15,7 @@ OBJS := \
     time.o
 DIRS := ${OBJS:.o=}
 
-BFLAGS := -classname=lljvm.lib.c
+BFLAGS := -classname=lljvm.lib.c -g0
 LLJVM_LD := java -classpath ../java/build lljvm.tools.ld.Main
 JAVA_LIBS := \
     lljvm.runtime.System \

@@ -161,11 +161,10 @@ void JVMWriter::printLocalVariable(const Function &f,
         ty = inst->getType();
     // getLocalVarNumber must be called at least once in this method
     unsigned int varNum = getLocalVarNumber(inst);
-#ifdef DEBUG
-    printSimpleInstruction(".var " + utostr(varNum) + " is "
-        + getValueName(inst) + ' ' + getTypeDescriptor(ty)
-        + " from begin_method to end_method");
-#endif
+    if(debug >= 2)
+        printSimpleInstruction(".var " + utostr(varNum) + " is "
+            + getValueName(inst) + ' ' + getTypeDescriptor(ty)
+            + " from begin_method to end_method");
     // initialise variable to avoid class verification errors
     printSimpleInstruction(getTypePrefix(ty, true) + "const_0");
     printSimpleInstruction(getTypePrefix(ty, true) + "store", utostr(varNum));
@@ -199,6 +198,9 @@ void JVMWriter::printCatchJump(unsigned int numJumps) {
     printSimpleInstruction("getfield", "lljvm/runtime/Jump/value I");
     for(unsigned int i = usedRegisters-1 - numJumps,
                      e = usedRegisters-1; i < e; i++) {
+        if(debug >= 2)
+            printSimpleInstruction(".var " + utostr(i) + " is setjmp_id_"
+                + utostr(i) + " I from begin_method to end_method");
         printSimpleInstruction("aload", utostr(jumpVarNum));
         printSimpleInstruction("getfield", "lljvm/runtime/Jump/id I");
         printSimpleInstruction("iload", utostr(i));
@@ -207,6 +209,9 @@ void JVMWriter::printCatchJump(unsigned int numJumps) {
     printSimpleInstruction("pop");
     printSimpleInstruction("aload", utostr(jumpVarNum));
     printSimpleInstruction("athrow");
+    if(debug >= 2)
+        printSimpleInstruction(".var " + utostr(jumpVarNum) + " is jump "
+            "Llljvm/runtime/Jump; from begin_method to end_method");
 }
 
 void JVMWriter::printFunction(const Function &f) {
@@ -227,18 +232,16 @@ void JVMWriter::printFunction(const Function &f) {
         i != e; i++) {
         // getLocalVarNumber must be called at least once in each iteration
         unsigned int varNum = getLocalVarNumber(i);
-#ifdef DEBUG
-        printSimpleInstruction(".var " + utostr(varNum) + " is "
-            + getValueName(i) + ' ' + getTypeDescriptor(i->getType())
-            + " from begin_method to end_method");
-#endif
+        if(debug >= 2)
+            printSimpleInstruction(".var " + utostr(varNum) + " is "
+                + getValueName(i) + ' ' + getTypeDescriptor(i->getType())
+                + " from begin_method to end_method");
     }
     if(f.isVarArg()) {
         vaArgNum = usedRegisters++;
-#ifdef DEBUG
-        printSimpleInstruction(".var " + utostr(vaArgNum)
-            + " is varargptr I from begin_method to end_method");
-#endif
+        if(debug >= 2)
+            printSimpleInstruction(".var " + utostr(vaArgNum)
+                + " is varargptr I from begin_method to end_method");
     }
     
     // TODO: better stack depth analysis

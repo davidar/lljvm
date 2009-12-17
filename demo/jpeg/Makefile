@@ -4,7 +4,7 @@ CLASSES := cjpeg.class djpeg.class jpegtran.class rdjpgcom.class wrjpgcom.class
 SCRIPTS := ${CLASSES:.class=}
 
 all: ${SOURCE_DIR} build/Makefile
-	cd build && $(MAKE) CCLD="../$(CC) -link" CFLAGS=""
+	cd build && $(MAKE) CCLD="../$(CC) -link"
 	cd build && cp ${CLASSES} ${SCRIPTS} ..
 
 ${SOURCE_DIR}:

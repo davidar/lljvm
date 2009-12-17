@@ -23,8 +23,9 @@
 #include "backend.h"
 
 void JVMWriter::printHeader() {
-    out << ".source " << sourcename << "\n"
-           ".class public final " << classname << "\n"
+    if(debug >= 1)
+        out << ".source " << sourcename << "\n";
+    out << ".class public final " << classname << "\n"
            ".super java/lang/Object\n\n";
 }
 
@@ -39,12 +40,11 @@ void JVMWriter::printFields() {
             out << ".field "
                 << (i->hasLocalLinkage() ? "private " : "public ")
                 << "static ";
-        out << getValueName(i) << ' ' << getTypeDescriptor(i->getType())
-#ifdef DEBUG
-            << " ; " << *i;
-#else
-            << '\n';
-#endif
+        out << getValueName(i) << ' ' << getTypeDescriptor(i->getType());
+        if(debug >= 3)
+            out << " ; " << *i;
+        else
+            out << '\n';
     }
     out << '\n';
 }
@@ -56,11 +56,11 @@ void JVMWriter::printExternalMethods() {
         if(i->isDeclaration() && !i->isIntrinsic()) {
             const Function *f = i;
             const FunctionType *ty = f->getFunctionType();
-            out << ".extern method " << getValueName(f) << getCallSignature(ty)
-#ifdef DEBUG
-            << " ; " << *ty
-#endif
-            << '\n';
+            out << ".extern method "
+                << getValueName(f) << getCallSignature(ty);
+            if(debug >= 3)
+                out << " ; " << *ty;
+            out << '\n';
             externRefs.insert(f);
         }
     }

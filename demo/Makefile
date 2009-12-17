@@ -1,9 +1,12 @@
+DIRS := \
+    bsd-games \
+    jpeg \
+    lua
+
 .PHONY: all clean
 
 all:
-	cd bsd-games && $(MAKE) all
-	cd jpeg && $(MAKE) all
+	for d in ${DIRS}; do (cd $$d && $(MAKE) all); done
 
 clean:
-	cd bsd-games && $(MAKE) clean
-	cd jpeg && $(MAKE) clean
+	for d in ${DIRS}; do (cd $$d && $(MAKE) clean); done
