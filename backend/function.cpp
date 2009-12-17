@@ -121,6 +121,8 @@ void JVMWriter::printIntrinsicCall(const IntrinsicInst *inst) {
     case Intrinsic::log:
     case Intrinsic::sqrt:
         printMathIntrinsic(inst); break;
+    case Intrinsic::bswap:
+        printBitIntrinsic(inst); break;
     default:
         errs() << "Intrinsic = " << *inst << '\n';
         llvm_unreachable("Invalid intrinsic function");

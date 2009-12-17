@@ -23,9 +23,9 @@
 package lljvm.runtime;
 
 /**
- * This class provides methods that emulate several LLVM instructions.
- * See <http://llvm.org/docs/LangRef.html> for information about these
- * instructions.
+ * This class provides methods that emulate several LLVM instructions and
+ * intrinsic functions.
+ * See <http://llvm.org/docs/LangRef.html> for further information.
  * 
  * @author  David Roberts
  */
@@ -436,5 +436,32 @@ public final class Instruction {
         return (value <= Long.MAX_VALUE)
             ? (long)value
             : Long.MIN_VALUE + (long)(value - (double)Long.MAX_VALUE - 1.0);
+    }
+    
+    public static short bswap(short value) {
+        final int b0 = (value >>> 0) & 0xff;
+        final int b1 = (value >>> 8) & 0xff;
+        return (short) (b0 << 8 | b1 << 0);
+    }
+    
+    public static int bswap(int value) {
+        final int b0 = (value >>> 0)  & 0xff;
+        final int b1 = (value >>> 8)  & 0xff;
+        final int b2 = (value >>> 16) & 0xff;
+        final int b3 = (value >>> 24) & 0xff;
+        return b0 << 24 | b1 << 16 | b2 << 8 | b3 << 0;
+    }
+    
+    public static long bswap(long value) {
+        final long b0 = (value >>> 0)  & 0xff;
+        final long b1 = (value >>> 8)  & 0xff;
+        final long b2 = (value >>> 16) & 0xff;
+        final long b3 = (value >>> 24) & 0xff;
+        final long b4 = (value >>> 32) & 0xff;
+        final long b5 = (value >>> 40) & 0xff;
+        final long b6 = (value >>> 48) & 0xff;
+        final long b7 = (value >>> 56) & 0xff;
+        return b0 << 56 | b1 << 48 | b2 << 40 | b3 << 32
+             | b4 << 24 | b5 << 16 | b6 << 8  | b7 << 0;
     }
 }

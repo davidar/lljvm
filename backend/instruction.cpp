@@ -339,3 +339,14 @@ void JVMWriter::printMathIntrinsic(const IntrinsicInst *inst) {
     }
     if(f32) printSimpleInstruction("d2f");
 }
+
+void JVMWriter::printBitIntrinsic(const IntrinsicInst *inst) {
+    // TODO: ctpop, ctlz, cttz
+    const Value *value = inst->getOperand(1);
+    const std::string typeDescriptor = getTypeDescriptor(value->getType());
+    switch(inst->getIntrinsicID()) {
+    case Intrinsic::bswap:
+        printVirtualInstruction(
+            "bswap(" + typeDescriptor + ")" + typeDescriptor, value); break;
+    }
+}

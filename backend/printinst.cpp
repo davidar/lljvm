@@ -60,15 +60,27 @@ void JVMWriter::printVirtualInstruction(const char *sig) {
 }
 
 void JVMWriter::printVirtualInstruction(const char *sig,
+                                        const Value *operand) {
+    printValueLoad(operand);
+    printVirtualInstruction(sig);
+}
+
+void JVMWriter::printVirtualInstruction(const char *sig,
                                         const Value *left,
                                         const Value *right) {
     printValueLoad(left);
     printValueLoad(right);
-    out << '\t' << "invokestatic lljvm/runtime/Instruction/" << sig << '\n';
+    printVirtualInstruction(sig);
 }
 
 void JVMWriter::printVirtualInstruction(const std::string &sig) {
-    out << '\t' << "invokestatic lljvm/runtime/Instruction/" << sig << '\n';
+    printVirtualInstruction(sig.c_str());
+}
+
+void JVMWriter::printVirtualInstruction(const std::string &sig,
+                                        const Value *operand) {
+    printValueLoad(operand);
+    printVirtualInstruction(sig);
 }
 
 void JVMWriter::printVirtualInstruction(const std::string &sig,
@@ -76,7 +88,7 @@ void JVMWriter::printVirtualInstruction(const std::string &sig,
                                         const Value *right) {
     printValueLoad(left);
     printValueLoad(right);
-    out << '\t' << "invokestatic lljvm/runtime/Instruction/" << sig << '\n';
+    printVirtualInstruction(sig);
 }
 
 void JVMWriter::printLabel(const char *label) {

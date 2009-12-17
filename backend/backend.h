@@ -126,6 +126,7 @@ private:
     void printMemIntrinsic(const MemIntrinsic *inst);
     void printMallocInstruction(const MallocInst *inst);
     void printMathIntrinsic(const IntrinsicInst *inst);
+    void printBitIntrinsic(const IntrinsicInst *inst);
     
     // loadstore.cpp
     void printValueLoad(const Value *v);
@@ -153,10 +154,12 @@ private:
     void printSimpleInstruction(const std::string &inst,
                                 const std::string &operand);
     void printVirtualInstruction(const char *sig);
+    void printVirtualInstruction(const char *sig, const Value *operand);
     void printVirtualInstruction(const char *sig,
                                  const Value *left,
                                  const Value *right);
     void printVirtualInstruction(const std::string &sig);
+    void printVirtualInstruction(const std::string &sig, const Value *operand);
     void printVirtualInstruction(const std::string &sig,
                                  const Value *left,
                                  const Value *right);
