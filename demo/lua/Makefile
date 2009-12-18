@@ -1,7 +1,7 @@
 CC := ../../lljvm-cc
 SOURCE_DIR := ../../thirdparty/lua/src
-CLASSES := lua.class luac.class
-SCRIPTS := ${CLASSES:.class=}
+CLASSES := lua.class luac.class liblua.class
+SCRIPTS := lua luac
 CWD := $(shell pwd)
 
 all: ${SOURCE_DIR}

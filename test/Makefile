@@ -22,10 +22,10 @@ check: ${TESTS}
 
 %.test:
 	echo -n "$*... "
-	cc -lm $*.c -o $*
+	cc $*.c -o $* -lm
 	./$* foo bar baz > $*.expected
 	rm -f $*
-	../lljvm-cc $*.c -o $*
+	../lljvm-cc $*.c -o $* -lm
 	./$* foo bar baz > $*.actual
 	rm -f $* $*.class
 	diff -q $*.expected $*.actual >/dev/null && echo PASS || echo FAIL
