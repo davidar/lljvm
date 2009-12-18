@@ -129,7 +129,7 @@ def parse_argv(separate_sources=True):
         return flags, output, srcs
     return flags, output
 
-def filter_flags_fn(flags, fn):
+def filter_flags(flags, fn):
     """Filter the given list of flags according to the given function,
     respecting takes_argument."""
     newflags = []
@@ -142,46 +142,39 @@ def filter_flags_fn(flags, fn):
             if arg: newflags.append(arg)
     return newflags
 
-def filter_flags(flags, invalid_flags=(), startswith=None, notstartswith=None):
-    """Filter invalid flags out of the given list. If startswith is specified,
-    then only flags that begin with an element of the given list will be
-    retained. Otherwise, if notstartswith is specified, any flag that begins
-    with an element of the given list will be removed."""
-    if startswith and notstartswith:
-        raise TypeError("cannot specify both startswith and notstartswith")
-    flags = list(flags)
-    if invalid_flags: flags = filter_flags_fn(flags,
-            lambda x: x not in invalid_flags)
-    if startswith: flags = filter_flags_fn(flags,
-            lambda x: startswith_element(x, startswith))
-    if notstartswith: flags = filter_flags_fn(flags,
-            lambda x: not startswith_element(x, notstartswith))
-    return flags
-
 def filter_cc_flags(flags):
     """Remove arguments from the given list that should be passed to the
     backend instead of cc, and return the new list of arguments."""
-    return filter_flags(flags, notstartswith=('-classname', '-g'))
+    return filter_flags(flags,
+        lambda x: not startswith_element(x, ('-classname','-g')))
 
 def filter_ld_flags(flags):
     """Remove arguments not recognised by llvm-ld from the given list, and
     return the new list of arguments."""
-    return filter_flags(flags, invalid_ld_flags,
-                        notstartswith=('-f', '-g', '-D', '-O', '-W'))
+    return filter_flags(flags,
+        lambda x: x not in invalid_ld_flags
+            and not startswith_element(x, ('-f','-g','-D','-O','-W'))
+            and (not x.startswith('-l') or x in ('-link','-link-as-library')))
 
 def filter_backend_flags(flags):
     """Return a list of only those flags accepted by lljvm-backend."""
-    return filter_flags(flags, startswith=('-classname', '-g'))
+    return filter_flags(flags,
+        lambda x: startswith_element(x, ('-classname','-g')))
 
 def bc2class(output, flags):
     """Generate {output}.class from {output}.bc and unlink {output}.bc"""
-    flags = filter_backend_flags(flags)
+    java_libs = list(default_java_libs)
+    for flag in flags:
+        if flag.startswith('-l') and flag not in ('-link','-link-as-library'):
+            java_libs.append('lib' + flag[2:])
+    
     output_j = open(output + '.j', 'w')
     backend_process = subprocess.Popen(
-        [os.path.join(lljvm_dir, 'lljvm-backend'), output + '.bc'] + flags,
+        [os.path.join(lljvm_dir, 'lljvm-backend'), output + '.bc']
+        + filter_backend_flags(flags),
         stdout=subprocess.PIPE)
     linker_returncode = subprocess.Popen(
-        lljvm_ld_cmd + default_java_libs,
+        list(lljvm_ld_cmd) + java_libs,
         stdin=backend_process.stdout, stdout=output_j).wait()
     output_j.close()
     
@@ -197,20 +190,25 @@ def bc2class(output, flags):
     if '-g3' not in flags:
         os.unlink(output + '.j')
     
-    script = open(output, 'w')
-    script.write(script_template % os.path.basename(output).replace('.', '_'))
-    script.close()
-    os.chmod(output, 0755)
+    if '-link-as-library' not in flags:
+        script = open(output, 'w')
+        script.write(script_template \
+            % os.path.basename(output).replace('.', '_'))
+        script.close()
+        os.chmod(output, 0755)
 
 def link(flags, output):
     """Call llvm-ld with the given flags, and call bc2class on the output."""
-    call_e(['llvm-ld', '--disable-opt', '-o', output] + filter_ld_flags(flags))
-    os.unlink(output)
+    if '-link-as-library' in flags: flags += ['-o', output + '.bc']
+    else:                           flags += ['-o', output]
+    call_e(['llvm-ld', '--disable-opt'] + filter_ld_flags(flags))
+    if '-link-as-library' not in flags:
+        os.unlink(output)
     bc2class(output, flags)
 
 def main():
     if not cc: die("Error: either llvm-gcc or clang must be installed")
-    if '-link' in sys.argv:
+    if '-link' in sys.argv or '-link-as-library' in sys.argv:
         link(*parse_argv(False)); return
     if '-c' in sys.argv or '-E' in sys.argv:
         flags = filter_cc_flags(sys.argv)
