@@ -51,6 +51,7 @@ lua-5.1.4.tar.gz:
 
 datalog: datalog-1.4.tar.gz
 	tar -zxvf $<
+	patch -p1 < datalog-1.4.patch
 	rm -rf datalog
 	mv -f datalog-1.4 datalog
 

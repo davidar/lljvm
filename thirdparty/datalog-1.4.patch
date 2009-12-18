@@ -1,0 +1,14 @@
+diff -ur a/datalog-1.4/Makefile.in b/datalog-1.4/Makefile.in
+--- a/datalog-1.4/Makefile.in	2009-03-30 23:59:29.000000000 +1000
++++ b/datalog-1.4/Makefile.in	2009-12-18 17:14:42.000000000 +1000
+@@ -208,8 +208,8 @@
+ AM_CPPFLAGS = -I$(srcdir)/lua
+ libdatalog_a_SOURCES = datalog.h loader.c datalog.c
+ datalog_SOURCES = interp.c
+-datalog_LDADD = libdatalog.a lua/liblua.a -lm
+-datalog_DEPENDENCIES = libdatalog.a lua/liblua.a
++datalog_LDADD = libdatalog.a -lm -L../../lua -llua
++datalog_DEPENDENCIES = libdatalog.a
+ BUILT_SOURCES = dl_lua.h
+ bin2c_SOURCES = bin2c.c
+ AM_MAKEINFOHTMLFLAGS = --no-split

@@ -3,9 +3,12 @@ SOURCE_DIR := ../../thirdparty/datalog
 CWD := $(shell pwd)
 CONFIGURE := ${CWD}/${SOURCE_DIR}/configure
 
-all: build/Makefile
+all: ../lua/liblua.class build/Makefile
 	cd build && $(MAKE) CCLD="${CWD}/$(CC) -link"
 	cd build && cp datalog datalog.class ${CWD}
+
+../lua/liblua.class:
+	cd ../lua && $(MAKE)
 
 build/Makefile: ${SOURCE_DIR}
 	mkdir -p build
