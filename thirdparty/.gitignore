@@ -8,3 +8,5 @@ lua-5.1.4.tar.gz
 lua/
 datalog-1.4.tar.gz
 datalog/
+zlib-1.2.3.tar.gz
+zlib/

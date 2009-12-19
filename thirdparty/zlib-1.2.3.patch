@@ -1,0 +1,42 @@
+diff -ur a/zlib-1.2.3/Makefile b/zlib-1.2.3/Makefile
+--- a/zlib-1.2.3/Makefile	2005-07-18 12:25:21.000000000 +1000
++++ b/zlib-1.2.3/Makefile	2009-12-19 16:37:29.000000000 +1000
+@@ -24,11 +24,11 @@
+ #CFLAGS=-O3 -Wall -Wwrite-strings -Wpointer-arith -Wconversion \
+ #           -Wstrict-prototypes -Wmissing-prototypes
+ 
+-LDFLAGS=libz.a
++LDFLAGS=-lz
+ LDSHARED=$(CC)
+ CPP=$(CC) -E
+ 
+-LIBS=libz.a
++LIBS=libz.class
+ SHAREDLIB=libz.so
+ SHAREDLIBV=libz.so.1.2.3
+ SHAREDLIBM=libz.so.1
+@@ -67,9 +67,8 @@
+ 	  echo '		*** zlib test FAILED ***'; \
+ 	fi
+ 
+-libz.a: $(OBJS) $(OBJA)
+-	$(AR) $@ $(OBJS) $(OBJA)
+-	-@ ($(RANLIB) $@ || true) >/dev/null 2>&1
++libz.class: $(OBJS) $(OBJA)
++	$(CC) -link-as-library $(OBJS) $(OBJA) -o libz
+ 
+ match.o: match.S
+ 	$(CPP) match.S > _match.s
+@@ -84,10 +83,10 @@
+ 	ln -s $@ $(SHAREDLIBM)
+ 
+ example$(EXE): example.o $(LIBS)
+-	$(CC) $(CFLAGS) -o $@ example.o $(LDFLAGS)
++	$(CCLD) $(CFLAGS) -o $@ example.o $(LDFLAGS)
+ 
+ minigzip$(EXE): minigzip.o $(LIBS)
+-	$(CC) $(CFLAGS) -o $@ minigzip.o $(LDFLAGS)
++	$(CCLD) $(CFLAGS) -o $@ minigzip.o $(LDFLAGS)
+ 
+ install: $(LIBS)
+ 	-@if [ ! -d $(exec_prefix) ]; then mkdir -p $(exec_prefix); fi

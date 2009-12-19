@@ -2,7 +2,8 @@ DIRS := \
     bsd-games \
     jpeg \
     lua \
-    datalog
+    datalog \
+    zlib
 
 .PHONY: all check clean
 

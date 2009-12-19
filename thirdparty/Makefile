@@ -3,13 +3,15 @@ DIRS := \
     bsd-games \
     jpeg \
     lua \
-    datalog
+    datalog \
+    zlib
 ARCHIVES := \
     newlib-1.17.0.tar.gz \
     bsd-games-2.17.tar.gz \
     jpeg-7.tar.gz \
     lua-5.1.4.tar.gz \
-    datalog-1.4.tar.gz
+    datalog-1.4.tar.gz \
+    zlib-1.2.3.tar.gz
 
 newlib: newlib-1.17.0.tar.gz
 	tar -zxvf $<
@@ -57,6 +59,16 @@ datalog: datalog-1.4.tar.gz
 
 datalog-1.4.tar.gz:
 	wget -c http://www.ccs.neu.edu/home/ramsdell/tools/datalog/$@ -O $@.part
+	mv -f $@.part $@
+
+zlib: zlib-1.2.3.tar.gz
+	tar -zxvf $<
+	patch -p1 < zlib-1.2.3.patch
+	rm -rf zlib
+	mv -f zlib-1.2.3 zlib
+
+zlib-1.2.3.tar.gz:
+	wget -c http://zlib.net/$@ -O $@.part
 	mv -f $@.part $@
 
 clean:

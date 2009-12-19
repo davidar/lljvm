@@ -207,7 +207,7 @@ def link(flags, output):
     """Call llvm-ld with the given flags, and call bc2class on the output."""
     if '-link-as-library' in flags: flags += ['-o', output + '.bc']
     else:                           flags += ['-o', output]
-    call_e(['llvm-ld', '--disable-opt'] + filter_ld_flags(flags))
+    call_e(['llvm-ld', '-disable-opt'] + filter_ld_flags(flags))
     if '-link-as-library' not in flags:
         os.unlink(output)
     bc2class(output, flags)
