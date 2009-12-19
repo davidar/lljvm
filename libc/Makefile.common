@@ -1,11 +1,9 @@
 SOURCE_DIR := ${LEVEL}/../thirdparty/newlib/newlib/libc
 
-CC := llvm-gcc
+CC := ${LEVEL}/../lljvm-cc
 CFLAGS := \
-    -emit-llvm \
-    -D__LLJVM__ -DMISSING_SYSCALL_NAMES -DHAVE_RENAME \
+    -DMISSING_SYSCALL_NAMES -DHAVE_RENAME \
     -fno-builtin \
-    -I${LEVEL}/../include/lljvm -I${LEVEL}/../include/newlib \
     -I${SOURCE_DIR}/${DIR}
 
 all: ${LEVEL}/${DIR}.o

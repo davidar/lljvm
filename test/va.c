@@ -1,24 +1,24 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-int vsum(int n, va_list ap) {
-    int i, sum = 0;
-    for(i = 0; i < n; i++)
-        sum += va_arg(ap, int);
-    return sum;
+void vf(int n, va_list ap) {
+    int i;
+    for(i = 0; i < n; i++) {
+        printf("%d\n", va_arg(ap, int));
+        printf("%lld\n", va_arg(ap, long long));
+    }
 }
 
-int sum(int n, ...) {
+void f(int n, ...) {
     va_list ap, ap_copy;
     va_start(ap, n);
     va_copy(ap_copy, ap);
     va_end(ap);
-    int sum = vsum(n, ap_copy);
+    vf(n, ap_copy);
     va_end(ap_copy);
-    return sum;
 }
 
 int main() {
-    printf("sum(1..5) = %d\n", sum(5, 1, 2, 3, 4, 5));
+    f(2, 1, (long long) 2, 3, (long long) 4);
     return 0;
 }

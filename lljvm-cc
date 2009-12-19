@@ -46,14 +46,16 @@ default_cflags = (
     '-I' + os.path.join(lljvm_dir, 'include', 'lljvm'),
     '-I' + os.path.join(lljvm_dir, 'include', 'newlib'),
     '-fno-builtin-rintl', '-fno-builtin-lrintl', '-fno-builtin-llrintl',
+    '-m32', '-malign-double',
 )
 
 # default java classes to link against
 default_java_libs = (
-    'lljvm.lib.c',
     'lljvm.runtime.System',
     'lljvm.runtime.IO',
     'lljvm.runtime.Posix',
+    'lljvm.runtime.Error',
+    'lljvm.runtime.Memory',
     'lljvm.runtime.Jump',
 )
 
@@ -146,7 +148,8 @@ def filter_ld_flags(flags):
     return the new list of arguments."""
     return filter_flags(flags,
         lambda x: x not in invalid_ld_flags
-            and not startswith_element(x, ('-f','-g','-D','-L','-O','-W'))
+            and not startswith_element(x,
+                ('-classname','-f','-g','-D','-L','-O','-W'))
             and (not x.startswith('-l') or x in ('-link','-link-as-library')))
 
 def filter_backend_flags(flags):
@@ -158,6 +161,8 @@ def bc2class(output, flags):
     """Generate {output}.class from {output}.bc and unlink {output}.bc"""
     classpath = [os.path.join(lljvm_dir, 'lljvm.jar')]
     java_libs = list(default_java_libs)
+    if '-nostdlib' not in flags:
+        java_libs.append('lljvm.lib.c')
     for flag in flags:
         if flag.startswith('-L'):
             classpath.append(os.path.abspath(flag[2:]))

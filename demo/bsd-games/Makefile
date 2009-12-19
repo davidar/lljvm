@@ -21,5 +21,11 @@ morse.class: ${SOURCE_DIR}/morse/morse.c err.c
 pig.class: ${SOURCE_DIR}/pig/pig.c err.c
 	$(CC) ${CFLAGS} $^ -o pig
 
+check: all
+	./banner -w80 \#
+	./number 123
+	./morse SOS
+	echo "hello world" | ./pig
+
 clean:
 	rm -f ${CLASSES} ${SCRIPTS}

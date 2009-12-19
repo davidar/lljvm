@@ -28,5 +28,9 @@ check: ${TESTS}
 	../lljvm-cc $*.c -o $* -lm
 	./$* foo bar baz > $*.actual
 	rm -f $* $*.class
-	diff -q $*.expected $*.actual >/dev/null && echo PASS || echo FAIL
+	if diff -q $*.expected $*.actual >/dev/null; then echo PASS; else \
+	    echo FAIL; \
+	    echo EXPECTED; cat $*.expected; \
+	    echo ACTUAL; cat $*.actual; \
+	fi
 	rm -f $*.expected $*.actual

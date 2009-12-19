@@ -15,13 +15,8 @@ OBJS := \
     time.o
 DIRS := ${OBJS:.o=}
 
-BFLAGS := -classname=lljvm.lib.c -g0
-LLJVM_LD := java -classpath ../java/build lljvm.tools.ld.Main
-JAVA_LIBS := \
-    lljvm.runtime.System \
-    lljvm.runtime.IO \
-    lljvm.runtime.Posix \
-    lljvm.runtime.Error
+CC := CLASSPATH=../java/build:$${CLASSPATH-.} ../lljvm-cc
+CFLAGS := -nostdlib -classname=lljvm.lib.c -g0
 
 all: ../thirdparty/newlib ../java/build/lljvm/lib/c.class
 
@@ -30,12 +25,10 @@ all: ../thirdparty/newlib ../java/build/lljvm/lib/c.class
 
 ../java/build/lljvm/lib/c.class:
 	for d in ${DIRS}; do (cd $$d && $(MAKE) all); done
-	llvm-ld -link-as-library ${OBJS} -o libc.bc
-	../lljvm-backend ${BFLAGS} libc.bc | $(LLJVM_LD) ${JAVA_LIBS} > libc.j
-	java jasmin.Main -d ../java/build libc.j
+	$(CC) -link-as-library ${CFLAGS} ${OBJS} -o ../java/build/libc
 
 clean:
 	for d in ${DIRS}; do (cd $$d && $(MAKE) clean); done
-	rm -f libc.bc libc.j ../java/build/lljvm/lib/c.class
+	rm -f ../java/build/lljvm/lib/c.class
 
 ${OBJS}: ; @true

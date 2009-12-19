@@ -14,6 +14,13 @@ build/Makefile:
 	mkdir -p build
 	cd build && ../${SOURCE_DIR}/configure CC="../$(CC)" LD="../$(CC) -link"
 
+check: all
+	-./cjpeg -h
+	-./djpeg -h
+	-./jpegtran -h
+	-./rdjpgcom -h
+	-./wrjpgcom -h
+
 clean:
 	rm -rf build
 	rm -f ${CLASSES} ${SCRIPTS}

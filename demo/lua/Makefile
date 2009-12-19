@@ -11,6 +11,10 @@ all: ${SOURCE_DIR}
 ${SOURCE_DIR}:
 	cd ../../thirdparty && $(MAKE) lua
 
+check: all
+	./lua -e 'print("Hello, world!")'
+	./luac -v
+
 clean:
 	-cd ${SOURCE_DIR} && $(MAKE) clean
 	rm -f ${CLASSES} ${SCRIPTS}

@@ -101,17 +101,6 @@ public final class System {
     }
     
     /**
-     * Increase the size of the heap by the specified amount.
-     * 
-     * @param increment  the amount to increment the heap size
-     * @return           a pointer to the previous end of the heap on success,
-     *                   -1 on error
-     */
-    public static int sbrk(int increment) {
-        return Memory.sbrk(increment);
-    }
-    
-    /**
      * Get process times.
      * 
      * @param buf  a pointer to the tms structure the process times are to be

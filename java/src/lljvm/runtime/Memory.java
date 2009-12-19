@@ -22,7 +22,6 @@
 
 package lljvm.runtime;
 
-import java.lang.Math;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -227,11 +226,11 @@ public final class Memory {
     }
     
     /**
-     * Increase the size of the heap by the specified amount. The previous
-     * end of the heap is returned on success, otherwise -1 is returned.
+     * Increase the size of the heap by the specified amount.
      * 
      * @param increment  the amount to increment the heap size
-     * @return           a pointer to the previous end of the heap
+     * @return           a pointer to the previous end of the heap on success,
+     *                   -1 on error
      */
     public static int sbrk(int increment) {
         final int prevHeapEnd = heapEnd;
@@ -822,7 +821,7 @@ public final class Memory {
      * @return       the first address following the value
      */
     public static int pack(int addr, long value) {
-        addr = alignOffsetUp(addr, 4);
+        addr = alignOffsetUp(addr, 8);
         store(addr, value);
         return addr + 8;
     }
@@ -852,7 +851,7 @@ public final class Memory {
      * @return       the first address following the value
      */
     public static int pack(int addr, double value) {
-        addr = alignOffsetUp(addr, 4);
+        addr = alignOffsetUp(addr, 8);
         store(addr, value);
         return addr + 8;
     }
@@ -887,6 +886,23 @@ public final class Memory {
     }
     
     /**
+     * Unpack a naturally-aligned value of the given size from the given
+     * address. The given address is updated to point to the first address
+     * following the value.
+     * 
+     * @param addrp  a pointer to the address
+     * @param size   the size of the value in bytes. Must be a power of 2.
+     * @return       the address of the first naturally-aligned value of the
+     *               given size following the given address
+     */
+    public static int unpack(int addrp, int size) {
+        int addr = Memory.load_i32(addrp);
+        addr = alignOffsetUp(addr, size);
+        Memory.store(addrp, addr + size);
+        return addr;
+    }
+    
+    /**
      * Unpack a packed list of values from the given address, according to
      * the given list of types.
      * 
@@ -900,7 +916,7 @@ public final class Memory {
         for(int i = 0; i < types.length; i++) {
             final Class<?> type = types[i];
             final int size = ReflectionUtils.sizeOf(type);
-            addr = alignOffsetUp(addr, Math.min(size, 4));
+            addr = alignOffsetUp(addr, size);
             values[i] = load(addr, type);
             addr += size;
         }

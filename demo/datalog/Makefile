@@ -3,6 +3,17 @@ SOURCE_DIR := ../../thirdparty/datalog
 CWD := $(shell pwd)
 CONFIGURE := ${CWD}/${SOURCE_DIR}/configure
 
+TESTS := \
+    ancestor \
+    bidipath \
+    laps \
+    long \
+    path \
+    pq \
+    revpath \
+    says \
+    true
+
 all: ../lua/liblua.class build/Makefile
 	cd build && $(MAKE) CCLD="${CWD}/$(CC) -link"
 	cd build && cp datalog datalog.class ${CWD}
@@ -16,6 +27,14 @@ build/Makefile: ${SOURCE_DIR}
 
 ${SOURCE_DIR}:
 	cd ../../thirdparty && $(MAKE) datalog
+
+check: all
+	for t in ${TESTS}; do \
+	    echo -n "$$t... "; \
+	    ./datalog ${SOURCE_DIR}/$$t.prolog | sort \
+	        | diff -q - ${SOURCE_DIR}/$$t.txt >/dev/null \
+	        && echo PASS || echo FAIL; \
+	done
 
 clean:
 	rm -rf build
