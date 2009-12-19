@@ -186,10 +186,11 @@ void JVMWriter::printFunctionBody(const Function &f) {
 }
 
 unsigned int JVMWriter::getLocalVarNumber(const Value *v) {
-    if(!localVars.count(v))
+    if(!localVars.count(v)) {
         localVars[v] = usedRegisters++;
-    if(getBitWidth(v->getType()) == 64)
-        usedRegisters++; // 64 bit types occupy 2 registers
+        if(getBitWidth(v->getType()) == 64)
+            usedRegisters++; // 64 bit types occupy 2 registers
+    }
     return localVars[v];
 }
 
