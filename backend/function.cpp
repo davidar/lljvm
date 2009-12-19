@@ -23,6 +23,9 @@
 #include "backend.h"
 
 std::string JVMWriter::getCallSignature(const FunctionType *ty) {
+    if(ty->isVarArg() && ty->getNumParams() == 0)
+        // non-prototyped function
+        return "";
     std::string sig;
     sig += '(';
     for(unsigned int i = 0, e = ty->getNumParams(); i < e; i++)

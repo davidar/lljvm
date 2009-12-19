@@ -149,7 +149,7 @@ def filter_ld_flags(flags):
     return filter_flags(flags,
         lambda x: x not in invalid_ld_flags
             and not startswith_element(x,
-                ('-classname','-f','-g','-D','-L','-O','-W'))
+                ('-classname','-f','-g','-D','-I','-L','-O','-W'))
             and (not x.startswith('-l') or x in ('-link','-link-as-library')))
 
 def filter_backend_flags(flags):

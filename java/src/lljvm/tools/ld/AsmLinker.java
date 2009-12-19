@@ -90,6 +90,20 @@ public class AsmLinker {
     private void printInvokeStatic(String methodName,
                                    Map<String, String> methodMap)
     throws IOException, LinkError {
+        if(!methodName.contains("(")) // non-prototyped function
+            for(String name : methodMap.keySet())
+                if(name.startsWith(methodName + "(")) {
+                    System.err.println(
+                            "WARNING: Function '" + methodName + "' should " +
+                            "be declared with a prototype. Linking will " +
+                            "succeed, but a runtime error will be thrown.");
+                    out.write("\tinvokestatic ");
+                    out.write(methodMap.get(name));
+                    out.write("/__non_prototyped__");
+                    out.write(methodName);
+                    out.write("()V\n");
+                    return;
+                }
         String className = methodMap.get(methodName);
         if(className == null)
             throw new LinkError(
