@@ -22,6 +22,13 @@
 
 #include "backend.h"
 
+/**
+ * Return the bit width of the given type.
+ * 
+ * @param ty      the type
+ * @param expand  specifies whether to expand the type to 32 bits
+ * @return        the bit width
+ */
 unsigned int JVMWriter::getBitWidth(const Type *ty, bool expand) {
     if(ty->getTypeID() == Type::ArrayTyID
     || ty->getTypeID() == Type::VectorTyID
@@ -42,6 +49,13 @@ unsigned int JVMWriter::getBitWidth(const Type *ty, bool expand) {
     }
 }
 
+/**
+ * Return the ID of the given type.
+ * 
+ * @param ty      the type
+ * @param expand  specifies whether to expand the type to 32 bits
+ * @return        the type ID
+ */
 char JVMWriter::getTypeID(const Type *ty, bool expand) {
     switch(ty->getTypeID()) {
     case Type::VoidTyID:
@@ -68,7 +82,13 @@ char JVMWriter::getTypeID(const Type *ty, bool expand) {
         llvm_unreachable("Invalid type");
     }
 }
-
+/**
+ * Return the name of the given type.
+ * 
+ * @param ty      the type
+ * @param expand  specifies whether to expand the type to 32 bits
+ * @return        the type name
+ */
 std::string JVMWriter::getTypeName(const Type *ty, bool expand) {
     switch(getTypeID(ty, expand)) {
     case 'V': return "void";
@@ -82,10 +102,24 @@ std::string JVMWriter::getTypeName(const Type *ty, bool expand) {
     }
 }
 
+/**
+ * Return the type descriptor of the given type.
+ * 
+ * @param ty      the type
+ * @param expand  specifies whether to expand the type to 32 bits
+ * @return        the type descriptor
+ */
 std::string JVMWriter::getTypeDescriptor(const Type *ty, bool expand) {
     return std::string() + getTypeID(ty, expand);
 }
 
+/**
+ * Return the type postfix of the given type.
+ * 
+ * @param ty      the type
+ * @param expand  specifies whether to expand the type to 32 bits
+ * @return        the type postfix
+ */
 std::string JVMWriter::getTypePostfix(const Type *ty, bool expand) {
     switch(ty->getTypeID()) {
     case Type::VoidTyID:
@@ -107,6 +141,13 @@ std::string JVMWriter::getTypePostfix(const Type *ty, bool expand) {
     }
 }
 
+/**
+ * Return the type prefix of the given type.
+ * 
+ * @param ty      the type
+ * @param expand  specifies whether to expand the type to 32 bits
+ * @return        the type prefix
+ */
 std::string JVMWriter::getTypePrefix(const Type *ty, bool expand) {
     switch(getTypeID(ty, expand)) {
     case 'Z':

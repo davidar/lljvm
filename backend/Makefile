@@ -15,12 +15,15 @@ OBJS := \
     sections.o \
     types.o
 
-.PHONY: all clean
+.PHONY: all doc clean
 
 all: lljvm-backend
 
 lljvm-backend: ${OBJS}
 	$(CXX) ${OBJS} ${CFLAGS} -o lljvm-backend
+
+doc:
+	doxygen
 
 clean:
 	rm -f *.o lljvm-backend

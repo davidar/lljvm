@@ -37,20 +37,38 @@
 
 using namespace llvm;
 
+/**
+ * A FunctionPass for generating Jasmin-style assembly for the JVM.
+ * 
+ * @author  David Roberts
+ */
 class JVMWriter : public FunctionPass {
+    /** The output stream */
     formatted_raw_ostream &out;
+    /** The name of the source file */
     std::string sourcename;
+    /** The binary name of the generated class */
     std::string classname;
+    /** The debugging level */
     unsigned int debug;
+    /** The current module */
     Module *module;
+    /** The target data for the platform */
     const TargetData *targetData;
+    /** Pass ID */
     static char id;
     
+    /** Set of external references */
     DenseSet<const Value*> externRefs;
+    /** Mapping of anonymous values to unique IDs */
     DenseMap<const Value*, unsigned int> anonValues;
+    /** Mapping of values to local variable numbers */
     DenseMap<const Value*, unsigned int> localVars;
+    /** Number of registers allocated for the function */
     unsigned int usedRegisters;
+    /** Local variable number of the pointer to the packed list of varargs */
     unsigned int vaArgNum;
+    /** Current instruction number */
     unsigned int instNum;
 
 public:

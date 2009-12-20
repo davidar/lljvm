@@ -22,6 +22,13 @@
 
 #include "backend.h"
 
+/**
+ * Return the call signature of the given function type. An empty string is
+ * returned if the function type appears to be non-prototyped.
+ * 
+ * @param ty  the function type
+ * @return    the call signature
+ */
 std::string JVMWriter::getCallSignature(const FunctionType *ty) {
     if(ty->isVarArg() && ty->getNumParams() == 0)
         // non-prototyped function
@@ -36,6 +43,14 @@ std::string JVMWriter::getCallSignature(const FunctionType *ty) {
     return sig;
 }
 
+/**
+ * Pack the specified operands of the given instruction into memory. The
+ * address of the packed values is left on the top of the stack.
+ * 
+ * @param inst        the given instruction
+ * @param minOperand  the lower bound on the operands to pack (inclusive)
+ * @param maxOperand  the upper bound on the operands to pack (exclusive)
+ */
 void JVMWriter::printOperandPack(const Instruction *inst,
                                  unsigned int minOperand,
                                  unsigned int maxOperand) {
@@ -59,6 +74,12 @@ void JVMWriter::printOperandPack(const Instruction *inst,
     printSimpleInstruction("pop");
 }
 
+/**
+ * Print a call/invoke instruction.
+ * 
+ * @param functionVal  the function to call
+ * @param inst         the instruction
+ */
 void JVMWriter::printFunctionCall(const Value *functionVal,
                                   const Instruction *inst) {
     unsigned int origin = isa<InvokeInst>(inst) ? 3 : 1;
@@ -99,6 +120,11 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
     }
 }
 
+/**
+ * Print a call to an intrinsic function.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printIntrinsicCall(const IntrinsicInst *inst) {
     switch(inst->getIntrinsicID()) {
     case Intrinsic::vastart:
@@ -132,6 +158,11 @@ void JVMWriter::printIntrinsicCall(const IntrinsicInst *inst) {
     }
 }
 
+/**
+ * Print a call instruction.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printCallInstruction(const Instruction *inst) {
     if(isa<IntrinsicInst>(inst))
         printIntrinsicCall(cast<IntrinsicInst>(inst));
@@ -139,6 +170,11 @@ void JVMWriter::printCallInstruction(const Instruction *inst) {
         printFunctionCall(inst->getOperand(0), inst);
 }
 
+/**
+ * Print an invoke instruction.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printInvokeInstruction(const InvokeInst *inst) {
     std::string labelname = getLabelName(inst) + "$invoke";
     printLabel(labelname + "_begin");
@@ -155,6 +191,13 @@ void JVMWriter::printInvokeInstruction(const InvokeInst *inst) {
         + "using " + labelname + "_catch");
 }
 
+/**
+ * Allocate a local variable for the given function. Variable initialisation
+ * and any applicable debugging information is printed.
+ * 
+ * @param f     the parent function of the variable
+ * @param inst  the instruction assigned to the variable
+ */
 void JVMWriter::printLocalVariable(const Function &f,
                                    const Instruction *inst) {
     const Type *ty;
@@ -175,6 +218,11 @@ void JVMWriter::printLocalVariable(const Function &f,
     printSimpleInstruction(getTypePrefix(ty, true) + "store", utostr(varNum));
 }
 
+/**
+ * Print the body of the given function.
+ * 
+ * @param f  the function
+ */
 void JVMWriter::printFunctionBody(const Function &f) {
     for(Function::const_iterator i = f.begin(), e = f.end(); i != e; i++) {
         if(Loop *l = getAnalysis<LoopInfo>().getLoopFor(i)) {
@@ -185,6 +233,13 @@ void JVMWriter::printFunctionBody(const Function &f) {
     }
 }
 
+/**
+ * Return the local variable number of the given value. Register/s are
+ * allocated for the variable if necessary.
+ * 
+ * @param v  the value
+ * @return   the local variable number
+ */
 unsigned int JVMWriter::getLocalVarNumber(const Value *v) {
     if(!localVars.count(v)) {
         localVars[v] = usedRegisters++;
@@ -194,6 +249,11 @@ unsigned int JVMWriter::getLocalVarNumber(const Value *v) {
     return localVars[v];
 }
 
+/**
+ * Print the block to catch Jump objects (thrown by longjmp).
+ * 
+ * @param numJumps  the number of setjmp calls made by the current function
+ */
 void JVMWriter::printCatchJump(unsigned int numJumps) {
     unsigned int jumpVarNum = usedRegisters++;
     printSimpleInstruction(".catch lljvm/runtime/Jump "
@@ -220,6 +280,11 @@ void JVMWriter::printCatchJump(unsigned int numJumps) {
             "Llljvm/runtime/Jump; from begin_method to end_method");
 }
 
+/**
+ * Print the given function.
+ * 
+ * @param f  the function
+ */
 void JVMWriter::printFunction(const Function &f) {
     localVars.clear();
     usedRegisters = 0;

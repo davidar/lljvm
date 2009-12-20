@@ -22,6 +22,11 @@
 
 #include "backend.h"
 
+/**
+ * Load the given value.
+ * 
+ * @param v  the value to load
+ */
 void JVMWriter::printValueLoad(const Value *v) {
     if(const Function *f = dyn_cast<Function>(v)) {
         std::string sig = getValueName(f)
@@ -61,6 +66,11 @@ void JVMWriter::printValueLoad(const Value *v) {
     }
 }
 
+/**
+ * Store the value currently on top of the stack to the given local variable.
+ * 
+ * @param v  the Value representing the local variable
+ */
 void JVMWriter::printValueStore(const Value *v) {
     if(isa<Function>(v) || isa<GlobalVariable>(v) || isa<Constant>(v)) {
         errs() << "Value  = " << *v << '\n';
@@ -88,6 +98,11 @@ void JVMWriter::printValueStore(const Value *v) {
             + " ; " + getValueName(v));
 }
 
+/**
+ * Load a value from the given address.
+ * 
+ * @param v  the address
+ */
 void JVMWriter::printIndirectLoad(const Value *v) {
     printValueLoad(v);
     const Type *ty = v->getType();
@@ -96,17 +111,34 @@ void JVMWriter::printIndirectLoad(const Value *v) {
     printIndirectLoad(ty);
 }
 
+/**
+ * Load a value of the given type from the address curently on top of the
+ * stack.
+ * 
+ * @param ty  the type of the value
+ */
 void JVMWriter::printIndirectLoad(const Type *ty) {
     printSimpleInstruction("invokestatic", "lljvm/runtime/Memory/load_"
         + getTypePostfix(ty) + "(I)" + getTypeDescriptor(ty));
 }
 
+/**
+ * Store a value at the given address.
+ * 
+ * @param ptr  the address at which to store the value
+ * @param val  the value to store
+ */
 void JVMWriter::printIndirectStore(const Value *ptr, const Value *val) {
     printValueLoad(ptr);
     printValueLoad(val);
     printIndirectStore(val->getType());
 }
 
+/**
+ * Indirectly store a value of the given type.
+ * 
+ * @param ty  the type of the value
+ */
 void JVMWriter::printIndirectStore(const Type *ty) {
     printSimpleInstruction("invokestatic",
         "lljvm/runtime/Memory/store(I" + getTypeDescriptor(ty) + ")V");

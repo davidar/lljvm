@@ -22,11 +22,22 @@
 
 #include "backend.h"
 
+/**
+ * Return a unique ID.
+ * 
+ * @return  a unique ID
+ */
 static uint64_t getUID() {
     static uint64_t x = 0;
     return ++x;
 }
 
+/**
+ * Replace PHI instructions with copy instructions (load-store pairs).
+ * 
+ * @param src   the predecessor block
+ * @param dest  the destination block
+ */
 void JVMWriter::printPHICopy(const BasicBlock *src, const BasicBlock *dest) {
     for(BasicBlock::const_iterator i = dest->begin(); isa<PHINode>(i); i++) {
         const PHINode *phi = cast<PHINode>(i);
@@ -38,6 +49,16 @@ void JVMWriter::printPHICopy(const BasicBlock *src, const BasicBlock *dest) {
     }
 }
 
+/**
+ * Print a branch instruction. If trueBlock is NULL, then print an
+ * unconditional branch to falseBlock.
+ * 
+ * @param curBlock    the current block
+ * @param trueBlock   the destination block if the value on top of the stack is
+ *                    non-zero
+ * @param falseBlock  the destination block if the value on top of the stack is
+ *                    zero
+ */
 void JVMWriter::printBranchToBlock(const BasicBlock *curBlock,
                                    const BasicBlock *trueBlock,
                                    const BasicBlock *falseBlock) {
@@ -69,6 +90,11 @@ void JVMWriter::printBranchToBlock(const BasicBlock *curBlock,
     }
 }
 
+/**
+ * Print a branch instruction.
+ * 
+ * @param inst  the branch instrtuction
+ */
 void JVMWriter::printBranchInstruction(const BranchInst *inst) {
     if(inst->isUnconditional()) {
         printBranchToBlock(inst->getParent(), NULL, inst->getSuccessor(0));
@@ -80,6 +106,15 @@ void JVMWriter::printBranchInstruction(const BranchInst *inst) {
     }
 }
 
+/**
+ * Print a select instruction.
+ * 
+ * @param cond      the condition
+ * @param trueVal   the return value of the instruction if the condition is
+ *                  non-zero
+ * @param falseVal  the return value of the instruction if the condition is
+ *                  zero
+ */
 void JVMWriter::printSelectInstruction(const Value *cond,
                                        const Value *trueVal,
                                        const Value *falseVal) {
@@ -93,6 +128,11 @@ void JVMWriter::printSelectInstruction(const Value *cond,
     printLabel(labelname + "b");
 }
 
+/**
+ * Print a switch instruction.
+ * 
+ * @param inst  the switch instruction
+ */
 void JVMWriter::printSwitchInstruction(const SwitchInst *inst) {
     // TODO: This method does not handle switch statements when the
     // successor contains phi instructions (the value of the phi instruction
@@ -115,6 +155,11 @@ void JVMWriter::printSwitchInstruction(const SwitchInst *inst) {
     out << "\t\tdefault : " << getLabelName(inst->getDefaultDest()) << '\n';
 }
 
+/**
+ * Print a loop.
+ * 
+ * @param l  the loop
+ */
 void JVMWriter::printLoop(const Loop *l) {
     printLabel(getLabelName(l->getHeader()));
     const std::vector<BasicBlock*> &blocks = l->getBlocks();

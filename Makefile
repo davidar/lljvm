@@ -11,6 +11,7 @@ all:
 
 doc:
 	cd java && $(MAKE) doc
+	cd backend && $(MAKE) doc
 
 check: all
 	cd test && $(MAKE) -s check

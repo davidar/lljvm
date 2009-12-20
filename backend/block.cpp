@@ -22,6 +22,11 @@
 
 #include "backend.h"
 
+/**
+ * Print the given basic block.
+ * 
+ * @param block  the basic block
+ */
 void JVMWriter::printBasicBlock(const BasicBlock *block) {
     printLabel(getLabelName(block));
     for(BasicBlock::const_iterator i = block->begin(), e = block->end();
@@ -53,6 +58,11 @@ void JVMWriter::printBasicBlock(const BasicBlock *block) {
     }
 }
 
+/**
+ * Print the given instruction.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printInstruction(const Instruction *inst) {
     const Value *left, *right;
     if(inst->getNumOperands() >= 1) left  = inst->getOperand(0);

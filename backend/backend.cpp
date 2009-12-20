@@ -24,21 +24,47 @@
 
 char JVMWriter::id = 0;
 
+/**
+ * Constructor.
+ * 
+ * @param td   the target data for the platform
+ * @param o    the output stream to be written to
+ * @param cls  the binary name of the class to generate
+ * @param dbg  the debugging level
+ */
 JVMWriter::JVMWriter(const TargetData *td, formatted_raw_ostream &o,
                      const std::string &cls, unsigned int dbg)
     : FunctionPass(&id), targetData(td), out(o), classname(cls), debug(dbg) {}
 
+/**
+ * Register required analysis information.
+ * 
+ * @param au  AnalysisUsage object representing the analysis usage information
+ *            of this pass.
+ */
 void JVMWriter::getAnalysisUsage(AnalysisUsage &au) const {
     au.addRequired<LoopInfo>();
     au.setPreservesAll();
 }
 
+/**
+ * Process the given function.
+ * 
+ * @param f  the function to process
+ * @return   whether the function was modified (always false)
+ */
 bool JVMWriter::runOnFunction(Function &f) {
     if(!f.isDeclaration() && !f.hasAvailableExternallyLinkage())
         printFunction(f);
     return false;
 }
 
+/**
+ * Perform per-module initialization.
+ * 
+ * @param m  the module
+ * @return   whether the module was modified (always false)
+ */
 bool JVMWriter::doInitialization(Module &m) {
     module = &m;
     instNum = 0;
@@ -70,6 +96,12 @@ bool JVMWriter::doInitialization(Module &m) {
     return false;
 }
 
+/**
+ * Perform per-module finalization.
+ * 
+ * @param m  the module
+ * @return   whether the module was modified (always false)
+ */
 bool JVMWriter::doFinalization(Module &m) {
     return false;
 }

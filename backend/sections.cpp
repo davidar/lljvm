@@ -22,6 +22,9 @@
 
 #include "backend.h"
 
+/**
+ * Print the header.
+ */
 void JVMWriter::printHeader() {
     if(debug >= 1)
         out << ".source " << sourcename << "\n";
@@ -29,6 +32,9 @@ void JVMWriter::printHeader() {
            ".super java/lang/Object\n\n";
 }
 
+/**
+ * Print the field declarations.
+ */
 void JVMWriter::printFields() {
     out << "; Fields\n";
     for(Module::global_iterator i = module->global_begin(),
@@ -49,6 +55,9 @@ void JVMWriter::printFields() {
     out << '\n';
 }
 
+/**
+ * Print the list of external methods.
+ */
 void JVMWriter::printExternalMethods() {
     out << "; External methods\n";
     for(Module::const_iterator i = module->begin(),
@@ -67,6 +76,9 @@ void JVMWriter::printExternalMethods() {
     out << '\n';
 }
 
+/**
+ * Print the class constructor.
+ */
 void JVMWriter::printConstructor() {
     out << "; Constructor\n"
            ".method private <init>()V\n"
@@ -76,6 +88,9 @@ void JVMWriter::printConstructor() {
            ".end method\n\n";
 }
 
+/**
+ * Print the static class initialization method.
+ */
 void JVMWriter::printClInit() {
     out << ".method public <clinit>()V\n";
     printSimpleInstruction(".limit stack 4");
@@ -113,6 +128,9 @@ void JVMWriter::printClInit() {
     out << ".end method\n\n";
 }
 
+/**
+ * Print the main method.
+ */
 void JVMWriter::printMainMethod() {
     const Function *f = module->getFunction("main");
     if(!f || f->isDeclaration())

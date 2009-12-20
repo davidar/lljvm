@@ -22,10 +22,23 @@
 
 #include "backend.h"
 
+/**
+ * Align the given offset.
+ * 
+ * @param offset  the offset
+ * @param align   the required alignment
+ */
 static unsigned int alignOffset(unsigned int offset, unsigned int align) {
     return offset + ((align - (offset % align)) % align);
 }
 
+/**
+ * Print an icmp/fcmp instruction.
+ * 
+ * @param predicate  the predicate for the instruction
+ * @param left       the first operand of the instruction
+ * @param right      the second operand of the instruction
+ */
 void JVMWriter::printCmpInstruction(unsigned int predicate,
                                     const Value *left,
                                     const Value *right) {
@@ -66,6 +79,13 @@ void JVMWriter::printCmpInstruction(unsigned int predicate,
         + ")Z", left, right);
 }
 
+/**
+ * Print an arithmetic instruction.
+ * 
+ * @param op     the opcode for the instruction
+ * @param left   the first operand of the instruction
+ * @param right  the second operand of the instruction
+ */
 void JVMWriter::printArithmeticInstruction(unsigned int op,
                                            const Value *left,
                                            const Value *right) {
@@ -115,6 +135,12 @@ void JVMWriter::printArithmeticInstruction(unsigned int op,
     }
 }
 
+/**
+ * Print a bitcast instruction.
+ * 
+ * @param ty     the destination type
+ * @param srcTy  the source type
+ */
 void JVMWriter::printBitCastInstruction(const Type *ty, const Type *srcTy) {
     char typeID = getTypeID(ty);
     char srcTypeID = getTypeID(srcTy);
@@ -132,12 +158,26 @@ void JVMWriter::printBitCastInstruction(const Type *ty, const Type *srcTy) {
                                "java/lang/Float/floatToRawIntBits(F)I");
 }
 
+/**
+ * Print a cast instruction.
+ * 
+ * @param typePrefix     the type prefix of the destination type
+ * @param srcTypePrefix  the type prefix of the source type
+ */
 void JVMWriter::printCastInstruction(const std::string &typePrefix,
                                      const std::string &srcTypePrefix) {
     if(srcTypePrefix != typePrefix)
         printSimpleInstruction(srcTypePrefix + "2" + typePrefix);
 }
 
+/**
+ * Print a cast instruction.
+ * 
+ * @param op    the opcode for the instruction
+ * @param v     the value to be casted
+ * @param ty    the destination type
+ * @param srcTy the source type
+ */
 void JVMWriter::printCastInstruction(unsigned int op, const Value *v,
                                      const Type *ty, const Type *srcTy) {
     printValueLoad(v);
@@ -184,6 +224,14 @@ void JVMWriter::printCastInstruction(unsigned int op, const Value *v,
     }
 }
 
+/**
+ * Print a getelementptr instruction.
+ * 
+ * @param v  the aggregate data structure to index
+ * @param i  an iterator to the first type indexed by the instruction
+ * @param e  an iterator specifying the upper bound on the types indexed by the
+ *           instruction
+ */
 void JVMWriter::printGepInstruction(const Value *v,
                                     gep_type_iterator i,
                                     gep_type_iterator e) {
@@ -234,6 +282,11 @@ void JVMWriter::printGepInstruction(const Value *v,
     }
 }
 
+/**
+ * Print an alloca instruction.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printAllocaInstruction(const AllocaInst *inst) {
     uint64_t size = targetData->getTypeAllocSize(inst->getAllocatedType());
     if(const ConstantInt *c = dyn_cast<ConstantInt>(inst->getOperand(0))) {
@@ -248,6 +301,12 @@ void JVMWriter::printAllocaInstruction(const AllocaInst *inst) {
                            "lljvm/runtime/Memory/allocateStack(I)I");
 }
 
+
+/**
+ * Print a va_arg instruction.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printVAArgInstruction(const VAArgInst *inst) {
     printIndirectLoad(inst->getOperand(0));
     printSimpleInstruction("dup");
@@ -261,6 +320,11 @@ void JVMWriter::printVAArgInstruction(const VAArgInst *inst) {
     printIndirectLoad(inst->getType());
 }
 
+/**
+ * Print a vararg intrinsic function.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printVAIntrinsic(const IntrinsicInst *inst) {
     const Type *valistTy = PointerType::getUnqual(
         IntegerType::get(inst->getContext(), 8));
@@ -281,6 +345,11 @@ void JVMWriter::printVAIntrinsic(const IntrinsicInst *inst) {
     }
 }
 
+/**
+ * Print a memory intrinsic function.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printMemIntrinsic(const MemIntrinsic *inst) {
     printValueLoad(inst->getDest());
     if(const MemTransferInst *minst = dyn_cast<MemTransferInst>(inst))
@@ -305,6 +374,11 @@ void JVMWriter::printMemIntrinsic(const MemIntrinsic *inst) {
     }
 }
 
+/**
+ * Print a malloc instruction.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printMallocInstruction(const MallocInst *inst) {
     printPtrLoad(targetData->getTypeAllocSize(inst->getAllocatedType()));
     printValueLoad(inst->getArraySize());
@@ -312,6 +386,11 @@ void JVMWriter::printMallocInstruction(const MallocInst *inst) {
     printSimpleInstruction("invokestatic", "lljvm/lib/c/malloc(I)I");
 }
 
+/**
+ * Print a mathematical intrinsic function.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printMathIntrinsic(const IntrinsicInst *inst) {
     bool f32 = (getBitWidth(inst->getOperand(1)->getType()) == 32);
     printValueLoad(inst->getOperand(1));
@@ -340,6 +419,11 @@ void JVMWriter::printMathIntrinsic(const IntrinsicInst *inst) {
     if(f32) printSimpleInstruction("d2f");
 }
 
+/**
+ * Print a bit manipulation intrinsic function.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printBitIntrinsic(const IntrinsicInst *inst) {
     // TODO: ctpop, ctlz, cttz
     const Value *value = inst->getOperand(1);

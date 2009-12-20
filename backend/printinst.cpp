@@ -22,6 +22,13 @@
 
 #include "backend.h"
 
+/**
+ * Print the given binary instruction.
+ * 
+ * @param name   the name of the instruction
+ * @param left   the first operand
+ * @param right  the second operand
+ */
 void JVMWriter::printBinaryInstruction(const char *name,
                                        const Value *left,
                                        const Value *right) {
@@ -30,6 +37,13 @@ void JVMWriter::printBinaryInstruction(const char *name,
     out << '\t' << name << '\n';
 }
 
+/**
+ * Print the given binary instruction.
+ * 
+ * @param name   the name of the instruction
+ * @param left   the first operand
+ * @param right  the second operand
+ */
 void JVMWriter::printBinaryInstruction(const std::string &name,
                                        const Value *left,
                                        const Value *right) {
@@ -38,33 +52,73 @@ void JVMWriter::printBinaryInstruction(const std::string &name,
     out << '\t' << name << '\n';
 }
 
+/**
+ * Print the given instruction.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printSimpleInstruction(const char *inst) {
     out << '\t' << inst << '\n';
 }
 
+/**
+ * Print the given instruction.
+ * 
+ * @param inst     the instruction
+ * @param operand  the operand to the instruction
+ */
 void JVMWriter::printSimpleInstruction(const char *inst, const char *operand) {
     out << '\t' << inst << ' ' << operand << '\n';
 }
 
+/**
+ * Print the given instruction.
+ * 
+ * @param inst  the instruction
+ */
 void JVMWriter::printSimpleInstruction(const std::string &inst) {
     out << '\t' << inst << '\n';
 }
 
+/**
+ * Print the given instruction.
+ * 
+ * @param inst     the instruction
+ * @param operand  the operand to the instruction
+ */
 void JVMWriter::printSimpleInstruction(const std::string &inst,
                                        const std::string &operand) {
     out << '\t' << inst << ' ' << operand << '\n';
 }
 
+/**
+ * Print the virtual instruction with the given signature.
+ * 
+ * @param sig  the signature of the instruction
+ */
 void JVMWriter::printVirtualInstruction(const char *sig) {
     out << '\t' << "invokestatic lljvm/runtime/Instruction/" << sig << '\n';
 }
 
+/**
+ * Print the virtual instruction with the given signature.
+ * 
+ * @param sig      the signature of the instruction
+ * @param operand  the operand to the instruction
+ */
 void JVMWriter::printVirtualInstruction(const char *sig,
                                         const Value *operand) {
     printValueLoad(operand);
     printVirtualInstruction(sig);
 }
 
+/**
+ * Print the virtual instruction with the given signature.
+ * 
+ * @param sig    the signature of the instruction
+ * @param left   the first operand
+ * @param right  the second operand
+ */
 void JVMWriter::printVirtualInstruction(const char *sig,
                                         const Value *left,
                                         const Value *right) {
@@ -73,16 +127,34 @@ void JVMWriter::printVirtualInstruction(const char *sig,
     printVirtualInstruction(sig);
 }
 
+/**
+ * Print the virtual instruction with the given signature.
+ * 
+ * @param sig  the signature of the instruction
+ */
 void JVMWriter::printVirtualInstruction(const std::string &sig) {
     printVirtualInstruction(sig.c_str());
 }
 
+/**
+ * Print the virtual instruction with the given signature.
+ * 
+ * @param sig      the signature of the instruction
+ * @param operand  the operand to the instruction
+ */
 void JVMWriter::printVirtualInstruction(const std::string &sig,
                                         const Value *operand) {
     printValueLoad(operand);
     printVirtualInstruction(sig);
 }
 
+/**
+ * Print the virtual instruction with the given signature.
+ * 
+ * @param sig    the signature of the instruction
+ * @param left   the first operand
+ * @param right  the second operand
+ */
 void JVMWriter::printVirtualInstruction(const std::string &sig,
                                         const Value *left,
                                         const Value *right) {
@@ -91,10 +163,20 @@ void JVMWriter::printVirtualInstruction(const std::string &sig,
     printVirtualInstruction(sig);
 }
 
+/**
+ * Print the given label.
+ * 
+ * @param label  the label
+ */
 void JVMWriter::printLabel(const char *label) {
     out << label << ":\n";
 }
 
+/**
+ * Print the given label.
+ * 
+ * @param label  the label
+ */
 void JVMWriter::printLabel(const std::string &label) {
     out << label << ":\n";
 }

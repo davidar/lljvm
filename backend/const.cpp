@@ -22,12 +22,22 @@
 
 #include "backend.h"
 
+/**
+ * Load the given pointer.
+ * 
+ * @param n  the value of the pointer
+ */
 void JVMWriter::printPtrLoad(uint64_t n) {
     if(module->getPointerSize() != Module::Pointer32)
         llvm_unreachable("Only 32-bit pointers are allowed");
     printConstLoad(APInt(32, n, false));
 }
 
+/**
+ * Load the given integer.
+ * 
+ * @param i  the integer
+ */
 void JVMWriter::printConstLoad(const APInt &i) {
     if(i.getBitWidth() <= 32) {
         int64_t value = i.getSExtValue();
@@ -51,6 +61,11 @@ void JVMWriter::printConstLoad(const APInt &i) {
     }
 }
 
+/**
+ * Load the given single-precision floating point value.
+ * 
+ * @param f  the value
+ */
 void JVMWriter::printConstLoad(float f) {
     if(f == 0.0)
         printSimpleInstruction("fconst_0");
@@ -70,6 +85,11 @@ void JVMWriter::printConstLoad(float f) {
         printSimpleInstruction("ldc", ftostr(f));
 }
 
+/**
+ * Load the given double-precision floating point value.
+ * 
+ * @param d  the value
+ */
 void JVMWriter::printConstLoad(double d) {
     if(d == 0.0)
         printSimpleInstruction("dconst_0");
@@ -87,6 +107,11 @@ void JVMWriter::printConstLoad(double d) {
         printSimpleInstruction("ldc2_w", ftostr(d));
 }
 
+/**
+ * Load the given constant.
+ * 
+ * @param c  the constant
+ */
 void JVMWriter::printConstLoad(const Constant *c) {
     if(const ConstantInt *i = dyn_cast<ConstantInt>(c)) {
         printConstLoad(i->getValue());
@@ -103,6 +128,13 @@ void JVMWriter::printConstLoad(const Constant *c) {
     }
 }
 
+/**
+ * Load the given string.
+ * 
+ * @param str      the string
+ * @param cstring  true iff the string contains a single null character at the
+ *                 end
+ */
 void JVMWriter::printConstLoad(const std::string &str, bool cstring) {
     out << "\tldc \"";
     if(cstring)
@@ -128,6 +160,13 @@ void JVMWriter::printConstLoad(const std::string &str, bool cstring) {
     out << "\"\n";
 }
 
+/**
+ * Store the given static constant. The constant is stored to the address
+ * currently on top of the stack, pushing the first address following the
+ * constant onto the stack afterwards.
+ * 
+ * @param c  the constant
+ */
 void JVMWriter::printStaticConstant(const Constant *c) {
     if(isa<ConstantAggregateZero>(c) || c->isNullValue()) {
         // zero initialised constant
@@ -190,6 +229,11 @@ void JVMWriter::printStaticConstant(const Constant *c) {
     }
 }
 
+/**
+ * Print the given constant expression.
+ * 
+ * @param ce  the constant expression
+ */
 void JVMWriter::printConstantExpr(const ConstantExpr *ce) {
     const Value *left, *right;
     if(ce->getNumOperands() >= 1) left  = ce->getOperand(0);
