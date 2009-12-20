@@ -23,6 +23,16 @@
 #include "backend.h"
 
 /**
+ * Return a unique ID.
+ * 
+ * @return  a unique ID
+ */
+static uint64_t getUID() {
+    static uint64_t x = 0;
+    return ++x;
+}
+
+/**
  * Return the call signature of the given function type. An empty string is
  * returned if the function type appears to be non-prototyped.
  * 
@@ -176,7 +186,7 @@ void JVMWriter::printCallInstruction(const Instruction *inst) {
  * @param inst  the instruction
  */
 void JVMWriter::printInvokeInstruction(const InvokeInst *inst) {
-    std::string labelname = getLabelName(inst) + "$invoke";
+    std::string labelname = getUID() + "$invoke";
     printLabel(labelname + "_begin");
     printFunctionCall(inst->getOperand(0), inst);
     printValueStore(inst); // save return value

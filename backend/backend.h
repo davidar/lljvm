@@ -60,8 +60,8 @@ class JVMWriter : public FunctionPass {
     
     /** Set of external references */
     DenseSet<const Value*> externRefs;
-    /** Mapping of anonymous values to unique IDs */
-    DenseMap<const Value*, unsigned int> anonValues;
+    /** Mapping of blocks to unique IDs */
+    DenseMap<const BasicBlock*, unsigned int> blockIDs;
     /** Mapping of values to local variable numbers */
     DenseMap<const Value*, unsigned int> localVars;
     /** Number of registers allocated for the function */
@@ -157,7 +157,7 @@ private:
     // name.cpp
     std::string sanitizeName(std::string name);
     std::string getValueName(const Value *v);
-    std::string getLabelName(const Value *v);
+    std::string getLabelName(const BasicBlock *block);
     
     // printinst.cpp
     void printBinaryInstruction(const char *name,

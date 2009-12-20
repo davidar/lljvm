@@ -55,14 +55,11 @@ std::string JVMWriter::getValueName(const Value *v) {
 /**
  * Return the label name of the given block.
  * 
- * @param v  the block
- * @return   the label
+ * @param block  the block
+ * @return       the label
  */
-std::string JVMWriter::getLabelName(const Value *v) {
-    if(const GlobalValue *gv = dyn_cast<GlobalValue>(v))
-        return sanitizeName(Mangler(*module).getMangledName(gv));
-    
-    if(!anonValues.count(v))
-        anonValues[v] = anonValues.size() + 1;
-    return sanitizeName("label" + utostr(anonValues[v]));
+std::string JVMWriter::getLabelName(const BasicBlock *block) {
+    if(!blockIDs.count(block))
+        blockIDs[block] = blockIDs.size() + 1;
+    return sanitizeName("label" + utostr(blockIDs[block]));
 }
