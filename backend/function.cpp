@@ -191,10 +191,10 @@ void JVMWriter::printInvokeInstruction(const InvokeInst *inst) {
     printFunctionCall(inst->getOperand(0), inst);
     printValueStore(inst); // save return value
     printLabel(labelname + "_end");
-    printBranchToBlock(inst->getParent(), NULL, inst->getNormalDest());
+    printBranchInstruction(inst->getParent(), inst->getNormalDest());
     printLabel(labelname + "_catch");
     printSimpleInstruction("pop");
-    printBranchToBlock(inst->getParent(), NULL, inst->getUnwindDest());
+    printBranchInstruction(inst->getParent(), inst->getUnwindDest());
     printSimpleInstruction(".catch lljvm/runtime/System$Unwind",
           "from "  + labelname + "_begin "
         + "to "    + labelname + "_end "

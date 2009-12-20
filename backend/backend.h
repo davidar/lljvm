@@ -88,9 +88,11 @@ private:
     
     // branch.cpp
     void printPHICopy(const BasicBlock *src, const BasicBlock *dest);
-    void printBranchToBlock(const BasicBlock *curBlock,
-                            const BasicBlock *trueBlock,
-                            const BasicBlock *falseBlock);
+    void printBranchInstruction(const BasicBlock *curBlock,
+                                const BasicBlock *destBlock);
+    void printBranchInstruction(const BasicBlock *curBlock,
+                                const BasicBlock *trueBlock,
+                                const BasicBlock *falseBlock);
     void printBranchInstruction(const BranchInst *inst);
     void printSelectInstruction(const Value *cond,
                                 const Value *trueVal,

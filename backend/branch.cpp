@@ -50,8 +50,19 @@ void JVMWriter::printPHICopy(const BasicBlock *src, const BasicBlock *dest) {
 }
 
 /**
- * Print a branch instruction. If trueBlock is NULL, then print an
- * unconditional branch to falseBlock.
+ * Print an unconditional branch instruction.
+ * 
+ * @param curBlock   the current block
+ * @param destBlock  the destination block
+ */
+void JVMWriter::printBranchInstruction(const BasicBlock *curBlock,
+                                       const BasicBlock *destBlock) {
+    printPHICopy(curBlock, destBlock);
+    printSimpleInstruction("goto", getLabelName(destBlock));
+}
+
+/**
+ * Print a conditional branch instruction.
  * 
  * @param curBlock    the current block
  * @param trueBlock   the destination block if the value on top of the stack is
@@ -59,19 +70,15 @@ void JVMWriter::printPHICopy(const BasicBlock *src, const BasicBlock *dest) {
  * @param falseBlock  the destination block if the value on top of the stack is
  *                    zero
  */
-void JVMWriter::printBranchToBlock(const BasicBlock *curBlock,
-                                   const BasicBlock *trueBlock,
-                                   const BasicBlock *falseBlock) {
+void JVMWriter::printBranchInstruction(const BasicBlock *curBlock,
+                                       const BasicBlock *trueBlock,
+                                       const BasicBlock *falseBlock) {
     if(trueBlock == falseBlock) {
-        printPHICopy(curBlock, trueBlock);
         printSimpleInstruction("pop");
-        printSimpleInstruction("goto", getLabelName(trueBlock));
-    } else if(falseBlock == NULL) {
+        printBranchInstruction(curBlock, trueBlock);
+    } else if(!falseBlock) {
         printPHICopy(curBlock, trueBlock);
         printSimpleInstruction("ifne", getLabelName(trueBlock));
-    } else if(trueBlock == NULL) {
-        printPHICopy(curBlock, falseBlock);
-        printSimpleInstruction("goto", getLabelName(falseBlock));
     } else {
         std::string labelname = getLabelName(trueBlock);
         if(isa<PHINode>(trueBlock->begin()))
@@ -97,12 +104,11 @@ void JVMWriter::printBranchToBlock(const BasicBlock *curBlock,
  */
 void JVMWriter::printBranchInstruction(const BranchInst *inst) {
     if(inst->isUnconditional()) {
-        printBranchToBlock(inst->getParent(), NULL, inst->getSuccessor(0));
+        printBranchInstruction(inst->getParent(), inst->getSuccessor(0));
     } else {
         printValueLoad(inst->getCondition());
-        printBranchToBlock(inst->getParent(),
-                           inst->getSuccessor(0),
-                           inst->getSuccessor(1));
+        printBranchInstruction(
+            inst->getParent(), inst->getSuccessor(0), inst->getSuccessor(1));
     }
 }
 
@@ -162,14 +168,17 @@ void JVMWriter::printSwitchInstruction(const SwitchInst *inst) {
  */
 void JVMWriter::printLoop(const Loop *l) {
     printLabel(getLabelName(l->getHeader()));
-    const std::vector<BasicBlock*> &blocks = l->getBlocks();
-    for(unsigned int i = 0, e = blocks.size(); i < e; i++) {
-        BasicBlock *block = blocks[i];
+    for(Loop::block_iterator i = l->block_begin(),
+                             e = l->block_end(); i != e; i++) {
+        const BasicBlock *block = *i;
         Loop *blockLoop = getAnalysis<LoopInfo>().getLoopFor(block);
         if(l == blockLoop)
+            // the loop is the innermost parent of this block
             printBasicBlock(block);
         else if(block == blockLoop->getHeader()
                  && l == blockLoop->getParentLoop())
+            // this block is the header of its innermost parent loop,
+            // and the loop is the parent of that loop
             printLoop(blockLoop);
     }
     printSimpleInstruction("goto", getLabelName(l->getHeader()));
