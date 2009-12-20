@@ -4,14 +4,16 @@ DIRS := \
     jpeg \
     lua \
     datalog \
-    zlib
+    zlib \
+    libpng
 ARCHIVES := \
     newlib-1.17.0.tar.gz \
     bsd-games-2.17.tar.gz \
     jpeg-7.tar.gz \
     lua-5.1.4.tar.gz \
     datalog-1.4.tar.gz \
-    zlib-1.2.3.tar.gz
+    zlib-1.2.3.tar.gz \
+    libpng-1.2.41.tar.gz
 
 newlib: newlib-1.17.0.tar.gz
 	tar -zxvf $<
@@ -69,6 +71,15 @@ zlib: zlib-1.2.3.tar.gz
 
 zlib-1.2.3.tar.gz:
 	wget -c http://zlib.net/$@ -O $@.part
+	mv -f $@.part $@
+
+libpng: libpng-1.2.41.tar.gz
+	tar -zxvf $<
+	rm -rf libpng
+	mv -f libpng-1.2.41 libpng
+
+libpng-1.2.41.tar.gz:
+	wget -c http://prdownloads.sourceforge.net/libpng/$@ -O $@.part
 	mv -f $@.part $@
 
 clean:

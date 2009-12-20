@@ -3,7 +3,8 @@ DIRS := \
     jpeg \
     lua \
     datalog \
-    zlib
+    zlib \
+    libpng
 
 .PHONY: all check clean
 
