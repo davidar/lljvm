@@ -12,8 +12,11 @@ ${SOURCE_DIR}:
 	cd ../../thirdparty && $(MAKE) lua
 
 check: all
-	./lua -e 'print("Hello, world!")'
-	./luac -v
+	rm -f luac.out
+	./lua factorial.lua
+	./luac factorial.lua
+	./lua luac.out
+	rm -f luac.out
 
 clean:
 	-cd ${SOURCE_DIR} && $(MAKE) clean
