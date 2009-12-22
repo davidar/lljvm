@@ -23,6 +23,7 @@
 package lljvm.util;
 
 import java.io.File;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -179,6 +180,22 @@ public final class ReflectionUtils {
      */
     public static String getSignature(Field field) {
         return field.getName() + " " + getDescriptor(field.getType());
+    }
+    
+    /**
+     * Convenience method for getting the type signature of a Field or Method
+     * object.
+     * 
+     * @param o  the Field or Method object
+     * @return   the type signature
+     */
+    public static String getSignature(AccessibleObject o) {
+        if(o instanceof Field)
+            return getSignature((Field) o);
+        if(o instanceof Method)
+            return getSignature((Method) o);
+        throw new IllegalArgumentException(
+                "Only Field and Method objects allowed");
     }
     
     /**

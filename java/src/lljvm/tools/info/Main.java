@@ -22,8 +22,11 @@
 
 package lljvm.tools.info;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.lang.reflect.AccessibleObject;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import lljvm.util.ReflectionUtils;
 
@@ -33,12 +36,40 @@ import lljvm.util.ReflectionUtils;
  * @author  David Roberts
  */
 public class Main {
+    /** Display fields/methods beginning with an underscore? */
+    private static boolean verbose = false;
+    
+    /**
+     * Print the given list of fields or methods under the given header.
+     * 
+     * @param header  the header
+     * @param list    the list of fields or methods
+     */
+    private static void printList(String header,
+                                  List<? extends AccessibleObject> list) {
+        System.out.println();
+        System.out.println(header);
+        List<String> sigs = new ArrayList<String>();
+        for(AccessibleObject o : list) {
+            String sig = ReflectionUtils.getSignature(o);
+            if(verbose || sig.charAt(0) != '_')
+                sigs.add(sig);
+        }
+        Collections.sort(sigs);
+        for(String sig : sigs)
+            System.out.println(sig);
+    }
+    
     /**
      * Main method.
      * 
      * @param args  Command line arguments.
      */
     public static void main(String[] args) {
+        if(args[0].equals("-v")) {
+            verbose = true;
+            args = Arrays.copyOfRange(args, 1, args.length);
+        }
         for(String classname : args) {
             Class<?> cls;
             try {
@@ -48,13 +79,9 @@ public class Main {
                 continue;
             }
             System.out.println(classname);
-            System.out.println("\nFields");
-            for(Field field : ReflectionUtils.getPublicStaticFields(cls))
-                System.out.println(ReflectionUtils.getSignature(field));
-            System.out.println("\nMethods");
-            for(Method method : ReflectionUtils.getPublicStaticMethods(cls))
-                System.out.println(ReflectionUtils.getSignature(method));
-            System.out.println("\n\n");
+            printList("Fields",  ReflectionUtils.getPublicStaticFields(cls));
+            printList("Methods", ReflectionUtils.getPublicStaticMethods(cls));
+            System.out.print("\n\n\n");
         }
     }
 }
