@@ -29,10 +29,62 @@ package lljvm.runtime;
  * @author  David Roberts
  */
 public final class Math {
+    /** Not a Number */
+    public static final int FP_NAN = 0;
+    /** Positive/negative infinity */
+    public static final int FP_INFINITE = 1;
+    /** Zero */
+    public static final int FP_ZERO = 2;
+    /** Too small to be represented in normalised format */
+    public static final int FP_SUBNORMAL = 3;
+    /** Not NaN, infinite, zero, or sub-normal */
+    public static final int FP_NORMAL = 4;
+    
     /**
      * Prevent this class from being instantiated.
      */
     private Math() {}
+    
+    /**
+     * Inverse hyperbolic sine function.
+     * 
+     * @param x  the value whose inverse hyperbolic sine is to be returned
+     * @return   the value whose hyperbolic sine is x
+     */
+    public static double asinh(double x) {
+        return java.lang.Math.log(x + java.lang.Math.sqrt(x * x + 1));
+    }
+    
+    /**
+     * Inverse hyperbolic cosine function.
+     * 
+     * @param x  the value whose inverse hyperbolic cosine is to be returned
+     * @return   the value whose hyperbolic cosine is x
+     */
+    public static double acosh(double x) {
+        return java.lang.Math.log(
+                x + java.lang.Math.sqrt(x - 1) * java.lang.Math.sqrt(x + 1));
+    }
+    
+    /**
+     * Inverse hyperbolic tangent function.
+     * 
+     * @param x  the value whose inverse hyperbolic tangent is to be returned
+     * @return   the value whose hyperbolic tangent is x
+     */
+    public static double atanh(double x) {
+        return java.lang.Math.log((1 + x) / (1 - x)) / 2;
+    }
+    
+    /**
+     * Base-2 exponential function.
+     * 
+     * @param x  the exponent
+     * @return   2 raised to the power of x
+     */
+    public static double exp2(double x) {
+        return java.lang.Math.pow(2, x);
+    }
     
     /**
      * Return the absolute value of the double value.
@@ -79,6 +131,25 @@ public final class Math {
     }
     
     /**
+     * Classify the given floating point number.
+     * 
+     * @param x  the floating point number
+     * @return   the integer representing the type of x:
+     *           one of FP_NAN, FP_INFINITE, FP_ZERO, FP_SUBNORMAL, FP_NORMAL
+     */
+    public static int fpclassify(double x) {
+        if(Double.isNaN(x))
+            return FP_NAN;
+        if(Double.isInfinite(x))
+            return FP_INFINITE;
+        if(x == 0.0)
+            return FP_ZERO;
+        if(java.lang.Math.abs(x) < Double.MIN_NORMAL)
+            return FP_SUBNORMAL;
+        return FP_NORMAL;
+    }
+    
+    /**
      * Split the given number into a normalised fraction and an exponent.
      * 
      * @param x    the number to split
@@ -111,6 +182,28 @@ public final class Math {
         int bits = Float.floatToRawIntBits(x);
         Memory.store(exp, ((bits & 0x7f800000) >>> 23) - 126);
         return Float.intBitsToFloat((bits & 0x7fffff) | 0x3f000000);
+    }
+    
+    /**
+     * Test whether the given value is infinite.
+     * 
+     * @param x  the value to test
+     * @return   1 if x is +infinity, -1 if x is -infinity, 0 otherwise
+     */
+    public static int isinf(double x) {
+        if(Double.isInfinite(x))
+            return x == Double.POSITIVE_INFINITY ? 1 : -1;
+        return 0;
+    }
+    
+    /**
+     * Test whether the given value is Not a Number.
+     * 
+     * @param x  the value to test
+     * @return   1 if x is NaN, 0 otherwise
+     */
+    public static int isnan(double x) {
+        return Double.isNaN(x) ? 1 : 0;
     }
     
     /**
