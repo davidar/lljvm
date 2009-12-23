@@ -45,9 +45,11 @@ default_cflags = (
     '-D__LLJVM__',
     '-I' + os.path.join(lljvm_dir, 'include', 'lljvm'),
     '-I' + os.path.join(lljvm_dir, 'include', 'newlib'),
-    '-fno-builtin-rintl', '-fno-builtin-lrintl', '-fno-builtin-llrintl',
-    '-m32', '-malign-double',
+    '-fno-builtin',
+    '-m32',
 )
+if cc == 'llvm-gcc':
+    default_cflags = default_cflags + ('-malign-double',)
 
 # default java classes to link against
 default_java_libs = (

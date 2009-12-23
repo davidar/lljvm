@@ -27,6 +27,7 @@ doc:
 
 clean:
 	rm -f *.o lljvm-backend
+	rm -rf doc
 
 .cpp.o:
 	$(CXX) ${CFLAGS} -c $<

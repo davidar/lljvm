@@ -1,6 +1,6 @@
 diff -ur a/newlib-1.17.0/newlib/libc/include/machine/setjmp.h b/newlib-1.17.0/newlib/libc/include/machine/setjmp.h
 --- a/newlib-1.17.0/newlib/libc/include/machine/setjmp.h	2008-12-12 06:05:38.000000000 +1000
-+++ b/newlib-1.17.0/newlib/libc/include/machine/setjmp.h	2009-12-20 22:16:34.000000000 +1000
++++ b/newlib-1.17.0/newlib/libc/include/machine/setjmp.h	2009-12-22 19:37:52.000000000 +1000
 @@ -245,6 +245,13 @@
  #define _JBTYPE unsigned short
  #endif /* __m32c__ */
@@ -17,7 +17,7 @@ diff -ur a/newlib-1.17.0/newlib/libc/include/machine/setjmp.h b/newlib-1.17.0/ne
  typedef	_JBTYPE jmp_buf[_JBLEN];
 diff -ur a/newlib-1.17.0/newlib/libc/include/sys/config.h b/newlib-1.17.0/newlib/libc/include/sys/config.h
 --- a/newlib-1.17.0/newlib/libc/include/sys/config.h	2008-11-20 07:05:31.000000000 +1000
-+++ b/newlib-1.17.0/newlib/libc/include/sys/config.h	2009-12-20 22:16:34.000000000 +1000
++++ b/newlib-1.17.0/newlib/libc/include/sys/config.h	2009-12-22 19:37:52.000000000 +1000
 @@ -135,6 +135,11 @@
  #define __CUSTOM_FILE_IO__
  #endif
@@ -32,7 +32,7 @@ diff -ur a/newlib-1.17.0/newlib/libc/include/sys/config.h b/newlib-1.17.0/newlib
     would pollute the user namespace, while still using types of the
 diff -ur a/newlib-1.17.0/newlib/libc/include/sys/signal.h b/newlib-1.17.0/newlib/libc/include/sys/signal.h
 --- a/newlib-1.17.0/newlib/libc/include/sys/signal.h	2006-04-19 06:06:09.000000000 +1000
-+++ b/newlib-1.17.0/newlib/libc/include/sys/signal.h	2009-12-20 22:16:34.000000000 +1000
++++ b/newlib-1.17.0/newlib/libc/include/sys/signal.h	2009-12-22 19:37:52.000000000 +1000
 @@ -187,6 +187,10 @@
  
  #endif /* defined(__CYGWIN__) || defined(__rtems__) */
@@ -44,9 +44,54 @@ diff -ur a/newlib-1.17.0/newlib/libc/include/sys/signal.h b/newlib-1.17.0/newlib
  /* #endif __STRICT_ANSI__ */
  
  #if defined(___AM29K__)
+diff -ur a/newlib-1.17.0/newlib/libc/include/sys/_types.h b/newlib-1.17.0/newlib/libc/include/sys/_types.h
+--- a/newlib-1.17.0/newlib/libc/include/sys/_types.h	2007-09-19 06:05:17.000000000 +1000
++++ b/newlib-1.17.0/newlib/libc/include/sys/_types.h	2009-12-22 19:37:52.000000000 +1000
+@@ -62,6 +62,11 @@
+ #define __need_wint_t
+ #include <stddef.h>
+ 
++#ifndef _WINT_T
++#define _WINT_T
++typedef unsigned int wint_t;
++#endif
++
+ #ifndef __mbstate_t_defined
+ /* Conversion state information.  */
+ typedef struct
+diff -ur a/newlib-1.17.0/newlib/libc/include/wchar.h b/newlib-1.17.0/newlib/libc/include/wchar.h
+--- a/newlib-1.17.0/newlib/libc/include/wchar.h	2008-12-13 05:47:05.000000000 +1000
++++ b/newlib-1.17.0/newlib/libc/include/wchar.h	2009-12-22 19:37:52.000000000 +1000
+@@ -10,6 +10,11 @@
+ #define __need_wint_t
+ #include <stddef.h>
+ 
++#ifndef _WINT_T
++#define _WINT_T
++typedef unsigned int wint_t;
++#endif
++
+ /* For _mbstate_t definition. */
+ #include <sys/_types.h>
+ 
+diff -ur a/newlib-1.17.0/newlib/libc/include/wctype.h b/newlib-1.17.0/newlib/libc/include/wctype.h
+--- a/newlib-1.17.0/newlib/libc/include/wctype.h	2002-11-07 10:44:31.000000000 +1000
++++ b/newlib-1.17.0/newlib/libc/include/wctype.h	2009-12-22 19:37:52.000000000 +1000
+@@ -7,6 +7,11 @@
+ #define __need_wint_t
+ #include <stddef.h>
+ 
++#ifndef _WINT_T
++#define _WINT_T
++typedef unsigned int wint_t;
++#endif
++
+ #ifndef WEOF
+ # define WEOF ((wint_t)-1)
+ #endif
 diff -ur a/newlib-1.17.0/newlib/libc/reent/reent.c b/newlib-1.17.0/newlib/libc/reent/reent.c
 --- a/newlib-1.17.0/newlib/libc/reent/reent.c	2006-10-11 18:04:50.000000000 +1000
-+++ b/newlib-1.17.0/newlib/libc/reent/reent.c	2009-12-20 22:16:34.000000000 +1000
++++ b/newlib-1.17.0/newlib/libc/reent/reent.c	2009-12-22 19:37:52.000000000 +1000
 @@ -23,7 +23,7 @@
  
  /* We use the errno variable used by the system dependent layer.  */
@@ -58,7 +103,7 @@ diff -ur a/newlib-1.17.0/newlib/libc/reent/reent.c b/newlib-1.17.0/newlib/libc/r
  
 diff -ur a/newlib-1.17.0/newlib/libc/reent/renamer.c b/newlib-1.17.0/newlib/libc/reent/renamer.c
 --- a/newlib-1.17.0/newlib/libc/reent/renamer.c	2008-11-25 07:27:33.000000000 +1000
-+++ b/newlib-1.17.0/newlib/libc/reent/renamer.c	2009-12-20 22:16:34.000000000 +1000
++++ b/newlib-1.17.0/newlib/libc/reent/renamer.c	2009-12-22 19:37:52.000000000 +1000
 @@ -5,6 +5,10 @@
  #include <sys/stat.h>
  #include <_syslist.h>

@@ -1,10 +1,7 @@
 SOURCE_DIR := ${LEVEL}/../thirdparty/newlib/newlib/libc
 
 CC := ${LEVEL}/../lljvm-cc
-CFLAGS := \
-    -DMISSING_SYSCALL_NAMES -DHAVE_RENAME \
-    -fno-builtin \
-    -I${SOURCE_DIR}/${DIR}
+CFLAGS := -DMISSING_SYSCALL_NAMES -DHAVE_RENAME -I${SOURCE_DIR}/${DIR}
 
 all: ${LEVEL}/${DIR}.o
 

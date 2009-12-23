@@ -124,16 +124,16 @@ include ${LEVEL}/Makefile.common
 CFLAGS := ${CFLAGS} -D_WANT_IO_LONG_LONG
 
 vfprintf.o: ${SOURCE_DIR}/${DIR}/vfprintf.c
-	$(CC) ${CFLAGS} -fshort-enums -c $< -o $@
+	$(CC) ${CFLAGS} -c $< -o $@
 
 vfiprintf.o: ${SOURCE_DIR}/${DIR}/vfprintf.c
-	$(CC) ${CFLAGS} -fshort-enums -DINTEGER_ONLY -c $< -o $@
+	$(CC) ${CFLAGS} -DINTEGER_ONLY -c $< -o $@
 
 svfprintf.o: ${SOURCE_DIR}/${DIR}/vfprintf.c
-	$(CC) ${CFLAGS} -fshort-enums -DSTRING_ONLY -c $< -o $@
+	$(CC) ${CFLAGS} -DSTRING_ONLY -c $< -o $@
 
 svfiprintf.o: ${SOURCE_DIR}/${DIR}/vfprintf.c
-	$(CC) ${CFLAGS} -fshort-enums -DINTEGER_ONLY -DSTRING_ONLY -c $< -o $@
+	$(CC) ${CFLAGS} -DINTEGER_ONLY -DSTRING_ONLY -c $< -o $@
 
 vfscanf.o: ${SOURCE_DIR}/${DIR}/vfscanf.c
 	$(CC) ${CFLAGS} -c $< -o $@
