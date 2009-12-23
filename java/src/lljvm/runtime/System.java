@@ -34,21 +34,6 @@ public final class System {
     private System() {}
     
     /**
-     * Constructs an argument vector from the given arguments.
-     * 
-     * @param args  the array of arguments
-     * @return      the argument vector
-     */
-    public static int argv(String[] args) {
-        final int argc = args.length;
-        final int argv = Memory.allocateStack((argc+1)*4);
-        for(int i = 0; i < argc; i++)
-            Memory.store(argv + i*4, Memory.storeStack(args[i]));
-        Memory.store(argv + argc*4, Memory.NULL);
-        return argv;
-    }
-    
-    /**
      * Performs any necessary cleanup, then terminates with the specified
      * status code.
      * 

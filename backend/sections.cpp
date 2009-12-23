@@ -151,7 +151,7 @@ void JVMWriter::printMainMethod() {
         printSimpleInstruction("arraylength");
         printSimpleInstruction("aload_0");
         printSimpleInstruction("invokestatic",
-            "lljvm/runtime/System/argv([Ljava/lang/String;)I");
+            "lljvm/runtime/Memory/storeStack([Ljava/lang/String;)I");
         printSimpleInstruction("invokestatic", classname + "/main("
             + getTypeDescriptor(arg1->getType())
             + getTypeDescriptor(arg2->getType()) + ")I");

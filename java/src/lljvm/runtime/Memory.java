@@ -608,6 +608,20 @@ public final class Memory {
     }
     
     /**
+     * Store an array of strings in the stack, terminated by a null pointer.
+     * 
+     * @param strings  the array of strings to be stored
+     * @return         a pointer to the array
+     */
+    public static int storeStack(String[] strings) {
+        final int addr = allocateStack(strings.length * 4 + 4);
+        for(int i = 0; i < strings.length; i++)
+            store(addr + i * 4, storeStack(strings[i]));
+        store(addr + strings.length * 4, NULL);
+        return addr;
+    }
+    
+    /**
      * Store a string in the stack, returning a pointer to the string.
      * 
      * @param string  the string to be stored
