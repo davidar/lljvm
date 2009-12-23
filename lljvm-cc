@@ -198,10 +198,12 @@ def bc2class(output, flags):
         os.unlink(output + '.j')
     
     if '-link-as-library' not in flags:
+        classname = os.path.basename(output).replace('.', '_')
+        for flag in flags:
+            if flag.startswith('-classname='):
+                classname = flag[len('-classname='):]
         script = open(output, 'w')
-        script.write(script_template \
-            % (':'.join(classpath),
-               os.path.basename(output).replace('.', '_')))
+        script.write(script_template % (':'.join(classpath), classname))
         script.close()
         os.chmod(output, 0755)
 
