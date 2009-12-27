@@ -28,6 +28,15 @@ package lljvm.runtime;
  * @author  David Roberts
  */
 public final class System {
+    /** Throw an exception instead of calling System.exit? */
+    public static boolean throwExit = false;
+    
+    /**
+     * Thrown to indicate that a call has been made to the _exit syscall.
+     */
+    @SuppressWarnings("serial")
+    public static class Exit extends RuntimeException {}
+    
     /**
      * Prevent this class from being instantiated.
      */
@@ -40,6 +49,8 @@ public final class System {
      * @param status  the exit status code
      */
     public static void _exit(int status) {
+        if(throwExit)
+            throw new Exit();
         IO.close();
         java.lang.System.exit(status);
     }
