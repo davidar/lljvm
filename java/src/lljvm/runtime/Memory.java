@@ -243,6 +243,7 @@ public final class Memory {
         for(int i = HEAP_BOTTOM; i <= HEAP_END; i++)
             if(pages[i] == null)
                 pages[i] = createPage();
+        // TODO: destroy pages if increment < 0
         return prevHeapEnd;
     }
     

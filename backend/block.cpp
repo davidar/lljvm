@@ -93,6 +93,7 @@ void JVMWriter::printInstruction(const Instruction *inst) {
         printSimpleInstruction("athrow");
         break;
     case Instruction::Free:
+        // TODO: lowering pass? <http://llvm.org/docs/Passes.html#lowerallocs>
         printValueLoad(inst->getOperand(0));
         printSimpleInstruction("invokestatic", "lljvm/lib/c/free(I)V");
         break;
@@ -136,6 +137,7 @@ void JVMWriter::printInstruction(const Instruction *inst) {
         printCmpInstruction(cast<CmpInst>(inst)->getPredicate(),
                             left, right); break;
     case Instruction::Malloc:
+        // TODO: lowering pass? <http://llvm.org/docs/Passes.html#lowerallocs>
         printMallocInstruction(cast<MallocInst>(inst)); break;
     case Instruction::Br:
         printBranchInstruction(cast<BranchInst>(inst)); break;

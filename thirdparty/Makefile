@@ -1,3 +1,5 @@
+# TODO: refactor duplicate code
+
 DIRS := \
     newlib \
     bsd-games \

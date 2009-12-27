@@ -1,0 +1,7 @@
+#!/bin/sh
+# Execute this script to generate the TODO list
+
+grep -nR TODO \
+    backend/{*.cpp,*.h,Makefile} demo/ include/lljvm/ java/ libc/ test/ \
+    lljvm-cc Makefile \
+    | sed 's/\s*[\/\*#]*\s*TODO:*//g' | less

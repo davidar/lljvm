@@ -22,6 +22,8 @@
 
 package lljvm.runtime;
 
+// TODO: proper environ support
+
 /**
  * Provides methods for interfacing with the system.
  * 
@@ -71,6 +73,7 @@ public final class System {
      * @return          does not return on success, -1 on error
      */
     public static int execve(int filename, int argv, int envp) {
+        // TODO: implement
         return Error.errno(Error.ENOMEM);
     }
     
@@ -80,6 +83,7 @@ public final class System {
      * @return  the PID of the child process on success, -1 on error
      */
     public static int fork() {
+        // TODO: implement
         return Error.errno(Error.EAGAIN);
     }
     
@@ -89,6 +93,7 @@ public final class System {
      * @return  the PID of the calling process
      */
     public static int getpid() {
+        // TODO: implement
         return 1;
     }
     
@@ -100,6 +105,7 @@ public final class System {
      * @return     0 on success, -1 on error
      */
     public static int kill(int pid, int sig) {
+        // TODO: implement
         return Error.errno(Error.EINVAL);
     }
     
@@ -112,6 +118,7 @@ public final class System {
      *             arbitrary point in the past on success, -1 on error
      */
     public static int times(int buf) {
+        // TODO: implement
         return -1;
     }
     
@@ -123,6 +130,7 @@ public final class System {
      * @return        the PID of the terminated child on success, -1 on error
      */
     public static int wait(int status) {
+        // TODO: implement
         return Error.errno(Error.ECHILD);
     }
 }

@@ -1,3 +1,5 @@
+# TODO: extract code from Makefiles in subdirectories to a common Makefile
+
 DIRS := \
     bsd-games \
     jpeg \

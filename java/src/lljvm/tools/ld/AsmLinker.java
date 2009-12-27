@@ -93,6 +93,7 @@ public class AsmLinker {
         if(!methodName.contains("(")) // non-prototyped function
             for(String name : methodMap.keySet())
                 if(name.startsWith(methodName + "(")) {
+                    // TODO: throw error unless specified otherwise
                     System.err.println(
                             "WARNING: Function '" + methodName + "' should " +
                             "be declared with a prototype. Linking will " +

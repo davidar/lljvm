@@ -43,7 +43,8 @@ public final class Posix {
      * @return      the appropriate value on success, -1 on error
      */
     public static int fcntl(int fd, int cmd, int args) {
-        return -1;
+        // TODO: implement
+        return Error.errno(Error.EACCES);
     }
     
     /**
@@ -54,6 +55,7 @@ public final class Posix {
      * @return    0 on success, -1 on error
      */
     public static int gettimeofday(int tv, int tz) {
+        // TODO: implement
         return Error.errno(Error.EINVAL);
     }
     
@@ -66,6 +68,7 @@ public final class Posix {
      * @return        0 on success, -1 on error
      */
     public static int sigprocmask(int how, int set, int oldset) {
+        // TODO: implement
         return Error.errno(Error.EINVAL);
     }
     
@@ -76,6 +79,7 @@ public final class Posix {
      * @return      the value of the system resource on success, -1 on error
      */
     public static int sysconf(int name) {
+        // TODO: implement
         return Error.errno(Error.EINVAL);
     }
 }
