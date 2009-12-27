@@ -149,6 +149,10 @@ The info utility lists the type signatures of the public static fields and
 methods provided by a class. For example, to list those provided by libc:
     java -jar lljvm.jar info lljvm.lib.c
 
+By default, any identifiers beginning with an underscore are omitted. To
+disable this behaviour, pass the -v flag:
+    java -jar lljvm.jar info -v lljvm.lib.c
+
 
 [1] http://llvm.org/
 [2] http://jasmin.sf.net/
