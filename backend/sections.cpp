@@ -45,7 +45,7 @@ void JVMWriter::printFields() {
         } else
             out << ".field "
                 << (i->hasLocalLinkage() ? "private " : "public ")
-                << "static ";
+                << "static final ";
         out << getValueName(i) << ' ' << getTypeDescriptor(i->getType());
         if(debug >= 3)
             out << " ; " << *i;

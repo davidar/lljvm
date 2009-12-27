@@ -35,7 +35,14 @@ public final class System {
      * Thrown to indicate that a call has been made to the _exit syscall.
      */
     @SuppressWarnings("serial")
-    public static class Exit extends RuntimeException {}
+    public static class Exit extends RuntimeException {
+        /** Exit status code */
+        public final int status;
+        public Exit(int status) {
+            super(Integer.toString(status));
+            this.status = status;
+        }
+    }
     
     /**
      * Prevent this class from being instantiated.
@@ -50,7 +57,7 @@ public final class System {
      */
     public static void _exit(int status) {
         if(throwExit)
-            throw new Exit();
+            throw new Exit(status);
         IO.close();
         java.lang.System.exit(status);
     }
