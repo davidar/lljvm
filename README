@@ -10,9 +10,11 @@ To compile LLJVM, simply call `make` in the project root directory, and call
 `make check` to run the testsuite.
 
 To generate the the documentation for the java packages and the backend, call
-`make doc`, which will generate HTML documentation in java/doc/ and
-backend/doc/html/ respectively. PDF documentation for the backend can be
-obtained by calling `make` from backend/doc/latex/ (requires PDFLaTeX).
+`make doc`, which will generate HTML documentation in doc/java/ and
+doc/backend/ respectively. PDF documentation for the backend can be obtained by
+calling `make doc-pdf` (requires PDFLaTeX), which will generate
+doc/backend.pdf. A zip archive containing all of the documentation can be
+created by calling `make doc-zip`.
 
 
 C COMPILER

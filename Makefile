@@ -1,6 +1,6 @@
 VERSION := 0.1dev
 
-.PHONY: all doc check demo clean distclean
+.PHONY: all doc doc-pdf doc-zip check demo clean distclean
 
 all:
 	cd include && $(MAKE) all
@@ -14,6 +14,19 @@ all:
 doc:
 	cd java && $(MAKE) doc
 	cd backend && $(MAKE) doc
+	rm -rf doc
+	mkdir -p doc
+	mv java/doc doc/java
+	mv backend/doc/html doc/backend
+
+doc-pdf: doc
+	cd backend/doc/latex && $(MAKE) all
+	mv backend/doc/latex/refman.pdf doc/backend.pdf
+
+doc-zip: doc doc-pdf
+	mv doc lljvm-doc-${VERSION}
+	zip -r lljvm-doc-${VERSION}.zip lljvm-doc-${VERSION}
+	mv lljvm-doc-${VERSION} doc
 
 check: all
 	cd test && $(MAKE) -s check
@@ -29,7 +42,9 @@ clean:
 	cd backend && $(MAKE) clean
 	cd libc && $(MAKE) clean
 	cd demo && $(MAKE) clean
-	rm -f lljvm-${VERSION}.jar lljvm-demo-${VERSION}.jar lljvm-backend
+	rm -rf doc
+	rm -f lljvm-${VERSION}.jar lljvm-demo-${VERSION}.jar \
+	      lljvm-doc-${VERSION}.zip lljvm-backend
 
 distclean: clean
 	cd thirdparty && $(MAKE) distclean
