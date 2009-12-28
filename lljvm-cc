@@ -23,7 +23,7 @@ import os
 import sys
 import subprocess
 
-__version__ = '0.1dev'
+__version__ = '0.2dev'
 
 # LLJVM root directory
 lljvm_dir = os.path.abspath(os.path.dirname(sys.argv.pop(0)))
