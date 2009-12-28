@@ -1,6 +1,8 @@
 all: lljvm-demo.jar
 
-lljvm-demo.jar: demo MANIFEST.MF Main.class
+lljvm-demo.jar: demo Main.class
+	echo "Main-Class: Main" > MANIFEST.MF
+	echo "Class-Path: lljvm-${VERSION}.jar" >> MANIFEST.MF
 	cd .. && jar -cvfm jar/$@ jar/MANIFEST.MF -C jar Main.class \
 	    -C bsd-games banner.class -C bsd-games morse.class \
 	    -C bsd-games number.class -C bsd-games pig.class \
@@ -17,4 +19,4 @@ demo:
 	javac $<
 
 clean:
-	rm -f Main.class lljvm-demo.jar
+	rm -f MANIFEST.MF Main.class lljvm-demo.jar

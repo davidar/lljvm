@@ -1,3 +1,3 @@
-lljvm.jar
-lljvm-demo.jar
+lljvm-*.jar
+lljvm-demo-*.jar
 lljvm-backend

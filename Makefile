@@ -1,3 +1,5 @@
+VERSION := 0.1dev
+
 .PHONY: all doc check demo clean distclean
 
 all:
@@ -7,7 +9,7 @@ all:
 	cd java && $(MAKE) all
 	cd libc && $(MAKE) all
 	cd java && $(MAKE) dist
-	cp java/dist/lljvm.jar .
+	cp java/dist/lljvm.jar lljvm-${VERSION}.jar
 
 doc:
 	cd java && $(MAKE) doc
@@ -17,8 +19,8 @@ check: all
 	cd test && $(MAKE) -s check
 
 demo: all
-	cd demo/jar && $(MAKE) all
-	cp demo/jar/lljvm-demo.jar .
+	cd demo/jar && $(MAKE) VERSION=${VERSION} all
+	cp demo/jar/lljvm-demo.jar lljvm-demo-${VERSION}.jar
 
 clean:
 	cd include && $(MAKE) clean
@@ -27,7 +29,7 @@ clean:
 	cd backend && $(MAKE) clean
 	cd libc && $(MAKE) clean
 	cd demo && $(MAKE) clean
-	rm -f lljvm.jar lljvm-demo.jar lljvm-backend
+	rm -f lljvm-${VERSION}.jar lljvm-demo-${VERSION}.jar lljvm-backend
 
 distclean: clean
 	cd thirdparty && $(MAKE) distclean

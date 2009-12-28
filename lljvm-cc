@@ -23,6 +23,8 @@ import os
 import sys
 import subprocess
 
+__version__ = '0.1dev'
+
 # LLJVM root directory
 lljvm_dir = os.path.abspath(os.path.dirname(sys.argv.pop(0)))
 
@@ -161,7 +163,7 @@ def filter_backend_flags(flags):
 
 def bc2class(output, flags):
     """Generate {output}.class from {output}.bc and unlink {output}.bc"""
-    classpath = [os.path.join(lljvm_dir, 'lljvm.jar')]
+    classpath = [os.path.join(lljvm_dir, 'lljvm-' + __version__ + '.jar')]
     java_libs = list(default_java_libs)
     if '-nostdlib' not in flags:
         java_libs.append('lljvm.lib.c')
