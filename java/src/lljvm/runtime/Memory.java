@@ -352,13 +352,9 @@ public final class Memory {
      * @param bytes  the bytes to be stored
      */
     public static void store(int addr, byte[] bytes) {
-        try {
-            final ByteBuffer page = getPage(addr);
-            page.position(getOffset(addr));
-            page.put(bytes);
-        } catch(NullPointerException e) {
-            throw new SegmentationFault(addr);
-        }
+        // TODO: make more efficient by using put(byte[])
+        for(int i = 0; i < bytes.length; i++)
+            store(addr + i, bytes[i]);
     }
     
     /**

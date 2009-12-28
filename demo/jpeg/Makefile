@@ -1,3 +1,5 @@
+# TODO: libjpeg.class
+
 CC := ../../lljvm-cc
 SOURCE_DIR := ../../thirdparty/jpeg
 CLASSES := cjpeg.class djpeg.class jpegtran.class rdjpgcom.class wrjpgcom.class

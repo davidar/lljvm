@@ -85,6 +85,11 @@ To demonstrate the capabilities of LLJVM, several common software packages can
 be compiled with lljvm-cc by entering the demo/ subdirectory and calling
 `make`. To verify that all of these compiled correctly, call `make check`.
 
+A JAR archive containing all of the demo programs can be created by calling
+`make demo` in the project root directory. For usage information, execute the
+JAR in the project root directory with no arguments:
+    java -jar lljvm-demo.jar
+
 
 BACKEND
 The LLJVM Backend transforms LLVM IR into Jasmin assembly code.

@@ -17,4 +17,4 @@ check: all
 	for d in ${DIRS}; do (cd $$d && $(MAKE) check); done
 
 clean:
-	for d in ${DIRS}; do (cd $$d && $(MAKE) clean); done
+	for d in ${DIRS} jar; do (cd $$d && $(MAKE) clean); done

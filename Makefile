@@ -1,4 +1,4 @@
-.PHONY: all doc check clean distclean
+.PHONY: all doc check demo clean distclean
 
 all:
 	cd include && $(MAKE) all
@@ -16,6 +16,10 @@ doc:
 check: all
 	cd test && $(MAKE) -s check
 
+demo: all
+	cd demo/jar && $(MAKE) all
+	cp demo/jar/lljvm-demo.jar .
+
 clean:
 	cd include && $(MAKE) clean
 	cd thirdparty && $(MAKE) clean
@@ -23,7 +27,7 @@ clean:
 	cd backend && $(MAKE) clean
 	cd libc && $(MAKE) clean
 	cd demo && $(MAKE) clean
-	rm -f lljvm.jar lljvm-backend
+	rm -f lljvm.jar lljvm-demo.jar lljvm-backend
 
 distclean: clean
 	cd thirdparty && $(MAKE) distclean
