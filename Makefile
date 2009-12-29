@@ -1,4 +1,4 @@
-VERSION := 0.2dev
+VERSION := 0.2
 
 .PHONY: all doc doc-pdf doc-zip check demo clean distclean
 
