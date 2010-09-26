@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 David Roberts <d@vidr.cc>
+* Copyright (c) 2009-2010 David Roberts <d@vidr.cc>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Analysis/ConstantsScanner.h>
 #include <llvm/Analysis/LoopInfo.h>
+#include <llvm/Instructions.h>
 #include <llvm/IntrinsicInst.h>
 #include <llvm/Module.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -144,7 +145,6 @@ private:
     void printVAArgInstruction(const VAArgInst *inst);
     void printVAIntrinsic(const IntrinsicInst *inst);
     void printMemIntrinsic(const MemIntrinsic *inst);
-    void printMallocInstruction(const MallocInst *inst);
     void printMathIntrinsic(const IntrinsicInst *inst);
     void printBitIntrinsic(const IntrinsicInst *inst);
     

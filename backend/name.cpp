@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 David Roberts <d@vidr.cc>
+* Copyright (c) 2009-2010 David Roberts <d@vidr.cc>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,8 @@
 
 #include "backend.h"
 
-#include <llvm/Support/Mangler.h>
+#include <llvm/MC/MCAsmInfo.h>
+#include <llvm/Target/Mangler.h>
 
 /**
  * Replace any non-alphanumeric characters with underscores.
@@ -45,7 +46,7 @@ std::string JVMWriter::sanitizeName(std::string name) {
  */
 std::string JVMWriter::getValueName(const Value *v) {
     if(const GlobalValue *gv = dyn_cast<GlobalValue>(v))
-        return sanitizeName(Mangler(*module).getMangledName(gv));
+        return sanitizeName(Mangler(MCAsmInfo()).getNameWithPrefix(gv));
     if(v->hasName())
         return '_' + sanitizeName(v->getName());
     if(localVars.count(v))

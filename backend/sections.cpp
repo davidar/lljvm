@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 David Roberts <d@vidr.cc>
+* Copyright (c) 2009-2010 David Roberts <d@vidr.cc>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -144,7 +144,7 @@ void JVMWriter::printMainMethod() {
     } else if(f->arg_size() == 2) {
         Function::const_arg_iterator arg1, arg2;
         arg1 = arg2 = f->arg_begin(); arg2++;
-        if(!arg1->getType()->isInteger()
+        if(!arg1->getType()->isIntegerTy()
          || arg2->getType()->getTypeID() != Type::PointerTyID)
             llvm_unreachable("main function has invalid type signature");
         printSimpleInstruction("aload_0");

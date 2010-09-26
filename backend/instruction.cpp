@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 David Roberts <d@vidr.cc>
+* Copyright (c) 2009-2010 David Roberts <d@vidr.cc>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -372,18 +372,6 @@ void JVMWriter::printMemIntrinsic(const MemIntrinsic *inst) {
         printSimpleInstruction("invokestatic",
             "lljvm/runtime/Memory/memset(IB" + lenDescriptor + "I)V"); break;
     }
-}
-
-/**
- * Print a malloc instruction.
- * 
- * @param inst  the instruction
- */
-void JVMWriter::printMallocInstruction(const MallocInst *inst) {
-    printPtrLoad(targetData->getTypeAllocSize(inst->getAllocatedType()));
-    printValueLoad(inst->getArraySize());
-    printSimpleInstruction("imul");
-    printSimpleInstruction("invokestatic", "lljvm/lib/c/malloc(I)I");
 }
 
 /**

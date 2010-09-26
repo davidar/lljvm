@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 David Roberts <d@vidr.cc>
+* Copyright (c) 2009-2010 David Roberts <d@vidr.cc>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -148,10 +148,6 @@ void JVMWriter::printIntrinsicCall(const IntrinsicInst *inst) {
     case Intrinsic::flt_rounds:
         printSimpleInstruction("iconst_m1"); break;
     case Intrinsic::dbg_declare:
-    case Intrinsic::dbg_func_start:
-    case Intrinsic::dbg_region_end:
-    case Intrinsic::dbg_region_start:
-    case Intrinsic::dbg_stoppoint:
         // ignore debugging intrinsics
         break;
     case Intrinsic::pow:

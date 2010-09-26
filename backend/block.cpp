@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 David Roberts <d@vidr.cc>
+* Copyright (c) 2009-2010 David Roberts <d@vidr.cc>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -92,11 +92,6 @@ void JVMWriter::printInstruction(const Instruction *inst) {
             "Llljvm/runtime/Instruction$Unreachable;");
         printSimpleInstruction("athrow");
         break;
-    case Instruction::Free:
-        // TODO: lowering pass? <http://llvm.org/docs/Passes.html#lowerallocs>
-        printValueLoad(inst->getOperand(0));
-        printSimpleInstruction("invokestatic", "lljvm/lib/c/free(I)V");
-        break;
     case Instruction::Add:
     case Instruction::FAdd:
     case Instruction::Sub:
@@ -136,9 +131,6 @@ void JVMWriter::printInstruction(const Instruction *inst) {
     case Instruction::FCmp:
         printCmpInstruction(cast<CmpInst>(inst)->getPredicate(),
                             left, right); break;
-    case Instruction::Malloc:
-        // TODO: lowering pass? <http://llvm.org/docs/Passes.html#lowerallocs>
-        printMallocInstruction(cast<MallocInst>(inst)); break;
     case Instruction::Br:
         printBranchInstruction(cast<BranchInst>(inst)); break;
     case Instruction::Select:

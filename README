@@ -3,7 +3,7 @@ languages (such as C) on the JVM.
 
 Homepage: http://da.vidr.cc/projects/lljvm/
 
-LLVM[1] 2.6 must be installed to compile and run LLJVM. Jasmin[2] is needed for
+LLVM[1] 2.7 must be installed to compile and run LLJVM. Jasmin[2] is needed for
 assembling JVM bytecode.
 
 To compile LLJVM, simply call `make` in the project root directory, and call

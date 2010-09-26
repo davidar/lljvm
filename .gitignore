@@ -3,3 +3,5 @@ lljvm-*.jar
 lljvm-demo-*.jar
 lljvm-doc-*.zip
 lljvm-backend
+*~
+Session.vim
