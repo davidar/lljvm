@@ -185,7 +185,8 @@ void JVMWriter::printInvokeInstruction(const InvokeInst *inst) {
     std::string labelname = getUID() + "$invoke";
     printLabel(labelname + "_begin");
     printFunctionCall(inst->getOperand(0), inst);
-    printValueStore(inst); // save return value
+    if(!inst->getType()->isVoidTy())
+        printValueStore(inst); // save return value
     printLabel(labelname + "_end");
     printBranchInstruction(inst->getParent(), inst->getNormalDest());
     printLabel(labelname + "_catch");
