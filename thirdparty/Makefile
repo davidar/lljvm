@@ -72,7 +72,7 @@ zlib: zlib-1.2.3.tar.gz
 	mv -f zlib-1.2.3 zlib
 
 zlib-1.2.3.tar.gz:
-	wget -c http://zlib.net/$@ -O $@.part
+	wget -c http://zlib.net/fossils/$@ -O $@.part
 	mv -f $@.part $@
 
 libpng: libpng-1.2.41.tar.gz
