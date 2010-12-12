@@ -69,17 +69,22 @@ void JVMWriter::printOperandPack(const Instruction *inst,
         size += targetData->getTypeAllocSize(
             inst->getOperand(i)->getType());
 
+    printLoadMemoryToStack( );
     printSimpleInstruction("bipush", utostr(size));
-    printSimpleInstruction("invokestatic",
+    printSimpleInstruction("invokevirtual",
                            "lljvm/runtime/Memory/allocateStack(I)I");
     printSimpleInstruction("dup");
 
     for(unsigned int i = minOperand; i < maxOperand; i++) {
         const Value *v = inst->getOperand(i);
+        printLoadMemoryToStack( );
+        printSimpleInstruction("swap");
         printValueLoad(v);
-        printSimpleInstruction("invokestatic",
+        // addr memory addrcurr value
+        printSimpleInstruction("invokevirtual",
             "lljvm/runtime/Memory/pack(I"
             + getTypeDescriptor(v->getType()) + ")I");
+        // addr addrcurr
     }
     printSimpleInstruction("pop");
 }
@@ -99,18 +104,25 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
         //for(unsigned int i = origin, e = inst->getNumOperands(); i < e; i++)
         //    printValueLoad(inst->getOperand(i));
         
+        if(externRefs.count(f)) {
+            printSimpleInstruction("GET_EXTERN_INSTANCE_FOR_METHOD", getValueName(f) + getCallSignature(ty) );
+        } else {
+            printLoadThis();
+        }
+        
         for(unsigned int i = 0, e = ty->getNumParams(); i < e; i++)
             printValueLoad(inst->getOperand(i + origin));
         if(ty->isVarArg() && inst)
             printOperandPack(inst, ty->getNumParams() + origin,
                                    inst->getNumOperands());
         
-        if(externRefs.count(f))
-            printSimpleInstruction("invokestatic",
+        if(externRefs.count(f)) {
+            printSimpleInstruction("invokevirtual",
                 getValueName(f) + getCallSignature(ty));
-        else
-            printSimpleInstruction("invokestatic",
+        } else {
+            printSimpleInstruction("invokevirtual",
                 classname + "/" + getValueName(f) + getCallSignature(ty));
+        }
         
         if(getValueName(f) == "setjmp") {
             unsigned int varNum = usedRegisters++;
@@ -119,11 +131,12 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
             printLabel("setjmp$" + utostr(varNum));
         }
     } else { // indirect call
+        printLoadFunctionToStack();
         printValueLoad(functionVal);
         const FunctionType *ty = cast<FunctionType>(
             cast<PointerType>(functionVal->getType())->getElementType());
         printOperandPack(inst, origin, inst->getNumOperands());
-        printSimpleInstruction("invokestatic",
+        printSimpleInstruction("invokevirtual",
             "lljvm/runtime/Function/invoke_"
             + getTypePostfix(ty->getReturnType()) + "(II)"
             + getTypeDescriptor(ty->getReturnType()));
@@ -294,11 +307,11 @@ void JVMWriter::printCatchJump(unsigned int numJumps) {
  */
 void JVMWriter::printFunction(const Function &f) {
     localVars.clear();
-    usedRegisters = 0;
+    usedRegisters = 1; // start at 1, because "this" is provided
     
     out << '\n';
     out << ".method " << (f.hasLocalLinkage() ? "private " : "public ")
-        << "static " << getValueName(&f) << '(';
+        << "" << getValueName(&f) << '('; // removed static
     for(Function::const_arg_iterator i = f.arg_begin(), e = f.arg_end();
         i != e; i++)
         out << getTypeDescriptor(i->getType());
@@ -344,7 +357,8 @@ void JVMWriter::printFunction(const Function &f) {
     }
     
     printLabel("begin_method");
-    printSimpleInstruction("invokestatic",
+    printLoadMemoryToStack( );
+    printSimpleInstruction("invokevirtual",
                            "lljvm/runtime/Memory/createStackFrame()V");
     printFunctionBody(f);
     if(numJumps) printCatchJump(numJumps);

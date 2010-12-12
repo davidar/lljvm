@@ -26,6 +26,7 @@ import java.io.IOException;
 
 import lljvm.runtime.Error;
 import lljvm.runtime.Memory;
+import lljvm.runtime.Environment;
 
 /**
  * A minimal implementation of the FileHandle interface.
@@ -76,22 +77,22 @@ public abstract class AbstractFileHandle implements FileHandle {
         return false;
     }
     
-    public int read(int buf, int count) {
+    public int read(Environment env, int buf, int count) {
         if(!read)
-            return Error.errno(Error.EINVAL);
+            return env.error.errno(Error.EINVAL);
         int num_bytes = 0;
         try {
             while(num_bytes < count) {
                 int b = read();
                 if(b < 0)
                     break;
-                Memory.store(buf++, (byte) b);
+                env.memory.store(buf++, (byte) b);
                 num_bytes++;
                 if(!available())
                     break;
             }
         } catch(IOException e) {
-            return Error.errno(Error.EIO);
+            return env.error.errno(Error.EIO);
         }
         return num_bytes;
     }
@@ -111,24 +112,24 @@ public abstract class AbstractFileHandle implements FileHandle {
      */
     protected void flush() throws IOException {}
     
-    public int write(int buf, int count) {
+    public int write(Environment env, int buf, int count) {
         if(!write)
-            return Error.errno(Error.EINVAL);
+            return env.error.errno(Error.EINVAL);
         int num_bytes = 0;
         try {
             while(num_bytes < count) {
-                write(Memory.load_i8(buf++));
+                write(env.memory.load_i8(buf++));
                 num_bytes++;
             }
             if(synchronous)
                 flush();
         } catch(IOException e) {
-            return Error.errno(Error.EIO);
+            return env.error.errno(Error.EIO);
         }
         return num_bytes;
     }
     
-    public int seek(int offset, int whence) {
-        return Error.errno(Error.ESPIPE);
+    public int seek(Environment env, int offset, int whence) {
+        return env.error.errno(Error.ESPIPE);
     }
 }

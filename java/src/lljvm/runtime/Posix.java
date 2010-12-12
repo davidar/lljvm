@@ -42,9 +42,9 @@ public final class Posix {
      *              i.e. a pointer to the arg argument (if applicable)
      * @return      the appropriate value on success, -1 on error
      */
-    public static int fcntl(int fd, int cmd, int args) {
+    public static int fcntl(Environment env, int fd, int cmd, int args) {
         // TODO: implement
-        return Error.errno(Error.EACCES);
+        return env.error.errno(Error.EACCES);
     }
     
     /**
@@ -54,9 +54,9 @@ public final class Posix {
      * @param tz  a pointer to the timezone structure to set
      * @return    0 on success, -1 on error
      */
-    public static int gettimeofday(int tv, int tz) {
+    public static int gettimeofday(Environment env, int tv, int tz) {
         // TODO: implement
-        return Error.errno(Error.EINVAL);
+        return env.error.errno(Error.EINVAL);
     }
     
     /**
@@ -67,9 +67,9 @@ public final class Posix {
      * @param oldset  where to store the previous value of the signal mask
      * @return        0 on success, -1 on error
      */
-    public static int sigprocmask(int how, int set, int oldset) {
+    public static int sigprocmask(Environment env, int how, int set, int oldset) {
         // TODO: implement
-        return Error.errno(Error.EINVAL);
+        return env.error.errno(Error.EINVAL);
     }
     
     /**
@@ -78,8 +78,8 @@ public final class Posix {
      * @param name  the name of the variable to retrieve
      * @return      the value of the system resource on success, -1 on error
      */
-    public static int sysconf(int name) {
+    public static int sysconf(Environment env, int name) {
         // TODO: implement
-        return Error.errno(Error.EINVAL);
+        return env.error.errno(Error.EINVAL);
     }
 }

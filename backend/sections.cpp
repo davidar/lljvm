@@ -29,7 +29,8 @@ void JVMWriter::printHeader() {
     if(debug >= 1)
         out << ".source " << sourcename << "\n";
     out << ".class public final " << classname << "\n"
-           ".super java/lang/Object\n\n";
+           ".super java/lang/Object\n"
+           ".implements lljvm/runtime/CustomLibrary\n\n";
 }
 
 /**
@@ -37,6 +38,8 @@ void JVMWriter::printHeader() {
  */
 void JVMWriter::printFields() {
     out << "; Fields\n";
+    out << ".field private final __env Llljvm/runtime/Environment;\n";
+    
     for(Module::global_iterator i = module->global_begin(),
                                 e = module->global_end(); i != e; i++) {
         if(i->isDeclaration()) {
@@ -45,7 +48,7 @@ void JVMWriter::printFields() {
         } else
             out << ".field "
                 << (i->hasLocalLinkage() ? "private " : "public ")
-                << "static final ";
+                << "final ";
         out << getValueName(i) << ' ' << getTypeDescriptor(i->getType());
         if(debug >= 3)
             out << " ; " << *i;
@@ -81,19 +84,45 @@ void JVMWriter::printExternalMethods() {
  */
 void JVMWriter::printConstructor() {
     out << "; Constructor\n"
-           ".method private <init>()V\n"
+           ".method public <init>()V\n"
            "\taload_0\n"
            "\tinvokespecial java/lang/Object/<init>()V\n"
            "\treturn\n"
            ".end method\n\n";
 }
 
+void JVMWriter::printLoadThis() {
+    printSimpleInstruction("aload_0"); // "this."
+}
+
+void JVMWriter::printLoadEnvToStack() {
+    printLoadThis();
+    printSimpleInstruction("getfield "+classname+"/__env Llljvm/runtime/Environment;");
+}
+
+void JVMWriter::printLoadMemoryToStack() {
+    printLoadEnvToStack( ); // "__env."
+    printSimpleInstruction("getfield lljvm/runtime/Environment/memory Llljvm/runtime/Memory;");
+}
+
+void JVMWriter::printLoadFunctionToStack() {
+    printLoadEnvToStack();
+    printSimpleInstruction("getfield", "lljvm/runtime/Environment/function Llljvm/runtime/Function;");
+}
+
 /**
  * Print the static class initialization method.
  */
 void JVMWriter::printClInit() {
-    out << ".method public <clinit>()V\n";
-    printSimpleInstruction(".limit stack 4");
+    //out << ".method public <clinit>()V\n";
+    out << ".method public initialiseEnvironment(Llljvm/runtime/Environment;)V\n";
+    printSimpleInstruction(".limit stack 5");
+    printSimpleInstruction(".limit locals 2");
+    
+    out << "\n\t; load environment into class\n";
+    printSimpleInstruction("aload_0"); // this.
+    printSimpleInstruction("aload_1"); // value
+    printSimpleInstruction("putfield "+classname+"/__env Llljvm/runtime/Environment;");
     
     out << "\n\t; allocate global variables\n";
     for(Module::global_iterator i = module->global_begin(),
@@ -101,11 +130,14 @@ void JVMWriter::printClInit() {
         if(!i->isDeclaration()) {
             const GlobalVariable *g = i;
             const Constant *c = g->getInitializer();
+            printLoadMemoryToStack();
             printConstLoad(
                 APInt(32, targetData->getTypeAllocSize(c->getType()), false));
-            printSimpleInstruction("invokestatic",
+            printSimpleInstruction("invokevirtual",
                                    "lljvm/runtime/Memory/allocateData(I)I");
-            printSimpleInstruction("putstatic",
+            printSimpleInstruction("aload_0"); // "this"
+            printSimpleInstruction("swap"); // move this 1 down the stack
+            printSimpleInstruction("putfield",
                 classname + "/" + getValueName(g) + " I");
         }
     }
@@ -116,7 +148,8 @@ void JVMWriter::printClInit() {
         if(!i->isDeclaration()) {
             const GlobalVariable *g = i;
             const Constant *c = g->getInitializer();
-            printSimpleInstruction("getstatic",
+            printSimpleInstruction("aload_0"); // "this"
+            printSimpleInstruction("getfield",
                 classname + "/" + getValueName(g) + " I");
             printStaticConstant(c);
             printSimpleInstruction("pop");
@@ -137,10 +170,40 @@ void JVMWriter::printMainMethod() {
         return;
 
     out << ".method public static main([Ljava/lang/String;)V\n";
-    printSimpleInstruction(".limit stack 4");
+    printSimpleInstruction(".limit stack 5");
+    
+    out << "\n\t; create an instance of our class, leaving it as TOS\n";
+    printSimpleInstruction("new", classname);
+    printSimpleInstruction("dup");
+    printSimpleInstruction("invokespecial", classname+"/<init>()V");
+    // stack: inst
+    
+    printSimpleInstruction("dup");
+    // stack: inst inst
+    
+    // create our environment
+    out << "\n\t; create our environment\n";
+    
+    printSimpleInstruction("new", "lljvm/runtime/Environment");
+    printSimpleInstruction("dup");
+    printSimpleInstruction("invokespecial", "lljvm/runtime/Environment/<init>()V");
+    // stack: inst inst env
+    
+    printSimpleInstruction("swap");
+    // stack: inst env inst
+    
+    printSimpleInstruction("invokevirtual", "lljvm/runtime/Environment/loadCustomLibrary("
+                                            "Llljvm/runtime/CustomLibrary;"
+                                            ")V");
+    // stack: inst
+    
+    printSimpleInstruction("dup");
+    
+    // stack: inst inst
 
     if(f->arg_size() == 0) {
-        printSimpleInstruction("invokestatic", classname + "/main()I");
+        printSimpleInstruction("invokevirtual", classname + "/main()I");
+        // stack: inst
     } else if(f->arg_size() == 2) {
         Function::const_arg_iterator arg1, arg2;
         arg1 = arg2 = f->arg_begin(); arg2++;
@@ -149,17 +212,44 @@ void JVMWriter::printMainMethod() {
             llvm_unreachable("main function has invalid type signature");
         printSimpleInstruction("aload_0");
         printSimpleInstruction("arraylength");
+        
+        // stack: inst inst argc
+        
+        printSimpleInstruction("swap");
+        printSimpleInstruction("dup_x1");
+        
+        // stack: inst inst argc inst
+        
+        // load memory onto stack
+        printSimpleInstruction("getfield", classname+"/__env Llljvm/runtime/Environment;");
+        // stack: inst inst argc env
+        printSimpleInstruction("getfield", "lljvm/runtime/Environment/memory Llljvm/runtime/Memory;");
+        // stack: inst inst argc memory
+        
         printSimpleInstruction("aload_0");
-        printSimpleInstruction("invokestatic",
+        printSimpleInstruction("invokevirtual",
             "lljvm/runtime/Memory/storeStack([Ljava/lang/String;)I");
-        printSimpleInstruction("invokestatic", classname + "/main("
+        // stack: inst inst argc argv
+        
+        printSimpleInstruction("invokevirtual", classname + "/main("
             + getTypeDescriptor(arg1->getType())
             + getTypeDescriptor(arg2->getType()) + ")I");
     } else {
         llvm_unreachable("main function has invalid number of arguments");
     }
-
-    printSimpleInstruction("invokestatic", "lljvm/lib/c/exit(I)V");
+    
+    // stack: inst ret
+    printSimpleInstruction("swap");
+    // stack: ret inst
+    printSimpleInstruction("getfield", classname+"/__env Llljvm/runtime/Environment;");
+    // stack: ret env
+    printSimpleInstruction("ldc", "\"lljvm/lib/c\"");
+    printSimpleInstruction("invokevirtual", "lljvm/runtime/Environment/getInstanceByName(Ljava.lang.String;)Llljvm.runtime.CustomLibrary;");
+    // stack: ret libc
+    printSimpleInstruction("checkcast", "lljvm/lib/c");
+    printSimpleInstruction("swap"); // put the return value ahead
+    // stack: libc ret
+    printSimpleInstruction("invokevirtual", "lljvm/lib/c/exit(I)V");
     printSimpleInstruction("return");
     out << ".end method\n";
 }

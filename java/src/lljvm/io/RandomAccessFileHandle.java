@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import lljvm.runtime.Environment;
 import lljvm.runtime.Error;
 import lljvm.runtime.IO;
 
@@ -75,21 +76,21 @@ public class RandomAccessFileHandle extends AbstractFileHandle {
         file.close();
     }
     
-    public int seek(int offset, int whence) {
+    public int seek(Environment env, int offset, int whence) {
         long n = offset;
         try {
             switch(whence) {
             case IO.SEEK_SET: break;
             case IO.SEEK_CUR: n += file.getFilePointer(); break;
             case IO.SEEK_END: n += file.length(); break;
-            default: return Error.errno(Error.EINVAL);
+            default: return env.error.errno(Error.EINVAL);
             }
             file.seek(n);
         } catch(IOException e) {
-            return Error.errno(Error.EINVAL);
+            return env.error.errno(Error.EINVAL);
         }
         if(n > Integer.MAX_VALUE)
-            return Error.errno(Error.EOVERFLOW);
+            return env.error.errno(Error.EOVERFLOW);
         return (int) n;
     }
 }

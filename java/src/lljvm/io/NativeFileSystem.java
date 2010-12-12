@@ -25,6 +25,7 @@ package lljvm.io;
 import java.io.File;
 import java.io.IOException;
 
+import lljvm.runtime.Environment;
 import lljvm.runtime.Error;
 import lljvm.runtime.IO;
 
@@ -53,7 +54,7 @@ public class NativeFileSystem implements FileSystem {
         return file;
     }
     
-    public FileHandle open(String pathname, int flags, int mode) {
+    public FileHandle open(Environment env, String pathname, int flags, int mode) {
         File file = newFile(pathname);
         try {
             if(file.createNewFile()) {
@@ -68,19 +69,19 @@ public class NativeFileSystem implements FileSystem {
                         (mode & (IO.S_IXGRP|IO.S_IXOTH)) == 0);
             } else { // file already exists
                 if((flags & IO.O_EXCL) != 0) {
-                    Error.errno(Error.EEXIST);
+                    env.error.errno(Error.EEXIST);
                     return null;
                 }
             }
         } catch(IOException e) {
-            Error.errno(Error.EACCES);
+            env.error.errno(Error.EACCES);
             return null;
         }
-        return open(file, flags);
+        return open(env, file, flags);
     }
     
-    public FileHandle open(String pathname, int flags) {
-        return open(newFile(pathname), flags);
+    public FileHandle open(Environment env, String pathname, int flags) {
+        return open(env, newFile(pathname), flags);
     }
     
     /**
@@ -90,32 +91,32 @@ public class NativeFileSystem implements FileSystem {
      * @param flags  the file status flags
      * @return       the new file handle
      */
-    private FileHandle open(File file, int flags) {
+    private FileHandle open(Environment env, File file, int flags) {
         try {
             return new RandomAccessFileHandle(file, flags);
         } catch(IOException e) {
-            Error.errno(Error.EACCES);
+            env.error.errno(Error.EACCES);
             return null;
         }
     }
     
-    public boolean rename(String oldpath, String newpath) {
+    public boolean rename(Environment env, String oldpath, String newpath) {
         File oldfile = newFile(oldpath);
         File newfile = newFile(newpath);
         return oldfile.renameTo(newfile);
     }
     
-    public boolean link(String oldpath, String newpath) {
+    public boolean link(Environment env, String oldpath, String newpath) {
         // TODO: Java 7: <http://java.sun.com/docs/books/tutorial/essential/
         //                                              io/links.html#hardLink>
         return false;
     }
     
-    public boolean unlink(String pathname) {
+    public boolean unlink(Environment env, String pathname) {
         return false;
     }
     
-    public boolean chdir(String path) {
+    public boolean chdir(Environment env, String path) {
         File newCWD = newFile(path);
         if(!newCWD.exists())
             return false;
@@ -123,7 +124,7 @@ public class NativeFileSystem implements FileSystem {
         return true;
     }
     
-    public String getcwd() {
+    public String getcwd(Environment env) {
         return cwd.getAbsolutePath();
     }
 }

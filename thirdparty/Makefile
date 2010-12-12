@@ -20,6 +20,7 @@ ARCHIVES := \
 newlib: newlib-1.17.0.tar.gz
 	tar -zxvf $<
 	patch -p1 < newlib-1.17.0.patch
+	patch -p1 < newlib-softexit.patch
 	rm -rf newlib
 	mv -f newlib-1.17.0 newlib
 

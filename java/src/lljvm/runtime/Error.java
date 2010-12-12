@@ -28,7 +28,7 @@ package lljvm.runtime;
  * 
  * @author  David Roberts
  */
-public final class Error {
+public final class Error implements CustomLibrary {
     /** Not super-user */
     public static final int EPERM = 1;
     /** No such file or directory */
@@ -281,20 +281,30 @@ public final class Error {
     public static final int EOWNERDEAD = 142;
     
     /** Pointer to errno */
-    public static int errno = Memory.allocateData(4);
+    public int errno;
+    
+    private Environment env;
     
     /**
-     * Prevent this class from being instantiated.
+     * Initialiser for use when loaded into an Environment
      */
-    private Error() {}
+    public void initialiseEnvironment( Environment env ) {
+        this.env = env;
+        errno = env.memory.allocateData(4);
+    }
+    
+    /**
+     * 
+     */
+    public Error() {}
     
     /**
      * Returns the value of errno.
      * 
      * @return  the value of errno
      */
-    public static int errno() {
-        return Memory.load_i32(errno);
+    public int errno() {
+        return env.memory.load_i32(errno);
     }
     
     /**
@@ -303,8 +313,8 @@ public final class Error {
      * @param value  the new value of errno
      * @return       -1
      */
-    public static int errno(int value) {
-        Memory.store(errno, value);
+    public int errno(int value) {
+        env.memory.store(errno, value);
         return -1;
     }
 }
