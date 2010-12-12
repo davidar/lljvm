@@ -7,7 +7,7 @@ diff -ur a/newlib-1.17.0/newlib/libc/include/machine/setjmp.h b/newlib-1.17.0/ne
  #elif defined (__i386__)
 -#if defined(__unix__) || defined(__rtems__)
 +#if defined(__unix__) || defined(__rtems__) || defined(__APPLE__)
- # define _JBLEN        9
+ # define _JBLEN	9
  #else
  #include "setjmp-dj.h"
 @@ -245,6 +245,13 @@
