@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.security.AccessControlException;
 
 import lljvm.runtime.CustomLibrary;
 
@@ -65,6 +66,9 @@ public final class ReflectionUtils {
                     new URL[] { new File(".").toURI().toURL() });
         } catch(MalformedURLException e) {
             classLoader = ClassLoader.getSystemClassLoader();
+        } catch(AccessControlException e) {
+            // we're probbaly in the applet sandbox. use the safer loader
+            return Class.forName(name);
         }
         return classLoader.loadClass(name);
     }

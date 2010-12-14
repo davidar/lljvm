@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.security.AccessControlException;
 
 import lljvm.util.ReflectionUtils;
 
@@ -80,7 +81,11 @@ public final class Function implements CustomLibrary {
             final String sig = ReflectionUtils.getQualifiedSignature(method);
             functionPointers.put(sig, addr);
             functionObjects.put(addr, method);
-            method.setAccessible(true);
+            try {
+                method.setAccessible(true);
+            } catch ( AccessControlException e ) {
+                // thrown if we're in an applet sandbox, ignore
+            }
             
             //java.lang.System.err.println( "Registering " + sig + " at " + addr );
         }

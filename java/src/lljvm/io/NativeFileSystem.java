@@ -36,7 +36,19 @@ import lljvm.runtime.IO;
  */
 public class NativeFileSystem implements FileSystem {
     /** User working directory system property */
-    private static final String USER_DIR = System.getProperty("user.dir");
+    private static final String USER_DIR;
+
+	static {
+		String dir = "";
+		try {
+		    // FIXME: this kills java in an applet -theo
+			//dir = System.getProperty("user.dir");
+		} catch (Exception e) {
+		}
+		
+		USER_DIR = dir;
+	}
+	
     /** Current working directory */
     private File cwd = (USER_DIR == null ? new File("") : new File(USER_DIR));
     

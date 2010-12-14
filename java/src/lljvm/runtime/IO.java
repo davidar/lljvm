@@ -23,6 +23,8 @@
 package lljvm.runtime;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.System;
 
 import lljvm.io.FileHandle;
@@ -114,6 +116,18 @@ public final class IO implements CustomLibrary {
         putFileHandle(new OutputStreamFileHandle(System.out));
         putFileHandle(new OutputStreamFileHandle(System.err));
     }
+    
+    public void setIn(InputStream stream) {
+		fileDescriptors[0] = new InputStreamFileHandle(stream);
+	}
+	
+	public void setOut(OutputStream stream) {
+		fileDescriptors[1] = new OutputStreamFileHandle(stream);
+	}
+	
+	public void setErr(OutputStream stream) {
+		fileDescriptors[2] = new OutputStreamFileHandle(stream);
+	}
     
     /**
      * 

@@ -169,6 +169,52 @@ void JVMWriter::printMainMethod() {
     if(!f || f->isDeclaration())
         return;
 
+    out << ".method public main_([Ljava/lang/String;)I\n";
+    printSimpleInstruction(".limit stack 5");
+    printSimpleInstruction(".limit locals 2");
+    
+    printSimpleInstruction("aload_0"); // this
+    
+    if(f->arg_size() == 0) {
+        printSimpleInstruction("invokevirtual", classname + "/main()I");
+        // stack: inst
+    } else if(f->arg_size() == 2) {
+        Function::const_arg_iterator arg1, arg2;
+        arg1 = arg2 = f->arg_begin(); arg2++;
+        if(!arg1->getType()->isIntegerTy()
+         || arg2->getType()->getTypeID() != Type::PointerTyID)
+            llvm_unreachable("main function has invalid type signature");
+        printSimpleInstruction("aload_1"); // args
+        printSimpleInstruction("arraylength");
+        
+        // stack: inst inst argc
+        
+        printSimpleInstruction("swap");
+        printSimpleInstruction("dup_x1");
+        
+        // stack: inst inst argc inst
+        
+        // load memory onto stack
+        printSimpleInstruction("getfield", classname+"/__env Llljvm/runtime/Environment;");
+        // stack: inst inst argc env
+        printSimpleInstruction("getfield", "lljvm/runtime/Environment/memory Llljvm/runtime/Memory;");
+        // stack: inst inst argc memory
+        
+        printSimpleInstruction("aload_1");
+        printSimpleInstruction("invokevirtual",
+            "lljvm/runtime/Memory/storeStack([Ljava/lang/String;)I");
+        // stack: inst inst argc argv
+        
+        printSimpleInstruction("invokevirtual", classname + "/main("
+            + getTypeDescriptor(arg1->getType())
+            + getTypeDescriptor(arg2->getType()) + ")I");
+    } else {
+        llvm_unreachable("main function has invalid number of arguments");
+    }
+    
+    printSimpleInstruction("ireturn");
+    out << ".end method\n";
+    
     out << ".method public static main([Ljava/lang/String;)V\n";
     printSimpleInstruction(".limit stack 5");
     
@@ -200,43 +246,10 @@ void JVMWriter::printMainMethod() {
     printSimpleInstruction("dup");
     
     // stack: inst inst
-
-    if(f->arg_size() == 0) {
-        printSimpleInstruction("invokevirtual", classname + "/main()I");
-        // stack: inst
-    } else if(f->arg_size() == 2) {
-        Function::const_arg_iterator arg1, arg2;
-        arg1 = arg2 = f->arg_begin(); arg2++;
-        if(!arg1->getType()->isIntegerTy()
-         || arg2->getType()->getTypeID() != Type::PointerTyID)
-            llvm_unreachable("main function has invalid type signature");
-        printSimpleInstruction("aload_0");
-        printSimpleInstruction("arraylength");
-        
-        // stack: inst inst argc
-        
-        printSimpleInstruction("swap");
-        printSimpleInstruction("dup_x1");
-        
-        // stack: inst inst argc inst
-        
-        // load memory onto stack
-        printSimpleInstruction("getfield", classname+"/__env Llljvm/runtime/Environment;");
-        // stack: inst inst argc env
-        printSimpleInstruction("getfield", "lljvm/runtime/Environment/memory Llljvm/runtime/Memory;");
-        // stack: inst inst argc memory
-        
-        printSimpleInstruction("aload_0");
-        printSimpleInstruction("invokevirtual",
-            "lljvm/runtime/Memory/storeStack([Ljava/lang/String;)I");
-        // stack: inst inst argc argv
-        
-        printSimpleInstruction("invokevirtual", classname + "/main("
-            + getTypeDescriptor(arg1->getType())
-            + getTypeDescriptor(arg2->getType()) + ")I");
-    } else {
-        llvm_unreachable("main function has invalid number of arguments");
-    }
+    
+    // invoke the instance main function
+    printSimpleInstruction("aload_0");
+    printSimpleInstruction("invokevirtual", classname + "/main_([Ljava/lang/String;)I");
     
     // stack: inst ret
     printSimpleInstruction("swap");

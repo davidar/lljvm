@@ -28,14 +28,16 @@ public class Environment {
     }
     
     public void loadCustomLibrary( CustomLibrary library ) {
-        library.initialiseEnvironment( this );
-        
         Class<?> libClass = library.getClass( );
         String libraryName = libClass.getCanonicalName( );
         
-        //java.lang.System.err.println( "Loaded CustomLibrary: " + libraryName );
-        
-        libraries.put( libraryName, library );
+        if ( !libraries.containsKey( libraryName ) ) {
+            library.initialiseEnvironment( this );
+
+            //java.lang.System.err.println( "Loaded CustomLibrary: " + libraryName );
+
+            libraries.put( libraryName, library );
+        }
     }
     
     public CustomLibrary getInstanceByName( String name ) {
