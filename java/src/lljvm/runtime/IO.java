@@ -102,7 +102,7 @@ public final class IO implements CustomLibrary {
     private int numFileDescriptors = 0;
     
     /** The file system interface */
-    private FileSystem fileSystem = new NativeFileSystem();
+    public FileSystem fileSystem = new NativeFileSystem();
     
     private Environment env;
     
