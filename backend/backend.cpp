@@ -34,7 +34,7 @@ char JVMWriter::id = 0;
  */
 JVMWriter::JVMWriter(const TargetData *td, formatted_raw_ostream &o,
                      const std::string &cls, unsigned int dbg)
-    : FunctionPass(&id), targetData(td), out(o), classname(cls), debug(dbg) {}
+    : FunctionPass(id), targetData(td), out(o), classname(cls), debug(dbg) {}
 
 /**
  * Register required analysis information.
