@@ -45,6 +45,9 @@ public class AsmLinker {
     /** External methods */
     private List<String> externMethods = new ArrayList<String>();
     
+    /** Current class name */
+    private String currentClassName;
+    
     /**
      * Construct a new AsmLinker with the specified input and output sources.
      * 
@@ -54,6 +57,21 @@ public class AsmLinker {
     public AsmLinker(BufferedReader in, BufferedWriter out) {
         this.in = in;
         this.out = out;
+    }
+    
+    private void readClass() throws IOException {
+        String line;
+        while((line = in.readLine()) != null) {
+            String[] args = line.trim().split("\\s+");
+            
+            out.write(line);
+            out.write('\n');
+            
+            if(args[0].equals(".class")) {
+                currentClassName = args[args.length-1];
+                break;
+            }
+        }
     }
     
     /**
@@ -87,8 +105,9 @@ public class AsmLinker {
      * @throws IOException  if there is a problem reading or writing
      * @throws LinkError    if there is a problem linking external references
      */
-    private void printInvokeStatic(String methodName,
-                                   Map<String, String> methodMap)
+    private void printInvoke(String methodName,
+                             Map<String, String> methodMap,
+                             boolean virtualCall )
     throws IOException, LinkError {
         if(!methodName.contains("(")) // non-prototyped function
             for(String name : methodMap.keySet())
@@ -109,7 +128,14 @@ public class AsmLinker {
         if(className == null)
             throw new LinkError(
                     "Unable to find external method " + methodName);
-        out.write("\tinvokestatic ");
+        
+        // FIXME: move this to the right place on the stack?
+        //printGetInst(className);
+        
+        if (virtualCall)
+            out.write("\tinvokevirtual ");
+        else
+            out.write("\tinvokestatic ");
         out.write(className);
         out.write('/');
         out.write(methodName);
@@ -132,6 +158,54 @@ public class AsmLinker {
             throw new LinkError(
                     "Unable to find external field " + fieldName);
         out.write("\tgetstatic ");
+        out.write(className);
+        out.write('/');
+        out.write(fieldName);
+        out.write('\n');
+    }
+    
+    private void printGetInst(String className) throws IOException {
+        // start by getting our environment on the stack
+        out.write("\taload_0\n");
+        out.write("\tgetfield "+currentClassName+"/__env Llljvm/runtime/Environment;\n");
+        
+        // now ask the environment to give us the instance of the class we need
+        out.write("\tldc \""+className+"\"\n");
+        out.write("\tinvokevirtual lljvm/runtime/Environment/getInstanceByName(Ljava/lang/String;)Llljvm.runtime.CustomLibrary;\n");
+        out.write("\tcheckcast " + className+"\n");
+    }
+    
+    private void printGetExternInst(String fieldName,
+                                       Map<String, String> fieldMap)
+    throws IOException, LinkError {
+        String className = fieldMap.get(fieldName);
+        if(className == null)
+            throw new LinkError(
+                    "Unable to find external member " + fieldName);
+        
+        printGetInst( className );
+    }
+    
+    /**
+     * Print a getfield instruction for the given method.
+     * 
+     * @param fieldName     Operand of the instruction.
+     * @param fieldMap      Mapping of external fields to classes.
+     * @throws IOException  if there is a problem reading or writing
+     * @throws LinkError    if there is a problem linking external references
+     */
+    private void printGetField(String fieldName,
+                                Map<String, String> fieldMap)
+    throws IOException, LinkError {
+        String className = fieldMap.get(fieldName);
+        if(className == null)
+            throw new LinkError(
+                    "Unable to find external field " + fieldName);
+        
+        printGetInst( className );
+        
+        // instance is now TOS, so getfield will work!
+        out.write("\tgetfield ");
         out.write(className);
         out.write('/');
         out.write(fieldName);
@@ -174,12 +248,22 @@ public class AsmLinker {
         String line;
         while((line = in.readLine()) != null) {
             String[] args = line.trim().split("\\s+");
+            
             if(args[0].equals("invokestatic")
                     && externMethods.contains(args[1]))
-                printInvokeStatic(args[1], methodMap);
+                printInvoke(args[1], methodMap, false);
+            else if(args[0].equals("invokevirtual")
+                    && externMethods.contains(args[1]))
+                printInvoke(args[1], methodMap, true);
             else if(args[0].equals("getstatic")
                     && externFields.contains(args[1] + " " + args[2]))
                 printGetStatic(args[1] + " " + args[2], fieldMap);
+            else if(args[0].equals("getfield")
+                    && externFields.contains(args[1] + " " + args[2]))
+                printGetField(args[1] + " " + args[2], fieldMap);
+            else if(args[0].equals("GET_EXTERN_INSTANCE_FOR_METHOD")
+                    && externMethods.contains(args[1]))
+                printGetExternInst(args[1], methodMap);
             else if(args[0].equals("CLASSFORMETHOD")
                     && externMethods.contains(args[1]))
                 printClassForMethod(args[1], methodMap);
@@ -200,6 +284,7 @@ public class AsmLinker {
     public void link(Map<String, String> methodMap,
                      Map<String, String> fieldMap)
     throws IOException, LinkError {
+        readClass();
         readExtern();
         linkStatic(methodMap, fieldMap);
     }

@@ -37,13 +37,16 @@ public class Jump extends RuntimeException {
     /** The return value of this Jump */
     public final int value;
     
+    private Environment env;
+    
     /**
      * Create a new Jump with the given ID and return value.
      * 
      * @param id     the ID
      * @param value  the return value
      */
-    private Jump(int id, int value) {
+    private Jump(Environment env, int id, int value) {
+        this.env = env;
         this.id = id;
         this.value = (value == 0 ? 1 : value);
     }
@@ -59,14 +62,15 @@ public class Jump extends RuntimeException {
     /**
      * Save the stack context in env for later use by longjmp.
      * 
-     * @param env  where to store the stack context
+     * @param env  the execution environment
+     * @param env_  where to store the stack context
      * @return     the unique ID of this jump target
      */
-    public static int setjmp(int env) {
+    public static int setjmp(Environment env, int env_) {
         int id = ++numJumps;
-        int stackDepth = Memory.getStackDepth();
-        Memory.store(env, id);
-        Memory.store(env+4, stackDepth);
+        int stackDepth = env.memory.getStackDepth();
+        env.memory.store(env_, id);
+        env.memory.store(env_+4, stackDepth);
         return id;
     }
     
@@ -75,13 +79,14 @@ public class Jump extends RuntimeException {
      * causing setjmp to return the given value.
      * If the return value is 0, 1 will be returned instead.
      * 
-     * @param env  the stack context stored by setjmp
+     * @param env  the execution environment
+     * @param env_ the stack context stored by setjmp
      * @param val  the return value
      */
-    public static void longjmp(int env, int val) {
-        int id = Memory.load_i32(env);
-        int stackDepth = Memory.load_i32(env+4);
-        Memory.destroyStackFrames(Memory.getStackDepth() - stackDepth);
-        throw new Jump(id, val);
+    public static void longjmp(Environment env, int env_, int val) {
+        int id = env.memory.load_i32(env_);
+        int stackDepth = env.memory.load_i32(env_+4);
+        env.memory.destroyStackFrames(env.memory.getStackDepth() - stackDepth);
+        throw new Jump(env, id, val);
     }
 }

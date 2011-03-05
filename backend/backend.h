@@ -193,6 +193,11 @@ private:
     void printConstructor();
     void printClInit();
     void printMainMethod();
+
+	void printLoadThis();
+	void printLoadEnvToStack();
+	void printLoadMemoryToStack();
+	void printLoadFunctionToStack();
     
     // types.cpp
     unsigned int getBitWidth(     const Type *ty, bool expand = false);

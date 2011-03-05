@@ -1,6 +1,15 @@
 diff -ur a/newlib-1.17.0/newlib/libc/include/machine/setjmp.h b/newlib-1.17.0/newlib/libc/include/machine/setjmp.h
 --- a/newlib-1.17.0/newlib/libc/include/machine/setjmp.h	2008-12-12 06:05:38.000000000 +1000
 +++ b/newlib-1.17.0/newlib/libc/include/machine/setjmp.h	2009-12-22 19:37:52.000000000 +1000
+@@ -60,7 +60,7 @@
+ #if defined(__CYGWIN__) && !defined (_JBLEN)
+ #define _JBLEN (13 * 4)
+ #elif defined (__i386__)
+-#if defined(__unix__) || defined(__rtems__)
++#if defined(__unix__) || defined(__rtems__) || defined(__APPLE__)
+ # define _JBLEN	9
+ #else
+ #include "setjmp-dj.h"
 @@ -245,6 +245,13 @@
  #define _JBTYPE unsigned short
  #endif /* __m32c__ */
