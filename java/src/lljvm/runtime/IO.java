@@ -113,6 +113,15 @@ public final class IO {
      */
     private IO() {}
     
+    
+    public static FileHandle[] setStdHandles(FileHandle stdIn, FileHandle stdOut, FileHandle stdErr) {
+    	FileHandle[] result = new FileHandle[] {fileDescriptors[0], fileDescriptors[1], fileDescriptors[2]};
+    	fileDescriptors[0] = stdIn;
+    	fileDescriptors[1] = stdOut;
+    	fileDescriptors[2] = stdErr;
+    	return result;
+    }
+    
     /**
      * Open and possibly create a file or device.
      * 
