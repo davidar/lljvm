@@ -27,7 +27,9 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -45,9 +47,17 @@ public class Main {
      * @param args  Command line arguments.
      */
     public static void main(String[] args) {
-        List<String> libs = Arrays.asList(args);
+        List<String> libs = new ArrayList<String>(Arrays.asList(args));
         Map<String, String> methodMap = null;
         Map<String, String> fieldMap = null;
+        String unresolvedClassName = null;
+        for(Iterator<String> iter = libs.iterator();iter.hasNext();) {
+        	String item = iter.next();
+        	if (item.startsWith("~")) {
+        		unresolvedClassName = item.substring(1);
+        		iter.remove();
+        	}
+        }
         try {
             methodMap = ReflectionUtils.buildMethodMap(libs);
             fieldMap = ReflectionUtils.buildFieldMap(libs);
@@ -63,7 +73,7 @@ public class Main {
                 new OutputStreamWriter(System.out));
         AsmLinker asm = new AsmLinker(in, out);
         try {
-            asm.link(methodMap, fieldMap);
+            asm.link(methodMap, fieldMap, unresolvedClassName);
             in.close();
             out.close();
         } catch(IOException e) {

@@ -173,6 +173,10 @@ def bc2class(output, flags):
             classpath.append(os.path.abspath(flag[2:]))
         elif flag == '-lm':
             java_libs += ['java.lang.Math', 'lljvm.runtime.Math']
+        elif flag.startswith('-l~'):
+        	java_libs.append(flag[2:])
+        elif flag.startswith('-l+'):
+        	java_libs.append(flag[3:])
         elif flag.startswith('-l') \
          and flag not in ('-link','-link-as-library'):
             java_libs.append('lib' + flag[2:])
