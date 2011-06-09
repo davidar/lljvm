@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Class for linking assembly files.
@@ -35,6 +36,9 @@ import java.util.Map;
  * @author  David Roberts
  */
 public class AsmLinker {
+	
+	private final AtomicInteger counter = new AtomicInteger();
+	
     /** The reader to read input assembly code */
     private BufferedReader in;
     /** The writer to write linked assembly code */
@@ -88,9 +92,9 @@ public class AsmLinker {
      * @throws LinkError    if there is a problem linking external references
      */
     private void printInvokeStatic(String methodName,
-                                   Map<String, String> methodMap)
+                                   Map<String, String> methodMap, String unresolvedClassName)
     throws IOException, LinkError {
-        if(!methodName.contains("(")) // non-prototyped function
+        if(!methodName.contains("(") && methodMap!=null) // non-prototyped function
             for(String name : methodMap.keySet())
                 if(name.startsWith(methodName + "(")) {
                     // TODO: throw error unless specified otherwise
@@ -106,6 +110,7 @@ public class AsmLinker {
                     return;
                 }
         String className = methodMap.get(methodName);
+        className = className !=null ? className : unresolvedClassName;
         if(className == null)
             throw new LinkError(
                     "Unable to find external method " + methodName);
@@ -125,9 +130,10 @@ public class AsmLinker {
      * @throws LinkError    if there is a problem linking external references
      */
     private void printGetStatic(String fieldName,
-                                Map<String, String> fieldMap)
+                                Map<String, String> fieldMap, String unresolvedClassName)
     throws IOException, LinkError {
-        String className = fieldMap.get(fieldName);
+        String className =fieldMap.get(fieldName);
+        className = className !=null ? className : unresolvedClassName;
         if(className == null)
             throw new LinkError(
                     "Unable to find external field " + fieldName);
@@ -148,9 +154,10 @@ public class AsmLinker {
      * @throws LinkError    if there is a problem linking external references
      */
     private void printClassForMethod(String methodName,
-                                     Map<String, String> methodMap)
+                                     Map<String, String> methodMap, String unresolvedClassName)
     throws IOException, LinkError {
         String className = methodMap.get(methodName);
+        className = className !=null ? className : unresolvedClassName;
         if(className == null)
             throw new LinkError(
                     "Unable to find external method " + methodName);
@@ -169,23 +176,43 @@ public class AsmLinker {
      * @throws LinkError    if there is a problem linking external references
      */
     private void linkStatic(Map<String, String> methodMap,
-                            Map<String, String> fieldMap)
+                            Map<String, String> fieldMap,
+                            String unresolvedClassName)
     throws IOException, LinkError {
         String line;
         while((line = in.readLine()) != null) {
             String[] args = line.trim().split("\\s+");
             if(args[0].equals("invokestatic")
                     && externMethods.contains(args[1]))
-                printInvokeStatic(args[1], methodMap);
+                printInvokeStatic(args[1], methodMap, unresolvedClassName);
             else if(args[0].equals("getstatic")
                     && externFields.contains(args[1] + " " + args[2]))
-                printGetStatic(args[1] + " " + args[2], fieldMap);
+                printGetStatic(args[1] + " " + args[2], fieldMap, unresolvedClassName);
             else if(args[0].equals("CLASSFORMETHOD")
                     && externMethods.contains(args[1]))
-                printClassForMethod(args[1], methodMap);
+                printClassForMethod(args[1], methodMap, unresolvedClassName);
             else
                 out.write(line + '\n');
         }
+    }
+    
+    /**
+     * Link references to methods and fields in the input to the classes
+     * specified in the given maps.
+     * 
+     * @param methodMap     Mapping of external methods to classes.
+     * @param fieldMap      Mapping of external fields to classes.
+     * @param unresolvedClassName if not {@code null}, then a missing method or field will cause this
+     * class to be written rather than failing the link.
+     * @throws IOException  if there is a problem reading or writing
+     * @throws LinkError    if there is a problem linking external references
+     */
+    public void link(Map<String, String> methodMap,
+                     Map<String, String> fieldMap,
+                     String unresolvedClassName)
+    throws IOException, LinkError {
+        readExtern();
+        linkStatic(methodMap, fieldMap,unresolvedClassName);
     }
     
     /**
@@ -198,9 +225,7 @@ public class AsmLinker {
      * @throws LinkError    if there is a problem linking external references
      */
     public void link(Map<String, String> methodMap,
-                     Map<String, String> fieldMap)
-    throws IOException, LinkError {
-        readExtern();
-        linkStatic(methodMap, fieldMap);
+            Map<String, String> fieldMap) throws IOException, LinkError {
+    	link(methodMap,fieldMap,null);
     }
 }
