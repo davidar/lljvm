@@ -1,4 +1,5 @@
 doc/
+/lib/
 lljvm-*.jar
 lljvm-demo-*.jar
 lljvm-doc-*.zip

@@ -26,10 +26,16 @@
  * Print the header.
  */
 void JVMWriter::printHeader() {
+    printLinkerHeader();
+    out << ".bytecode 49.0\n";
     if(debug >= 1)
         out << ".source " << sourcename << "\n";
-    out << ".class public final " << classname << "\n"
-           ".super java/lang/Object\n\n";
+    out << ".class public " << classname << "\n"
+           ".super java/lang/Object\n\n" << "\n"
+           ".implements lljvm/runtime/Module" << "\n";
+    out << "; ;;START LINKER DECLARATIONS;; ;\n";
+    printDeclareLinkerFields();
+    out << "; ;;END LINKER DECLARATIONS;; ;\n\n";
 }
 
 /**
@@ -37,15 +43,16 @@ void JVMWriter::printHeader() {
  */
 void JVMWriter::printFields() {
     out << "; Fields\n";
+
     for(Module::global_iterator i = module->global_begin(),
                                 e = module->global_end(); i != e; i++) {
         if(i->isDeclaration()) {
-            out << ".extern field ";
+            out << ";.extern field ";
             externRefs.insert(i);
         } else
             out << ".field "
                 << (i->hasLocalLinkage() ? "private " : "public ")
-                << "static final ";
+                << "final ";
         out << getValueName(i) << ' ' << getTypeDescriptor(i->getType());
         if(debug >= 3)
             out << " ; " << *i;
@@ -65,7 +72,7 @@ void JVMWriter::printExternalMethods() {
         if(i->isDeclaration() && !i->isIntrinsic()) {
             const Function *f = i;
             const FunctionType *ty = f->getFunctionType();
-            out << ".extern method "
+            out << ";.extern method "
                 << getValueName(f) << getCallSignature(ty);
             if(debug >= 3)
                 out << " ; " << *ty;
@@ -81,51 +88,67 @@ void JVMWriter::printExternalMethods() {
  */
 void JVMWriter::printConstructor() {
     out << "; Constructor\n"
-           ".method private <init>()V\n"
-           "\taload_0\n"
-           "\tinvokespecial java/lang/Object/<init>()V\n"
-           "\treturn\n"
-           ".end method\n\n";
-}
+           ".method public <init>()V\n";
+    printSimpleInstruction("aload_0");
+    printSimpleInstruction("invokespecial","java/lang/Object/<init>()V");
+    printSimpleInstruction("return");
+    printSimpleInstruction(".limit stack 1");
+    printSimpleInstruction(".limit locals 1");
+    out << ".end method\n\n";
+    
+    out << ".method public initialize(Llljvm.runtime.Context;)V\n";
 
-/**
- * Print the static class initialization method.
- */
-void JVMWriter::printClInit() {
-    out << ".method public <clinit>()V\n";
-    printSimpleInstruction(".limit stack 4");
+    printSimpleInstruction(".limit stack 12");
+    printSimpleInstruction(".limit locals 2");
+
+    out << "\n;;;START LINKER INITIALIZATIONS;;;\n";
+    printInitLinkerFields();
+    out << ";;;END LINKER INITIALIZATIONS;;;\n\n";
+
     
     out << "\n\t; allocate global variables\n";
+
     for(Module::global_iterator i = module->global_begin(),
                                 e = module->global_end(); i != e; i++) {
         if(!i->isDeclaration()) {
             const GlobalVariable *g = i;
             const Constant *c = g->getInitializer();
+            printSimpleInstruction("aload_0");
+            printStartInvocationTag();
             printConstLoad(
                 APInt(32, targetData->getTypeAllocSize(c->getType()), false));
-            printSimpleInstruction("invokestatic",
-                                   "lljvm/runtime/Memory/allocateData(I)I");
-            printSimpleInstruction("putstatic",
+            printEndInvocationTag("lljvm/runtime/Memory/allocateData(I)I");
+            printSimpleInstruction("putfield",
                 classname + "/" + getValueName(g) + " I");
         }
     }
     
-    out << "\n\t; initialise global variables\n";
+    out << "\n\t; initialize global variables\n";
     for(Module::global_iterator i = module->global_begin(),
                                 e = module->global_end(); i != e; i++) {
         if(!i->isDeclaration()) {
             const GlobalVariable *g = i;
             const Constant *c = g->getInitializer();
-            printSimpleInstruction("getstatic",
+            printSimpleInstruction("aload_0");
+            printSimpleInstruction("getfield",
                 classname + "/" + getValueName(g) + " I");
             printStaticConstant(c);
             printSimpleInstruction("pop");
             out << '\n';
         }
     }
-    
-    printSimpleInstruction("return");
-    out << ".end method\n\n";
+
+    out << "\n"
+           "\treturn\n"
+           ".end method\n\n";
+           
+           
+   out << ".method public destroy(Llljvm.runtime.Context;)V\n";
+   printSimpleInstruction("return");
+   printSimpleInstruction(".limit stack 0");
+   printSimpleInstruction(".limit locals 2");   
+   out << ".end method\n\n";
+
 }
 
 /**
@@ -137,10 +160,18 @@ void JVMWriter::printMainMethod() {
         return;
 
     out << ".method public static main([Ljava/lang/String;)V\n";
-    printSimpleInstruction(".limit stack 4");
-
+    printSimpleInstruction(".limit stack 6");
+    printSimpleInstruction(".limit locals 2");
+    printSimpleInstruction("new","lljvm/runtime/DefaultContext");
+    printSimpleInstruction("dup");
+    printSimpleInstruction("invokespecial","lljvm/runtime/DefaultContext/<init>()V");
+    printSimpleInstruction("dup");
+    printSimpleInstruction("astore_1");
+    printSimpleInstruction("ldc",classname);
+    printSimpleInstruction("invokeinterface","lljvm/runtime/Context/getModule(Ljava/lang/Class;)Ljava/lang/Object; 2");
+    printSimpleInstruction("checkcast",classname);
     if(f->arg_size() == 0) {
-        printSimpleInstruction("invokestatic", classname + "/main()I");
+        printSimpleInstruction("invokevirtual",classname + "/main()I");
     } else if(f->arg_size() == 2) {
         Function::const_arg_iterator arg1, arg2;
         arg1 = arg2 = f->arg_begin(); arg2++;
@@ -149,17 +180,29 @@ void JVMWriter::printMainMethod() {
             llvm_unreachable("main function has invalid type signature");
         printSimpleInstruction("aload_0");
         printSimpleInstruction("arraylength");
-        printSimpleInstruction("aload_0");
-        printSimpleInstruction("invokestatic",
+
+        printSimpleInstruction("aload_1");
+        printSimpleInstruction("ldc","lljvm/runtime/Memory");
+        printSimpleInstruction("invokeinterface","lljvm/runtime/Context/getModule(Ljava/lang/Class;)Ljava/lang/Object; 2");
+        printSimpleInstruction("checkcast","lljvm/runtime/Memory");
+        printSimpleInstruction("aload_0");       
+        printSimpleInstruction("invokevirtual",
             "lljvm/runtime/Memory/storeStack([Ljava/lang/String;)I");
-        printSimpleInstruction("invokestatic", classname + "/main("
+            
+        printSimpleInstruction("invokevirtual", classname + "/main("
             + getTypeDescriptor(arg1->getType())
             + getTypeDescriptor(arg2->getType()) + ")I");
     } else {
         llvm_unreachable("main function has invalid number of arguments");
     }
 
-    printSimpleInstruction("invokestatic", "lljvm/lib/c/exit(I)V");
+    printSimpleInstruction("aload_1");
+    printSimpleInstruction("ldc","lljvm/lib/c");
+    printSimpleInstruction("invokeinterface","lljvm/runtime/Context/getModule(Ljava/lang/Class;)Ljava/lang/Object; 2");
+    printSimpleInstruction("checkcast","lljvm/lib/c");
+    printSimpleInstruction("swap");
+    printSimpleInstruction("invokevirtual", "lljvm/lib/c/exit(I)V");
     printSimpleInstruction("return");
     out << ".end method\n";
 }
+

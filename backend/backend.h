@@ -154,7 +154,6 @@ private:
     void printIndirectLoad(const Value *v);
     void printIndirectLoad(const Type *ty);
     void printIndirectStore(const Value *ptr, const Value *val);
-    void printIndirectStore(const Type *ty);
     
     // name.cpp
     std::string sanitizeName(std::string name);
@@ -186,12 +185,20 @@ private:
     void printLabel(const char *label);
     void printLabel(const std::string &label);
     
+    void printStartInvocationTag(int includeStackSize = 0);
+    void printEndInvocationTag(const std::string &sig, bool local=false);
+    void printGetField(const std::string &sig, bool local=false);
+    void printLoadClassNameForMethod(const std::string &sig);
+    void printDeclareLinkerFields();
+    void printInitLinkerFields();
+    void printLinkerSection();
+    void printLinkerHeader();
+
     // sections.cpp
     void printHeader();
     void printFields();
     void printExternalMethods();
     void printConstructor();
-    void printClInit();
     void printMainMethod();
     
     // types.cpp

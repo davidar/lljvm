@@ -9,7 +9,11 @@ all:
 	cd java && $(MAKE) all
 	cd libc && $(MAKE) all
 	cd java && $(MAKE) dist
-	cp java/dist/lljvm.jar lljvm-${VERSION}.jar
+	mkdir -p lib
+	cp java/dist/lljvm.jar lib/lljvm-${VERSION}.jar
+	cp java/dist/lljvm-sources.jar lib/lljvm-sources-${VERSION}.jar
+	cp thirdparty/jasmin/jasmin.jar lib/
+
 
 doc:
 	cd java && $(MAKE) doc

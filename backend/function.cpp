@@ -69,16 +69,16 @@ void JVMWriter::printOperandPack(const Instruction *inst,
         size += targetData->getTypeAllocSize(
             inst->getOperand(i)->getType());
 
+    printStartInvocationTag();
     printSimpleInstruction("bipush", utostr(size));
-    printSimpleInstruction("invokestatic",
-                           "lljvm/runtime/Memory/allocateStack(I)I");
+    printEndInvocationTag("lljvm/runtime/Memory/allocateStack(I)I");
     printSimpleInstruction("dup");
 
     for(unsigned int i = minOperand; i < maxOperand; i++) {
         const Value *v = inst->getOperand(i);
+        printStartInvocationTag(1);
         printValueLoad(v);
-        printSimpleInstruction("invokestatic",
-            "lljvm/runtime/Memory/pack(I"
+        printEndInvocationTag("lljvm/runtime/Memory/pack(I"
             + getTypeDescriptor(v->getType()) + ")I");
     }
     printSimpleInstruction("pop");
@@ -96,6 +96,7 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
     if(const Function *f = dyn_cast<Function>(functionVal)) { // direct call
         const FunctionType *ty = f->getFunctionType();
         
+        printStartInvocationTag();
         //for(unsigned int i = origin, e = inst->getNumOperands(); i < e; i++)
         //    printValueLoad(inst->getOperand(i));
         
@@ -106,11 +107,11 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
                                    inst->getNumOperands());
         
         if(externRefs.count(f))
-            printSimpleInstruction("invokestatic",
+            printEndInvocationTag(
                 getValueName(f) + getCallSignature(ty));
         else
-            printSimpleInstruction("invokestatic",
-                classname + "/" + getValueName(f) + getCallSignature(ty));
+            printEndInvocationTag(
+                classname + "/" + getValueName(f) + getCallSignature(ty), true);
         
         if(getValueName(f) == "setjmp") {
             unsigned int varNum = usedRegisters++;
@@ -119,12 +120,12 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
             printLabel("setjmp$" + utostr(varNum));
         }
     } else { // indirect call
+        printStartInvocationTag();
         printValueLoad(functionVal);
         const FunctionType *ty = cast<FunctionType>(
             cast<PointerType>(functionVal->getType())->getElementType());
         printOperandPack(inst, origin, inst->getNumOperands());
-        printSimpleInstruction("invokestatic",
-            "lljvm/runtime/Function/invoke_"
+        printEndInvocationTag("lljvm/runtime/Function/invoke_"
             + getTypePostfix(ty->getReturnType()) + "(II)"
             + getTypeDescriptor(ty->getReturnType()));
     }
@@ -294,11 +295,13 @@ void JVMWriter::printCatchJump(unsigned int numJumps) {
  */
 void JVMWriter::printFunction(const Function &f) {
     localVars.clear();
-    usedRegisters = 0;
+    usedRegisters = 1;  //First register is a reference to this
     
     out << '\n';
-    out << ".method " << (f.hasLocalLinkage() ? "private " : "public ")
-        << "static " << getValueName(&f) << '(';
+    //TODO - Make local methods private... the tricky part is that 
+    //linker has to know to use invokespecial when calling them.
+    out << ".method " << (f.hasLocalLinkage() ? " " : "public ")
+        << getValueName(&f) << '(';
     for(Function::const_arg_iterator i = f.arg_begin(), e = f.arg_end();
         i != e; i++)
         out << getTypeDescriptor(i->getType());
@@ -323,12 +326,12 @@ void JVMWriter::printFunction(const Function &f) {
     }
     
     // TODO: better stack depth analysis
-    unsigned int stackDepth = 8;
+    unsigned int stackDepth = 10;
     unsigned int numJumps = 0;
     for(const_inst_iterator i = inst_begin(&f), e = inst_end(&f);
         i != e; i++) {
-        if(stackDepth < i->getNumOperands())
-            stackDepth = i->getNumOperands();
+        if(stackDepth < (i->getNumOperands()+2))
+            stackDepth = i->getNumOperands()+2;
         if(i->getType() != Type::getVoidTy(f.getContext()))
             printLocalVariable(f, &*i);
         if(const CallInst *inst = dyn_cast<CallInst>(&*i))
@@ -344,8 +347,8 @@ void JVMWriter::printFunction(const Function &f) {
     }
     
     printLabel("begin_method");
-    printSimpleInstruction("invokestatic",
-                           "lljvm/runtime/Memory/createStackFrame()V");
+    printStartInvocationTag();
+    printEndInvocationTag("lljvm/runtime/Memory/createStackFrame()V");
     printFunctionBody(f);
     if(numJumps) printCatchJump(numJumps);
     printSimpleInstruction(".limit stack", utostr(stackDepth * 2));

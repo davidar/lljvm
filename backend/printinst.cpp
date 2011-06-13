@@ -22,6 +22,16 @@
 
 #include "backend.h"
 
+namespace {
+const char TAG_INVOKE_BEGIN[] = "**LLJVM-INVOKE-BEGIN**";
+const char TAG_INVOKE_END[] = "**LLJVM-INVOKE-END**";
+const char TAG_GET_FIELD[] = "**LLJVM-GET-FIELD**";
+const char TAG_CLASSNAME_FOR_METHOD[] = "**LLJVM-CLASSNAME-FOR-METHOD**";
+const char TAG_LINKER_DECLARATIONS[] = "**LLJVM-LINKER-DECLARATIONS**";
+const char TAG_LINKER_INITIALIZATIONS[] = "**LLJVM-LINKER-INITIALIZATIONS**";
+const char TAG_LINKER_HEADER[] = "**LLJVM-LINKER-HEADER**";
+}
+
 /**
  * Print the given binary instruction.
  * 
@@ -179,4 +189,71 @@ void JVMWriter::printLabel(const char *label) {
  */
 void JVMWriter::printLabel(const std::string &label) {
     out << label << ":\n";
+}
+
+/**
+ * Print the linker tag indicating the start of a JVM invocation sequence.
+ * This should be followed by instructions placing the invocation arguments
+ * on the stack and finally by an end invocation tag.
+ *
+ * @param includeStackSize number of existing positions on the stack that should
+ * be included in the invocation.  For non-static invocations, the linker-generated
+ * code must insert a reference to the target instance below these items.  Currently
+ * only 0 and 1 are supported.
+ */
+void JVMWriter::printStartInvocationTag(int includeStackSize) {
+    out << TAG_INVOKE_BEGIN << " | includeStackSize=" << includeStackSize << "\n";
+}
+
+/**
+ * Print a linker tag indicating the end of a JVM invocation sequence.
+ * @param sig a symbolic reference to the method to invoke.  The reference may be
+ * unqualified, in which case the target classname will be resolved by the linker.
+ * @param local if true, then the call is to this instance rather than an external instance.
+ */
+void JVMWriter::printEndInvocationTag(const std::string &sig, bool local) {
+    out << TAG_INVOKE_END << " | sig=" << sig << " | local=" << (local?"true":"false") << "\n";
+}
+
+/**
+ * Print a linker tag for generating a field access.
+ * @param sig a symbolic reference to the field.  The reference may be
+ * unqualified, in which case the target classname will be resolved by the linker.
+ * @param local if true, then the access is to this instance rather than an external instance.
+ */
+void JVMWriter::printGetField(const std::string &sig, bool local) {
+    out << TAG_GET_FIELD << " | sig=" << sig << " | local=" << (local?"true":"false") << "\n";
+}
+
+/**
+ * Print a linker tag for loading a resolved class name on the stack.  At link time,
+ * this generates a "ldc" instruction for the resolved class name.
+ * @param sig a symbolic reference to the method to invoke.  The reference may be
+ * unqualified, in which case the target classname will be resolved by the linker.
+ */
+void JVMWriter::printLoadClassNameForMethod(const std::string &sig) {
+    out << TAG_CLASSNAME_FOR_METHOD << " | sig=" << sig << "\n";
+}
+
+/**
+ * Print the linker declarations placeholder.   The linker will replace this with
+ * field declarations for the members it creates.
+ */
+void JVMWriter::printDeclareLinkerFields() {
+    out << TAG_LINKER_DECLARATIONS << "\n";
+}
+
+/**
+ * Print the linker initializations placeholder.  The linker will replace this
+ * with code for initializing the fields it defined.
+ */
+void JVMWriter::printInitLinkerFields() {
+    out << TAG_LINKER_INITIALIZATIONS << "\n";
+}
+
+/**
+ * Print the linker header.  Used to pass module-wide information to the linker.
+ */
+void JVMWriter::printLinkerHeader() {
+    out << TAG_LINKER_HEADER << " | class=" << classname << "\n";
 }

@@ -31,6 +31,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +83,15 @@ public final class ReflectionUtils {
         return methods;
     }
     
+    private static List<Method> getInstanceMethods(Method[] allMethods) {
+        List<Method> methods = new ArrayList<Method>();
+        for(Method method : allMethods)
+            if(!Modifier.isStatic(method.getModifiers()))
+                methods.add(method);
+        return methods;
+    	
+    }
+    
     /**
      * Returns a list of the public static methods provided by the specified
      * class.
@@ -94,6 +104,7 @@ public final class ReflectionUtils {
         return getStaticMethods(cls.getMethods());
     }
     
+    
     /**
      * Returns a list of the static methods provided by the specified class.
      * 
@@ -102,6 +113,18 @@ public final class ReflectionUtils {
      */
     public static List<Method> getStaticMethods(Class<?> cls) {
         return getStaticMethods(cls.getDeclaredMethods());
+    }
+    
+    public static List<Method> getPublicInstanceMethods(Class<?> cls) {
+    	return getInstanceMethods(cls.getMethods());
+    }
+
+    public static List<Method> getAllPublicMethods(Class<?> cls) {
+    	return new ArrayList<Method>(Arrays.asList(cls.getMethods()));
+    }
+
+    public static List<Method> getAllMethods(Class<?> cls) {
+    	return new ArrayList<Method>(Arrays.asList(cls.getMethods()));
     }
 
     /**
@@ -117,6 +140,34 @@ public final class ReflectionUtils {
         for(Field field : cls.getFields()) {
             int modifiers = field.getModifiers();
             if(Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers))
+                fields.add(field);
+        }
+        return fields;
+    }
+
+    /**
+     * Returns a list of the public non-static fields provided by the specified
+     * class.
+     * 
+     * @param cls  the class providing the fields
+     * @return     a list of the public static fields provided by the
+     *             specified class
+     */
+    public static List<Field> getPublicInstanceFields(Class<?> cls) {
+        List<Field> fields = new ArrayList<Field>();
+        for(Field field : cls.getFields()) {
+            int modifiers = field.getModifiers();
+            if(Modifier.isPublic(modifiers) && !Modifier.isStatic(modifiers))
+                fields.add(field);
+        }
+        return fields;
+    }    
+    
+    public static List<Field> getAllPublicFields(Class<?> cls) {
+        List<Field> fields = new ArrayList<Field>();
+        for(Field field : cls.getFields()) {
+            int modifiers = field.getModifiers();
+            if(Modifier.isPublic(modifiers))
                 fields.add(field);
         }
         return fields;
@@ -198,54 +249,65 @@ public final class ReflectionUtils {
                 "Only Field and Method objects allowed");
     }
     
-    /**
-     * Given a list of binary names of classes, returns a mapping of type
-     * signatures of methods provided by these classes to the binary name of
-     * the first class in the given list that provides them.
-     * 
-     * @param classNames  the list of binary names of classes
-     * @return            the mapping of method signatures to class names
-     * @throws ClassNotFoundException
-     *                    if any of the specified classes cannot be found
-     */
-    public static Map<String, String> buildMethodMap(List<String> classNames)
-    throws ClassNotFoundException {
-        Map<String, String> map = new HashMap<String, String>();
-        for(String className : classNames) {
-            Class<?> cls = getClass(className);
-            className = className.replace('.', '/');
-            for(Method method : getPublicStaticMethods(cls)) {
-                String methodSig = getSignature(method);
-                if(!map.containsKey(methodSig))
-                    map.put(methodSig, className);
-            }
+
+    public static Map<String, MethodInfo> buildMethodMap(Class<?> clazz) {
+        Map<String, MethodInfo> map = new HashMap<String, MethodInfo>();
+        String binName = clazz.getName().replace('.', '/');
+        for(Method method : getAllPublicMethods(clazz)) {
+            String methodSig = getSignature(method);
+            if(!map.containsKey(methodSig))
+                map.put(methodSig, new MethodInfo(clazz, binName+"/"+methodSig, method));
         }
         return map;
     }
 
-    /**
-     * Given a list of binary names of classes, returns a mapping of type
-     * signatures of fields provided by these classes to the binary name of
-     * the first class in the given list that provides them.
-     * 
-     * @param classNames  the list of binary names of classes
-     * @return            the mapping of field signatures to class names
-     * @throws ClassNotFoundException
-     *                    if any of the specified classes cannot be found
-     */
-    public static Map<String, String> buildFieldMap(List<String> classNames)
-    throws ClassNotFoundException {
-        Map<String, String> map = new HashMap<String, String>();
-        for(String className : classNames) {
-            Class<?> cls = getClass(className);
-            className = className.replace('.', '/');
-            for(Field field : getPublicStaticFields(cls)) {
-                String fieldSig = getSignature(field);
-                if(!map.containsKey(fieldSig))
-                    map.put(fieldSig, className);
-            }
+    public static Map<String, FieldInfo> buildFieldMap(Class<?> clazz) {
+        Map<String, FieldInfo> map = new HashMap<String, FieldInfo>();
+        String binName = clazz.getName().replace('.', '/');
+        for(Field field : getAllPublicFields(clazz)) {
+            String fieldSig = getSignature(field);
+            if(!map.containsKey(fieldSig))
+                map.put(fieldSig, new FieldInfo(clazz, binName+"/"+fieldSig, field));
         }
         return map;
+    }
+
+
+    
+    public static final class MethodInfo {
+        public final Class<?> targetClass;
+        public final String symbolicReference;
+        public final Method method;
+        public MethodInfo(Class<?> targetClass, String symbolicReference, Method method) {
+            super();
+            this.targetClass = targetClass;
+            this.symbolicReference = symbolicReference;
+            this.method = method;
+        }        
+        
+        public String targetClassBinaryName() {
+            int p = symbolicReference.indexOf('(');
+            p = symbolicReference.lastIndexOf('/', p);
+            return symbolicReference.substring(0,p);
+        }
+    }
+    
+    public static final class FieldInfo {
+        public final Class<?> targetClass;
+        public final String symbolicReference;
+        public final Field field;
+        public FieldInfo(Class<?> targetClass, String symbolicReference, Field field) {
+            super();
+            this.targetClass = targetClass;
+            this.symbolicReference = symbolicReference;
+            this.field = field;
+        }        
+        public String targetClassBinaryName() {
+            int p = symbolicReference.indexOf(' ');
+            p = symbolicReference.lastIndexOf('/', p);
+            return symbolicReference.substring(0,p);
+        }
+
     }
     
     public static int sizeOf(Class<?> cls) {

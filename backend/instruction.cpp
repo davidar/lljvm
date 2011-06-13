@@ -289,6 +289,7 @@ void JVMWriter::printGepInstruction(const Value *v,
  */
 void JVMWriter::printAllocaInstruction(const AllocaInst *inst) {
     uint64_t size = targetData->getTypeAllocSize(inst->getAllocatedType());
+    printStartInvocationTag();
     if(const ConstantInt *c = dyn_cast<ConstantInt>(inst->getOperand(0))) {
         // constant optimization
         printPtrLoad(c->getZExtValue() * size);
@@ -297,8 +298,7 @@ void JVMWriter::printAllocaInstruction(const AllocaInst *inst) {
         printValueLoad(inst->getOperand(0));
         printSimpleInstruction("imul");
     }
-    printSimpleInstruction("invokestatic",
-                           "lljvm/runtime/Memory/allocateStack(I)I");
+    printEndInvocationTag("lljvm/runtime/Memory/allocateStack(I)I");
 }
 
 
@@ -308,6 +308,7 @@ void JVMWriter::printAllocaInstruction(const AllocaInst *inst) {
  * @param inst  the instruction
  */
 void JVMWriter::printVAArgInstruction(const VAArgInst *inst) {
+    printStartInvocationTag();
     printIndirectLoad(inst->getOperand(0));
     printSimpleInstruction("dup");
     printConstLoad(
@@ -315,8 +316,8 @@ void JVMWriter::printVAArgInstruction(const VAArgInst *inst) {
     printSimpleInstruction("iadd");
     printValueLoad(inst->getOperand(0));
     printSimpleInstruction("swap");
-    printIndirectStore(PointerType::getUnqual(
-        IntegerType::get(inst->getContext(), 8)));
+    const Type *ty = PointerType::getUnqual(IntegerType::get(inst->getContext(), 8));
+    printEndInvocationTag("lljvm/runtime/Memory/store(I" + getTypeDescriptor(ty) + ")V");
     printIndirectLoad(inst->getType());
 }
 
@@ -330,15 +331,17 @@ void JVMWriter::printVAIntrinsic(const IntrinsicInst *inst) {
         IntegerType::get(inst->getContext(), 8));
     switch(inst->getIntrinsicID()) {
     case Intrinsic::vastart:
+        printStartInvocationTag();
         printValueLoad(inst->getOperand(1));
         printSimpleInstruction("iload", utostr(vaArgNum) + " ; varargptr");
-        printIndirectStore(valistTy);
+        printEndInvocationTag("lljvm/runtime/Memory/store(I" + getTypeDescriptor(valistTy) + ")V");
         break;
     case Intrinsic::vacopy:
+        printStartInvocationTag();
         printValueLoad(inst->getOperand(1));
         printValueLoad(inst->getOperand(2));
         printIndirectLoad(valistTy);
-        printIndirectStore(valistTy);
+        printEndInvocationTag("lljvm/runtime/Memory/store(I" + getTypeDescriptor(valistTy) + ")V");
         break;
     case Intrinsic::vaend:
         break;
@@ -351,6 +354,7 @@ void JVMWriter::printVAIntrinsic(const IntrinsicInst *inst) {
  * @param inst  the instruction
  */
 void JVMWriter::printMemIntrinsic(const MemIntrinsic *inst) {
+    printStartInvocationTag();
     printValueLoad(inst->getDest());
     if(const MemTransferInst *minst = dyn_cast<MemTransferInst>(inst))
         printValueLoad(minst->getSource());
@@ -363,13 +367,13 @@ void JVMWriter::printMemIntrinsic(const MemIntrinsic *inst) {
         inst->getLength()->getType(), true);
     switch(inst->getIntrinsicID()) {
     case Intrinsic::memcpy:
-        printSimpleInstruction("invokestatic",
+        printEndInvocationTag(
             "lljvm/runtime/Memory/memcpy(II" + lenDescriptor + "I)V"); break;
     case Intrinsic::memmove:
-        printSimpleInstruction("invokestatic",
+        printEndInvocationTag(
             "lljvm/runtime/Memory/memmove(II" + lenDescriptor + "I)V"); break;
     case Intrinsic::memset:
-        printSimpleInstruction("invokestatic",
+        printEndInvocationTag(
             "lljvm/runtime/Memory/memset(IB" + lenDescriptor + "I)V"); break;
     }
 }

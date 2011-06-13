@@ -28,7 +28,7 @@ package lljvm.runtime;
  * 
  * @author  David Roberts
  */
-public final class Math {
+public final class Math implements Module {
     /** Not a Number */
     public static final int FP_NAN = 0;
     /** Positive/negative infinity */
@@ -40,18 +40,30 @@ public final class Math {
     /** Not NaN, infinite, zero, or sub-normal */
     public static final int FP_NORMAL = 4;
     
+    private Memory memory;
+    
     /**
      * Prevent this class from being instantiated.
      */
-    private Math() {}
+    public Math() {
+    }
     
+    @Override
+    public void initialize(Context context) {
+        this.memory = context.getModule(Memory.class);
+    }
+
+    @Override
+    public void destroy(Context context) {
+    }
+
     /**
      * Inverse hyperbolic sine function.
      * 
      * @param x  the value whose inverse hyperbolic sine is to be returned
      * @return   the value whose hyperbolic sine is x
      */
-    public static double asinh(double x) {
+    public double asinh(double x) {
         return java.lang.Math.log(x + java.lang.Math.sqrt(x * x + 1));
     }
     
@@ -61,7 +73,7 @@ public final class Math {
      * @param x  the value whose inverse hyperbolic cosine is to be returned
      * @return   the value whose hyperbolic cosine is x
      */
-    public static double acosh(double x) {
+    public double acosh(double x) {
         return java.lang.Math.log(
                 x + java.lang.Math.sqrt(x - 1) * java.lang.Math.sqrt(x + 1));
     }
@@ -72,7 +84,7 @@ public final class Math {
      * @param x  the value whose inverse hyperbolic tangent is to be returned
      * @return   the value whose hyperbolic tangent is x
      */
-    public static double atanh(double x) {
+    public double atanh(double x) {
         return java.lang.Math.log((1 + x) / (1 - x)) / 2;
     }
     
@@ -82,7 +94,7 @@ public final class Math {
      * @param x  the exponent
      * @return   2 raised to the power of x
      */
-    public static double exp2(double x) {
+    public double exp2(double x) {
         return java.lang.Math.pow(2, x);
     }
     
@@ -92,7 +104,7 @@ public final class Math {
      * @param x  the double value
      * @return   the absolute value of the double value
      */
-    public static double fabs(double x) {
+    public double fabs(double x) {
         return java.lang.Math.abs(x);
     }
     
@@ -102,7 +114,7 @@ public final class Math {
      * @param x  the float value
      * @return   the absolute value of the float value
      */
-    public static float fabsf(float x) {
+    public float fabsf(float x) {
         return java.lang.Math.abs(x);
     }
     
@@ -114,7 +126,7 @@ public final class Math {
      * @param y  the divisor
      * @return   the remainder of the division
      */
-    public static double fmod(double x, double y) {
+    public double fmod(double x, double y) {
         return x % y;
     }
     
@@ -126,7 +138,7 @@ public final class Math {
      * @param y  the divisor
      * @return   the remainder of the division
      */
-    public static float fmodf(float x, float y) {
+    public float fmodf(float x, float y) {
         return x % y;
     }
     
@@ -137,7 +149,7 @@ public final class Math {
      * @return   the integer representing the type of x:
      *           one of FP_NAN, FP_INFINITE, FP_ZERO, FP_SUBNORMAL, FP_NORMAL
      */
-    public static int fpclassify(double x) {
+    public int fpclassify(double x) {
         if(Double.isNaN(x))
             return FP_NAN;
         if(Double.isInfinite(x))
@@ -156,13 +168,13 @@ public final class Math {
      * @param exp  where to store the exponent
      * @return     the normalised fraction
      */
-    public static double frexp(double x, int exp) {
+    public double frexp(double x, int exp) {
         if(x == 0.0)
-            Memory.store(exp, 0);
+            memory.store(exp, 0);
         if(Double.isNaN(x) || Double.isInfinite(x) || x == 0.0)
             return x;
         long bits = Double.doubleToRawLongBits(x);
-        Memory.store(exp, (int) ((bits & 0x7ff0000000000000L) >>> 52) - 1022);
+        memory.store(exp, (int) ((bits & 0x7ff0000000000000L) >>> 52) - 1022);
         return Double.longBitsToDouble(
                 (bits & 0x800fffffffffffffL) | 0x3fe0000000000000L);
     }
@@ -174,13 +186,13 @@ public final class Math {
      * @param exp  where to store the exponent
      * @return     the normalised fraction
      */
-    public static float frexpf(float x, int exp) {
+    public float frexpf(float x, int exp) {
         if(x == 0.0)
-            Memory.store(exp, 0);
+            memory.store(exp, 0);
         if(Float.isNaN(x) || Float.isInfinite(x) || x == 0.0)
             return x;
         int bits = Float.floatToRawIntBits(x);
-        Memory.store(exp, ((bits & 0x7f800000) >>> 23) - 126);
+        memory.store(exp, ((bits & 0x7f800000) >>> 23) - 126);
         return Float.intBitsToFloat((bits & 0x7fffff) | 0x3f000000);
     }
     
@@ -190,7 +202,7 @@ public final class Math {
      * @param x  the value to test
      * @return   1 if x is +infinity, -1 if x is -infinity, 0 otherwise
      */
-    public static int isinf(double x) {
+    public int isinf(double x) {
         if(Double.isInfinite(x))
             return x == Double.POSITIVE_INFINITY ? 1 : -1;
         return 0;
@@ -202,7 +214,7 @@ public final class Math {
      * @param x  the value to test
      * @return   1 if x is NaN, 0 otherwise
      */
-    public static int isnan(double x) {
+    public int isnan(double x) {
         return Double.isNaN(x) ? 1 : 0;
     }
     
@@ -213,9 +225,9 @@ public final class Math {
      * @param iptr  where to store the integral part
      * @return      the fractional part
      */
-    public static double modf(double x, int iptr) {
+    public double modf(double x, int iptr) {
         double i = (double) (int) x;
-        Memory.store(iptr, i);
+        memory.store(iptr, i);
         return x - i;
     }
     
@@ -226,9 +238,9 @@ public final class Math {
      * @param iptr  where to store the integral part
      * @return      the fractional part
      */
-    public static float modff(float x, int iptr) {
+    public float modff(float x, int iptr) {
         float i = (float) (int) x;
-        Memory.store(iptr, i);
+        memory.store(iptr, i);
         return x - i;
     }
     
@@ -240,7 +252,7 @@ public final class Math {
      * @param y  the divisor
      * @return   the remainder of the division
      */
-    public static double remainder(double x, double y) {
+    public double remainder(double x, double y) {
         return java.lang.Math.IEEEremainder(x, y);
     }
     
@@ -252,7 +264,7 @@ public final class Math {
      * @param y  the divisor
      * @return   the remainder of the division
      */
-    public static float remainderf(float x, float y) {
+    public float remainderf(float x, float y) {
         return (float) remainder(x, y);
     }
 }

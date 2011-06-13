@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 David Roberts <d@vidr.cc>
+* Copyright (c) 2011 Joshua Arnold
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -20,28 +20,15 @@
 * THE SOFTWARE.
 */
 
-package lljvm.tools.ld;
+package lljvm.runtime;
 
 /**
- * Thrown when there is an error linking an assembly file.
- * 
- * @author  David Roberts
+ * Standard context implementation used by LLJVM generated {@code main} methods.  May
+ * also be used to invoke LLJVM code directly. 
  */
-@SuppressWarnings("serial")
-public class LinkError extends Exception {
-    /**
-     * Constructs a LinkError with no detail message.
-     */
-    public LinkError() {
-        super();
+public class DefaultContext extends AbstractContext {
+
+    public DefaultContext() {
     }
-    
-    /**
-     * Constructs a LinkError with the specified detail message.
-     * 
-     * @param s  the detail message
-     */
-    public LinkError(String s) {
-        super(s);
-    }
+
 }

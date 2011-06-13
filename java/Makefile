@@ -1,6 +1,6 @@
 .PHONY: all dist doc clean
 
-all:
+all: 
 	ant
 
 dist:
@@ -11,3 +11,4 @@ doc:
 
 clean:
 	ant clean
+

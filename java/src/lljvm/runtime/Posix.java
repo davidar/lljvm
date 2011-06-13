@@ -27,12 +27,22 @@ package lljvm.runtime;
  * 
  * @author  David Roberts
  */
-public final class Posix {
-    /**
-     * Prevent this class from being instantiated.
-     */
-    private Posix() {}
+public final class Posix implements Module {
+	
+	private Error error;
+
+	public Posix() {
+    }
     
+    @Override
+    public void initialize(Context context) {
+        this.error = context.getModule(Error.class);
+    }
+
+    @Override
+    public void destroy(Context context) {
+    }
+
     /**
      * Manipulate the given file descriptor.
      * 
@@ -42,9 +52,9 @@ public final class Posix {
      *              i.e. a pointer to the arg argument (if applicable)
      * @return      the appropriate value on success, -1 on error
      */
-    public static int fcntl(int fd, int cmd, int args) {
+    public int fcntl(int fd, int cmd, int args) {
         // TODO: implement
-        return Error.errno(Error.EACCES);
+        return error.errno(Error.EACCES);
     }
     
     /**
@@ -54,9 +64,9 @@ public final class Posix {
      * @param tz  a pointer to the timezone structure to set
      * @return    0 on success, -1 on error
      */
-    public static int gettimeofday(int tv, int tz) {
+    public int gettimeofday(int tv, int tz) {
         // TODO: implement
-        return Error.errno(Error.EINVAL);
+        return error.errno(Error.EINVAL);
     }
     
     /**
@@ -67,9 +77,9 @@ public final class Posix {
      * @param oldset  where to store the previous value of the signal mask
      * @return        0 on success, -1 on error
      */
-    public static int sigprocmask(int how, int set, int oldset) {
+    public int sigprocmask(int how, int set, int oldset) {
         // TODO: implement
-        return Error.errno(Error.EINVAL);
+        return error.errno(Error.EINVAL);
     }
     
     /**
@@ -78,8 +88,8 @@ public final class Posix {
      * @param name  the name of the variable to retrieve
      * @return      the value of the system resource on success, -1 on error
      */
-    public static int sysconf(int name) {
+    public int sysconf(int name) {
         // TODO: implement
-        return Error.errno(Error.EINVAL);
+        return error.errno(Error.EINVAL);
     }
 }

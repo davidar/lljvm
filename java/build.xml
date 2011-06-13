@@ -13,7 +13,7 @@
     </target>
 
     <target name="compile" depends="init" >
-        <javac srcdir="${src}" destdir="${build}" includeantruntime="false"/>
+        <javac srcdir="${src}" destdir="${build}" includeantruntime="false" debug="true" />
     </target>
 
     <target name="dist" depends="compile">
@@ -22,6 +22,8 @@
                 <attribute name="Main-Class" value="lljvm.tools.Main"/>
                 <attribute name="Class-Path" value="."/>
             </manifest>
+        </jar>
+        <jar jarfile="${dist}/lljvm-sources.jar" basedir="${src}">
         </jar>
     </target>
     

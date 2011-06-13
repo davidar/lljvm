@@ -7,7 +7,8 @@ DIRS := \
     lua \
     datalog \
     zlib \
-    libpng
+    libpng \
+    jasmin
 ARCHIVES := \
     newlib-1.17.0.tar.gz \
     bsd-games-2.17.tar.gz \
@@ -15,7 +16,8 @@ ARCHIVES := \
     lua-5.1.4.tar.gz \
     datalog-1.4.tar.gz \
     zlib-1.2.3.tar.gz \
-    libpng-1.2.41.tar.gz
+    libpng-1.2.41.tar.gz \
+    jasmin-2.4.zip
 
 newlib: newlib-1.17.0.tar.gz
 	tar -zxvf $<
@@ -83,6 +85,16 @@ libpng: libpng-1.2.41.tar.gz
 libpng-1.2.41.tar.gz:
 	wget -c http://prdownloads.sourceforge.net/libpng/$@ -O $@.part
 	mv -f $@.part $@
+
+jasmin: jasmin-2.4.zip
+	jar xvf $<
+	rm -rf jasmin
+	mv -f jasmin-2.4 jasmin
+	
+jasmin-2.4.zip:
+	wget -c http://downloads.sourceforge.net/project/jasmin/jasmin/jasmin-2.4/jasmin-2.4.zip -O $@.part
+	mv -f $@.part $@
+	
 
 clean:
 	rm -rf ${DIRS}

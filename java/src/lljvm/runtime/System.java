@@ -29,10 +29,15 @@ package lljvm.runtime;
  * 
  * @author  David Roberts
  */
-public final class System {
+public final class System implements Module {
+	
+	private Error error;
+	private IO io;
+	
     /** Throw an exception instead of calling System.exit? */
     public static boolean throwExit = false;
     
+
     /**
      * Thrown to indicate that a call has been made to the _exit syscall.
      */
@@ -46,21 +51,33 @@ public final class System {
         }
     }
     
-    /**
-     * Prevent this class from being instantiated.
-     */
-    private System() {}
     
+    public System() {
+    }
+    
+    
+    @Override
+    public void initialize(Context context) {
+        this.error = context.getModule(Error.class);
+        this.io = context.getModule(IO.class);
+    }
+
+
+    @Override
+    public void destroy(Context context) {
+    }
+
+
     /**
      * Performs any necessary cleanup, then terminates with the specified
      * status code.
      * 
      * @param status  the exit status code
      */
-    public static void _exit(int status) {
+    public void _exit(int status) {
         if(throwExit)
             throw new Exit(status);
-        IO.close();
+        io.close();
         java.lang.System.exit(status);
     }
     
@@ -72,9 +89,9 @@ public final class System {
      * @param envp      an array of environment variables
      * @return          does not return on success, -1 on error
      */
-    public static int execve(int filename, int argv, int envp) {
+    public int execve(int filename, int argv, int envp) {
         // TODO: implement
-        return Error.errno(Error.ENOMEM);
+        return error.errno(Error.ENOMEM);
     }
     
     /**
@@ -82,9 +99,9 @@ public final class System {
      * 
      * @return  the PID of the child process on success, -1 on error
      */
-    public static int fork() {
+    public int fork() {
         // TODO: implement
-        return Error.errno(Error.EAGAIN);
+        return error.errno(Error.EAGAIN);
     }
     
     /**
@@ -92,7 +109,7 @@ public final class System {
      * 
      * @return  the PID of the calling process
      */
-    public static int getpid() {
+    public int getpid() {
         // TODO: implement
         return 1;
     }
@@ -104,9 +121,9 @@ public final class System {
      * @param sig  the signal
      * @return     0 on success, -1 on error
      */
-    public static int kill(int pid, int sig) {
+    public int kill(int pid, int sig) {
         // TODO: implement
-        return Error.errno(Error.EINVAL);
+        return error.errno(Error.EINVAL);
     }
     
     /**
@@ -117,7 +134,7 @@ public final class System {
      * @return     the number of clock ticks that have elapsed since an
      *             arbitrary point in the past on success, -1 on error
      */
-    public static int times(int buf) {
+    public int times(int buf) {
         // TODO: implement
         return -1;
     }
@@ -129,8 +146,8 @@ public final class System {
      *                stored
      * @return        the PID of the terminated child on success, -1 on error
      */
-    public static int wait(int status) {
+    public int wait(int status) {
         // TODO: implement
-        return Error.errno(Error.ECHILD);
+        return error.errno(Error.ECHILD);
     }
 }

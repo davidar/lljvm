@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import lljvm.runtime.Context;
 import lljvm.runtime.Error;
 import lljvm.runtime.IO;
 
@@ -45,9 +46,9 @@ public class RandomAccessFileHandle extends AbstractFileHandle {
      * @param flags         the file status flags
      * @throws IOException  if an error occurs while opening the file
      */
-    public RandomAccessFileHandle(File file, int flags)
+    public RandomAccessFileHandle(Context context, File file, int flags)
     throws IOException {
-        super((flags & IO.O_WRONLY) == 0,
+        super(context, (flags & IO.O_WRONLY) == 0,
               (flags & (IO.O_WRONLY|IO.O_RDWR)) != 0,
               (flags & IO.O_SYNC) != 0);
         this.file = new RandomAccessFile(file, this.write ? "rw" : "r");
@@ -82,14 +83,14 @@ public class RandomAccessFileHandle extends AbstractFileHandle {
             case IO.SEEK_SET: break;
             case IO.SEEK_CUR: n += file.getFilePointer(); break;
             case IO.SEEK_END: n += file.length(); break;
-            default: return Error.errno(Error.EINVAL);
+            default: return error.errno(Error.EINVAL);
             }
             file.seek(n);
         } catch(IOException e) {
-            return Error.errno(Error.EINVAL);
+            return error.errno(Error.EINVAL);
         }
         if(n > Integer.MAX_VALUE)
-            return Error.errno(Error.EOVERFLOW);
+            return error.errno(Error.EOVERFLOW);
         return (int) n;
     }
 }

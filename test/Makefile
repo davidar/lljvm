@@ -16,21 +16,51 @@ TESTS := \
     unreachable.test \
     va.test
 
-.PHONY: check
+CLEANS := $(patsubst %.test,%.clean,$(TESTS))
 
-check: ${TESTS}
 
-%.test:
-	echo -n "$*... "
-	cc $*.c -o $* -lm
-	./$* foo bar baz > $*.expected
-	rm -f $*
-	../lljvm-cc $*.c -o $* -lm
-	./$* foo bar baz > $*.actual
-	rm -f $* $*.class
-	if diff -q $*.expected $*.actual >/dev/null; then echo PASS; else \
+.PHONY: check clean
+
+check: $(TESTS)
+
+clean: $(CLEANS)
+	@rm -Rf expected
+	@rm -Rf actual
+
+%.clean : 
+	@rm -Rf ./expected/$*
+	@rm -Rf ./actual/$*
+	@rm -f ./$*
+	@rm -f $*.class
+	@rm -f $*.output
+
+%.test: %.clean
+	@mkdir -p expected/$*
+	@mkdir -p actual/$*
+
+	@echo -n "$*... "
+	@rm -f $*
+	@cc $*.c -o $* -lm
+	@./$* foo bar baz > $*.output
+
+	@mv ./$* ./expected/$*/
+	@mv ./$*.output ./expected/$*/
+	@cp ./$*.c ./expected/$*/
+
+	@../lljvm-cc $*.c -o $* -lm
+	@./$* foo bar baz > $*.output
+
+	@mv ./$* ./actual/$*/
+	@mv ./$*.output ./actual/$*/
+	@mv ./$*.class ./actual/$*/
+	@cp ./$*.c ./actual/$*/
+	
+	@if diff -q ./expected/$*/$*.output ./actual/$*/$*.output >/dev/null; then echo PASS; else \
 	    echo FAIL; \
-	    echo EXPECTED; cat $*.expected; \
-	    echo ACTUAL; cat $*.actual; \
+	    echo EXPECTED; cat ./expected/$*/$*.output; \
+	    echo ACTUAL; cat ./actual/$*/$*.output; \
 	fi
-	rm -f $*.expected $*.actual
+
+
+	
+

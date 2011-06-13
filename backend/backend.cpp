@@ -91,7 +91,6 @@ bool JVMWriter::doInitialization(Module &m) {
     printFields();
     printExternalMethods();
     printConstructor();
-    printClInit();
     printMainMethod();
     return false;
 }
