@@ -23,13 +23,12 @@
 #include "backend.h"
 
 namespace {
-const char TAG_INVOKE_BEGIN[] = "**LLJVM-INVOKE-BEGIN**";
-const char TAG_INVOKE_END[] = "**LLJVM-INVOKE-END**";
-const char TAG_GET_FIELD[] = "**LLJVM-GET-FIELD**";
-const char TAG_CLASSNAME_FOR_METHOD[] = "**LLJVM-CLASSNAME-FOR-METHOD**";
-const char TAG_LINKER_DECLARATIONS[] = "**LLJVM-LINKER-DECLARATIONS**";
-const char TAG_LINKER_INITIALIZATIONS[] = "**LLJVM-LINKER-INITIALIZATIONS**";
-const char TAG_LINKER_HEADER[] = "**LLJVM-LINKER-HEADER**";
+const char TAG_INVOKE_BEGIN[] = "*LLJVM|INVOKE-BEGIN";
+const char TAG_INVOKE_END[] = "*LLJVM|INVOKE-END";
+const char TAG_GET_FIELD[] = "*LLJVM|GET-FIELD";
+const char TAG_CLASSNAME_FOR_METHOD[] = "*LLJVM|CLASSNAME-FOR-METHOD";
+const char TAG_LINKER_DECLARATIONS[] = "*LLJVM|LINKER-DECLARATIONS";
+const char TAG_LINKER_INITIALIZATIONS[] = "*LLJVM|LINKER-INITIALIZATIONS";
 }
 
 /**
@@ -202,7 +201,7 @@ void JVMWriter::printLabel(const std::string &label) {
  * only 0 and 1 are supported.
  */
 void JVMWriter::printStartInvocationTag(int includeStackSize) {
-    out << TAG_INVOKE_BEGIN << " | includeStackSize=" << includeStackSize << "\n";
+    out << TAG_INVOKE_BEGIN << "|includeStackSize=" << includeStackSize << "\n";
 }
 
 /**
@@ -212,7 +211,7 @@ void JVMWriter::printStartInvocationTag(int includeStackSize) {
  * @param local if true, then the call is to this instance rather than an external instance.
  */
 void JVMWriter::printEndInvocationTag(const std::string &sig, bool local) {
-    out << TAG_INVOKE_END << " | sig=" << sig << " | local=" << (local?"true":"false") << "\n";
+    out << TAG_INVOKE_END << "|sig=" << sig << "|local=" << (local?"true":"false") << "\n";
 }
 
 /**
@@ -222,7 +221,7 @@ void JVMWriter::printEndInvocationTag(const std::string &sig, bool local) {
  * @param local if true, then the access is to this instance rather than an external instance.
  */
 void JVMWriter::printGetField(const std::string &sig, bool local) {
-    out << TAG_GET_FIELD << " | sig=" << sig << " | local=" << (local?"true":"false") << "\n";
+    out << TAG_GET_FIELD << "|sig=" << sig << "|local=" << (local?"true":"false") << "\n";
 }
 
 /**
@@ -232,7 +231,7 @@ void JVMWriter::printGetField(const std::string &sig, bool local) {
  * unqualified, in which case the target classname will be resolved by the linker.
  */
 void JVMWriter::printLoadClassNameForMethod(const std::string &sig) {
-    out << TAG_CLASSNAME_FOR_METHOD << " | sig=" << sig << "\n";
+    out << TAG_CLASSNAME_FOR_METHOD << "|sig=" << sig << "\n";
 }
 
 /**
@@ -251,9 +250,3 @@ void JVMWriter::printInitLinkerFields() {
     out << TAG_LINKER_INITIALIZATIONS << "\n";
 }
 
-/**
- * Print the linker header.  Used to pass module-wide information to the linker.
- */
-void JVMWriter::printLinkerHeader() {
-    out << TAG_LINKER_HEADER << " | class=" << classname << "\n";
-}

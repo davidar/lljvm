@@ -52,6 +52,7 @@ public final class MethodReference {
     private final InvocationType invocationType;
     private final EnumSet<Flags> flags;
 
+    private int hash;
     /**
      * Constructor.
      * 
@@ -122,5 +123,38 @@ public final class MethodReference {
     public boolean isLocal() {
         return flags.contains(Flags.LOCAL);
     }
+
+    private static final int HASH_PRIME_1 = 80489;
+    
+    @Override
+    public int hashCode() {
+        int h = hash;
+        if (h==0) {
+            h = symbolicReference.hashCode() + HASH_PRIME_1 * (invocationType.hashCode() + HASH_PRIME_1 * flags.hashCode());
+            hash = h;
+        }
+        return h;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj==this)
+            return true;
+        if (obj==null)
+            return false;
+        if (!(obj instanceof MethodReference))
+            return false;
+        MethodReference mref = (MethodReference)obj;
+        return symbolicReference.equals(mref.symbolicReference)
+            && invocationType == mref.invocationType
+            && flags.equals(mref.flags);
+    }
+
+    @Override
+    public String toString() {
+        return symbolicReference+" "+invocationType+" "+flags;
+    }
+    
+    
 
 }

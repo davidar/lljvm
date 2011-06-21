@@ -70,7 +70,7 @@ takes_argument = ('-MF', '-MT', '-MQ', '-include', '-cp')
 # (partial) list of flags not recognised by llvm-ld
 # TODO: need a better way of filtering out invalid flags
 invalid_ld_flags = ('-pthread', '-shared', '-nostdlib', '-lgcc',
-                    '-static-libgcc', '-link', '-MF', '-MT', '-MQ', '-include', '-cp',  '-jlisting')
+                    '-static-libgcc', '-link', '-MF', '-MT', '-MQ', '-include', '-cp',  '-jlisting', '--verbose')
 
 # template for the launcher script
 script_template = \
@@ -161,6 +161,11 @@ def filter_backend_flags(flags):
     return filter_flags(flags,
         lambda x: startswith_element(x, ('-classname','-g')))
 
+def filter_java_ld_flags(flags):
+    """Return a list of only those flags accepted by lljvm-backend."""
+    return filter_flags(flags,
+        lambda x:  x == '--verbose')
+
 def argument_vals(flags,  arg_flag):
     fnd = False
     for flag in flags:
@@ -201,7 +206,8 @@ def bc2class(output, flags):
         + filter_backend_flags(flags),
         stdout=subprocess.PIPE)
     linker_returncode = subprocess.Popen(
-        ['java', '-cp',  os.pathsep.join(classpath),  'lljvm.tools.ld.Main'] + java_libs,
+        ['java', '-cp',  os.pathsep.join(classpath),  'lljvm.tools.ld.Main'] + java_libs +
+        filter_java_ld_flags(flags),
         stdin=backend_process.stdout, stdout=output_j).wait()
     output_j.close()
     

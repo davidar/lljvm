@@ -74,7 +74,8 @@ class JVMWriter : public FunctionPass {
 
 public:
     JVMWriter(const TargetData *td, formatted_raw_ostream &o,
-              const std::string &cls, unsigned int dbg);
+              const std::string &cls, const std::string &src, 
+              unsigned int dbg);
 
 private:
     // backend.cpp
@@ -191,8 +192,6 @@ private:
     void printLoadClassNameForMethod(const std::string &sig);
     void printDeclareLinkerFields();
     void printInitLinkerFields();
-    void printLinkerSection();
-    void printLinkerHeader();
 
     // sections.cpp
     void printHeader();

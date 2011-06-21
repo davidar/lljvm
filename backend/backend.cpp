@@ -33,8 +33,10 @@ char JVMWriter::id = 0;
  * @param dbg  the debugging level
  */
 JVMWriter::JVMWriter(const TargetData *td, formatted_raw_ostream &o,
-                     const std::string &cls, unsigned int dbg)
-    : FunctionPass(&id), targetData(td), out(o), classname(cls), debug(dbg) {}
+                     const std::string &cls, const std::string &src,
+                     unsigned int dbg)
+    : FunctionPass(&id), targetData(td), out(o), classname(cls)
+    , sourcename(src), debug(dbg) {}
 
 /**
  * Register required analysis information.
@@ -69,12 +71,14 @@ bool JVMWriter::doInitialization(Module &m) {
     module = &m;
     instNum = 0;
     
-    std::string modID = module->getModuleIdentifier();
-    size_t slashPos = modID.rfind('/');
-    if(slashPos == std::string::npos)
-        sourcename = modID;
-    else
-        sourcename = modID.substr(slashPos + 1);
+    if (sourcename.empty()) {
+        std::string modID = module->getModuleIdentifier();
+        size_t slashPos = modID.rfind('/');
+        if(slashPos == std::string::npos)
+            sourcename = modID;
+        else
+            sourcename = modID.substr(slashPos + 1);
+    }
     
     if(!classname.empty()) {
         for(std::string::iterator i = classname.begin(),

@@ -22,20 +22,12 @@
 
 package lljvm.tools.ld;
 
-import java.io.BufferedWriter;
-import java.io.FileInputStream;
-import java.io.FilterReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.OutputStreamWriter;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+
+import lljvm.tools.LoggingEnvironment;
+
 /**
  * Main class for executing the LLJVM linker.
  * 
@@ -43,95 +35,43 @@ import java.util.List;
  * @author Joshua Arnold
  */
 public class Main {
-	/**
-	 * Main method.
-	 * 
-	 * @param args
-	 *            Command line arguments.
-	 */
-	public static int doMain(String[] args, Reader in, Writer _out, Writer _err) {
-		final PrintWriter out = new PrintWriter(new BufferedWriter(_out));
-		final PrintWriter err = new PrintWriter(new BufferedWriter(_err));
-		try {
-			List<String> libs = new ArrayList<String>(Arrays.asList(args));
-			String unresolvedClassName = null;
-			String inputFile = null;
-			for (Iterator<String> iter = libs.iterator(); iter.hasNext();) {
-				String item = iter.next();
-				if (item.startsWith("~")) {
-					unresolvedClassName = item.substring(1);
-					iter.remove();
-				} else if (item.equals("--input")) {
-				    iter.remove();
-				    if (iter.hasNext()) {
-				        inputFile = iter.next();
-				        iter.remove();
-				    }
-				}
-			}
-			
-			try {
-			    Reader linkIn;
-			    if (inputFile!=null)
-			        linkIn = new InputStreamReader(new FileInputStream(inputFile));  //TODO - Char encoding
-			    else
-			        linkIn = noClose(in);
-	            try {
-    	            Resolver resolver = new DefaultResolver(libs,unresolvedClassName,Main.class.getClassLoader());
-    	            AsmLinker linker = new AsmLinker(new LineNumberReader(linkIn), out, resolver);
     
-    	            linker.link();
-	            } finally {
-	                linkIn.close();
-	            }
-			} catch (AsmLinkerException e) {
-			    err.println("Linker Error: "+e);
-			    e.printStackTrace(err);
-			    return 1;
-			} catch (IOException e) {
-			    err.println("IO Error: "+e);
-			    e.printStackTrace(err);
-			    return 1;
-			}
-			
-		} finally {
-			try {
-				out.flush();
-			} finally {
-				err.flush();
-			}
-		}
-		if (out.checkError()) {
-			err.println("Error writing to output stream");
-			err.flush();
-			return 1;
-		}
-		if (err.checkError()) {
-			err.println("Error writing to error stream");
-			err.flush();
-			return 1;
-		}
-		return 0;
+    public static int doMain(String[] args, InputStream in, OutputStream out, PrintWriter err) {
+        try {
+            LinkerParameters params = new LinkerParameters();
+            params.addSource(new AsmStreamSource("<stdin>", in, out));
+            for (String arg : args) {
+                if (arg.startsWith("~")) {
+                    params.setUnresolvedTarget(arg.substring(1));
+                } else {
+                    params.addLibraryClass(arg);
+                }
+            }
+            AsmLinker linker = new AsmLinker(params);
+            linker.run();
+        } catch (AsmLinkerException e) {
+            err.println("Linker Error: " + e);
+            e.printStackTrace(err);
+            err.flush();
+            return 1;            
+        }
+        return 0;
+    }
+    
 
-	}
-	
-	private static Reader noClose(Reader in) {
-	    return new FilterReader(in) {
-            @Override public void close() {}
-        };
-	}
 
-	public static void main(String[] args) {
-		int res;
-		try {
-			//TODO: Character encodings
-			res = doMain(args,new InputStreamReader(System.in),new OutputStreamWriter(System.out), new OutputStreamWriter(System.err));
-		} catch (Throwable t) {
-			System.err.println("An unexpected error occurred: "+t);
-			t.printStackTrace();
-			res = 1;
-		}
-		System.exit(res);
-	}
-	
+    public static void main(String[] args)  {
+        args = LoggingEnvironment.setupLogging(args).getNonLoggingArgs(); 
+        int res;
+        try {
+            res = doMain(args, System.in, System.out, new PrintWriter(System.err));
+        } catch (Throwable t) {
+            System.err.println("An unexpected error occurred: " + t);
+            t.printStackTrace();
+            res = 1;            
+        }
+        System.exit(res);        
+    }
+    
+    
 }

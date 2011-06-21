@@ -29,7 +29,11 @@ package lljvm.tools.ld;
 public class AsmLinkerException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
-
+	
+	private String fileName;
+	
+	private int lineNum = -1;
+	
 	public AsmLinkerException() {
 	}
 
@@ -45,4 +49,39 @@ public class AsmLinkerException extends RuntimeException {
 		super(message, cause);
 	}
 
+    @Override
+    public synchronized AsmLinkerException initCause(Throwable cause) {
+        super.initCause(cause);
+        return this;
+    }
+
+    @Override
+    public String getMessage() {
+        String base = super.getMessage();
+        if (fileName==null && lineNum < 0)
+            return base;
+        return base + " : " + fileName + (lineNum < 0 ? "" : ("("+lineNum+")"));
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+    
+    public AsmLinkerException withFileName(String fileName) {
+        this.fileName = fileName;
+        return this;
+    }
+    public int getLineNum() {
+        return lineNum;
+    }
+
+    public void setLineNum(int lineNum) {
+        this.lineNum = lineNum;
+    }
+
+    
 }

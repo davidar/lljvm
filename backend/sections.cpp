@@ -26,7 +26,6 @@
  * Print the header.
  */
 void JVMWriter::printHeader() {
-    printLinkerHeader();
     out << ".bytecode 49.0\n";
     if(debug >= 1)
         out << ".source " << sourcename << "\n";
@@ -96,7 +95,7 @@ void JVMWriter::printConstructor() {
     printSimpleInstruction(".limit locals 1");
     out << ".end method\n\n";
     
-    out << ".method public initialize(Llljvm.runtime.Context;)V\n";
+    out << ".method public initialize(Llljvm/runtime/Context;)V\n";
 
     printSimpleInstruction(".limit stack 12");
     printSimpleInstruction(".limit locals 2");
@@ -143,7 +142,7 @@ void JVMWriter::printConstructor() {
            ".end method\n\n";
            
            
-   out << ".method public destroy(Llljvm.runtime.Context;)V\n";
+   out << ".method public destroy(Llljvm/runtime/Context;)V\n";
    printSimpleInstruction("return");
    printSimpleInstruction(".limit stack 0");
    printSimpleInstruction(".limit locals 2");   

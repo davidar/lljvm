@@ -22,6 +22,7 @@
 
 package lljvm.tools;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 
 /**
@@ -44,11 +45,34 @@ public class Main {
         args = Arrays.copyOfRange(args, 1, args.length);
         if(cmd.equals("ld"))
             lljvm.tools.ld.Main.main(args);
+        if(cmd.equals("ldbatch"))
+            lljvm.tools.ld.BatchMain.main(args);
         else if(cmd.equals("info"))
             lljvm.tools.info.Main.main(args);
+        else if (cmd.equals("jasmin"))
+            runJasmin(args);
         else {
             System.err.println("Unrecognised command name");
             System.exit(1);
+        }
+    }
+    
+    private static void runJasmin(String[] args) {
+        //It's convenient not to have any build-time dependencies on jasmin
+        try {
+            try {
+                Class.forName("jasmin.Main").getMethod("main",String[].class).invoke(null, (Object)args);
+            } catch (InvocationTargetException e) {
+                //unwind unnecessary nesting
+                if (e.getCause()!=null)
+                    throw e.getCause();
+            }
+        } catch (Throwable t) {
+            if (t instanceof RuntimeException)
+                throw (RuntimeException)t;
+            if (t instanceof Error)
+                throw (Error)t;
+            throw new RuntimeException(t);
         }
     }
 }

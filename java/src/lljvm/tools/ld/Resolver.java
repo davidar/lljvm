@@ -22,6 +22,9 @@
 
 package lljvm.tools.ld;
 
+
+import lljvm.util.ClassInfo;
+
 /**
  * Resolves method and field symbolic references to actual methods/fields.
  * @author Joshua Arnold
@@ -30,37 +33,38 @@ public interface Resolver {
  
     /**
      * Resolves an external method with the specified symbolic reference.
-     * @param symRef the reference (may be qualified or unqualified)
+     * @param signature the method signature (may be qualified or unqualified)
      * @return a {@link MethodReference} describe the resolved method.
      * @throws AsmLinkerException if the resolution fails.
      */
-    MethodReference resolveMethod(String symRef);
+    MethodReference resolveMethod(String signature, ClassInfo referrer);
     
     /**
      * Resolves a local method with the specified symbolic reference.
-     * @param symRef the reference (may be qualified or unqualified)
+     * @param signature the method signature (may be qualified or unqualified)
      * @param className the name of the class being linked.
      * @return a {@link MethodReference} describe the resolved method.
      * @throws AsmLinkerException if the resolution fails.
      */
-    MethodReference resolveLocalMethod(String symRef, String className);
+    MethodReference resolveLocalMethod(String signature, ClassInfo referrer);
 
     /**
      * Resolves an external field with the specified symbolic reference.
-     * @param symRef the reference (may be qualified or unqualified)
+     * @param signature the field signature (may be qualified or unqualified)
      * @return a {@link MethodReference} describe the resolved method.
      * @throws AsmLinkerException if the resolution fails.
      */
-    FieldReference resolveField(String symRef);
+    FieldReference resolveField(String signature, ClassInfo referrer);
 
     /**
      * Resolves a local field with the specified symbolic reference.
-     * @param symRef the reference (may be qualified or unqualified)
+     * @param signature the field signature (may be qualified or unqualified)
      * @param className the name of the class being linked.
      * @return a {@link MethodReference} describe the resolved method.
      * @throws AsmLinkerException if the resolution fails.
      */
-    FieldReference resolveLocalField(String symRef, String className);
+    FieldReference resolveLocalField(String signature, ClassInfo referrer);
+    
     
 }
 

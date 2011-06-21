@@ -1,0 +1,103 @@
+#!/usr/bin/python
+# Copyright (c) 2009-2010 David Roberts <d@vidr.cc>
+# Copyright (c) 2011 Joshua Arnold
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+from __future__ import print_function
+
+import os
+import sys
+import subprocess
+import itertools
+
+__version__ = '0.3dev'
+
+# LLJVM root directory
+lljvm_dir = os.path.abspath(os.path.dirname(sys.argv.pop(0)))
+
+jvm_cp = ('-cp', '-classpath')
+
+java_tool_main = 'lljvm.tools.Main'
+java_tools = ('ld',  'ldbatch',  'info',  'jasmin')
+
+
+default_classpath = (os.path.join(lljvm_dir, 'lib',  'lljvm-' + __version__ + '.jar'),
+                     os.path.join(lljvm_dir,  'lib',  'jasmin.jar'))
+
+
+
+def split_java_args(args):
+    """Given a java command line, returns tuple  of vmargs and appargs"""    
+    try:
+        i = args.index('-vmargs')
+    except ValueError:
+        return [], args
+    return args[i+1:],  args[:i]
+    
+def extract_classpath(vmargs):
+    """Given a list of vmargs, extracts classpath and returns tuple of classpath and remaining args"""
+    otherargs = [] 
+    classpath = []
+    iscp = False
+    for vmarg in vmargs:
+        if iscp:
+            classpath.extend(vmarg.split(os.pathsep))
+            iscp = False
+        elif vmarg in jvm_cp:
+            iscp = True
+        else:
+            otherargs.append(vmarg)
+    return classpath, otherargs
+
+
+def call_e(*popenargs, **kwargs):
+    """Call the given command, exiting if it has a non-zero return code."""
+    p = subprocess.Popen(*popenargs, **kwargs)
+    if p.wait() != 0: sys.exit(p.returncode)
+
+def call_java_tool(command,  args):
+    vmargs,  appargs = split_java_args(args)
+    classpath,  vmargs = extract_classpath(vmargs)
+    classpath.extend(default_classpath)
+    
+    allargs = (['java', '-cp',  os.pathsep.join(classpath)] 
+                                                + vmargs 
+                                                + [java_tool_main, command] 
+                                                + appargs)
+    #print(str(allargs))
+    call_e(allargs)
+
+def main():
+    if not sys.argv:
+        print('Missing command name', file=sys.stderr)
+        sys.exit(1)
+    if "home" == sys.argv[0]:
+        print(lljvm_dir)
+    elif "cc" == sys.argv[0]:
+        call_e([lljvm_dir+'/lljvm-cc'] + sys.argv[1:])
+    elif "backend"==sys.argv[0]:
+        call_e([lljvm_dir+'/lljvm-backend'] + sys.argv[1:])
+    elif sys.argv[0] in java_tools:
+        call_java_tool(sys.argv[0],  sys.argv[1:])
+    else:
+        print('Unknown command:', sys.argv[0],  file=sys.stderr)
+        sys.exit(1)
+    
+    
+if __name__ == '__main__': main()

@@ -47,8 +47,8 @@ clean:
 	cd libc && $(MAKE) clean
 	cd demo && $(MAKE) clean
 	rm -rf doc
-	rm -f lljvm-${VERSION}.jar lljvm-demo-${VERSION}.jar \
-	      lljvm-doc-${VERSION}.zip lljvm-backend
+	rm -f lljvm-backend lib/lljvm-${VERSION}.jar lib/lljvm-sources-${VERSION}.jar lib/jasmin.jar
+
 
 distclean: clean
 	cd thirdparty && $(MAKE) distclean

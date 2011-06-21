@@ -46,6 +46,8 @@ public final class FieldReference {
     private final String symbolicReference;
     private final AccessType accessType;
     private final EnumSet<Flags> flags;
+    
+    private int hash;
 
     /**
      * Constructor.
@@ -117,4 +119,37 @@ public final class FieldReference {
     public boolean isLocal() {
         return flags.contains(Flags.LOCAL);
     }
+    
+    private static final int HASH_PRIME_1 = 70003;
+    
+    @Override
+    public int hashCode() {
+        int h = hash;
+        if (h==0) {
+            h = symbolicReference.hashCode() + HASH_PRIME_1 * (accessType.hashCode() + HASH_PRIME_1 * flags.hashCode());
+            hash = h;
+        }
+        return h;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj==this)
+            return true;
+        if (obj==null)
+            return false;
+        if (!(obj instanceof FieldReference))
+            return false;
+        FieldReference fref = (FieldReference)obj;
+        return symbolicReference.equals(fref.symbolicReference)
+            && accessType == fref.accessType
+            && flags.equals(fref.flags);
+    }
+
+    @Override
+    public String toString() {
+        return symbolicReference+" "+accessType+" "+flags;
+    }
+    
+    
 }

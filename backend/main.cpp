@@ -41,6 +41,9 @@ static cl::opt<std::string> input(
     cl::Positional, cl::desc("<input bitcode>"), cl::init("-"));
 static cl::opt<std::string> classname(
     "classname", cl::desc("Binary name of the generated class"));
+static cl::opt<std::string> sourcename(
+    "sourcename", cl::desc("Name of source file to be included in the generated class"));
+
 
 enum DebugLevel {g0 = 0, g1 = 1, g2 = 2, g3 = 3};
 cl::opt<DebugLevel> debugLevel(cl::desc("Debugging level:"), cl::init(g1),
@@ -78,7 +81,7 @@ int main(int argc, char **argv) {
     // TODO: fix switch generation so the following pass is not needed
     pm.add(createLowerSwitchPass());
     pm.add(createCFGSimplificationPass());
-    pm.add(new JVMWriter(&td, fouts(), classname, debugLevel));
+    pm.add(new JVMWriter(&td, fouts(), classname, sourcename, debugLevel));
     pm.add(createGCInfoDeleter());
     pm.run(*mod);
     return 0;

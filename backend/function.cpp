@@ -298,9 +298,7 @@ void JVMWriter::printFunction(const Function &f) {
     usedRegisters = 1;  //First register is a reference to this
     
     out << '\n';
-    //TODO - Make local methods private... the tricky part is that 
-    //linker has to know to use invokespecial when calling them.
-    out << ".method " << (f.hasLocalLinkage() ? " " : "public ")
+    out << ".method " << (f.hasLocalLinkage() ? "private " : "public ")
         << getValueName(&f) << '(';
     for(Function::const_arg_iterator i = f.arg_begin(), e = f.arg_end();
         i != e; i++)
