@@ -295,7 +295,6 @@ void JVMWriter::printCatchJump(unsigned int numJumps) {
  */
 void JVMWriter::printFunction(const Function &f) {
     localVars.clear();
-    usedRegisters = 1;  //First register is a reference to this
     
     out << '\n';
     out << ".method " << (f.hasLocalLinkage() ? "private " : "public ")
@@ -306,6 +305,11 @@ void JVMWriter::printFunction(const Function &f) {
     if(f.isVarArg())
         out << "I";
     out << ')' << getTypeDescriptor(f.getReturnType()) << '\n';
+
+    usedRegisters = 1;  //First register is a reference to this
+    if(debug >= 2)
+        printSimpleInstruction(".var 0 is this L" + classname + ";"
+            + " from init_method to end_method");
     
     for(Function::const_arg_iterator i = f.arg_begin(), e = f.arg_end();
         i != e; i++) {
@@ -314,14 +318,15 @@ void JVMWriter::printFunction(const Function &f) {
         if(debug >= 2)
             printSimpleInstruction(".var " + utostr(varNum) + " is "
                 + getValueName(i) + ' ' + getTypeDescriptor(i->getType())
-                + " from begin_method to end_method");
+                + " from init_method to end_method");
     }
     if(f.isVarArg()) {
         vaArgNum = usedRegisters++;
         if(debug >= 2)
             printSimpleInstruction(".var " + utostr(vaArgNum)
-                + " is varargptr I from begin_method to end_method");
+                + " is varargptr I from init_method to end_method");
     }
+    printLabel("init_method");
     
     // TODO: better stack depth analysis
     unsigned int stackDepth = 10;
