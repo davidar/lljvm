@@ -250,3 +250,14 @@ void JVMWriter::printInitLinkerFields() {
     out << TAG_LINKER_INITIALIZATIONS << "\n";
 }
 
+void JVMWriter::printTrc(const std::string &sig) {
+    if (!trace)
+        return;
+    (*trace) << sig << '\n';
+    trcLineNum++;
+    std::string::size_type pos;
+    for(pos=0;(pos=sig.find('\n',pos))!=std::string::npos;pos++)
+        trcLineNum++;
+    
+}
+

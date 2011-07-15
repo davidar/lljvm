@@ -295,16 +295,28 @@ void JVMWriter::printCatchJump(unsigned int numJumps) {
  */
 void JVMWriter::printFunction(const Function &f) {
     localVars.clear();
+    temporaryNames.clear();
     
     out << '\n';
-    out << ".method " << (f.hasLocalLinkage() ? "private " : "public ")
+    
+    std::string method;
+    raw_string_ostream methodstrm(method);
+    
+    methodstrm << ".method " << (f.hasLocalLinkage() ? "private " : "public ")
         << getValueName(&f) << '(';
     for(Function::const_arg_iterator i = f.arg_begin(), e = f.arg_end();
         i != e; i++)
-        out << getTypeDescriptor(i->getType());
+        methodstrm << getTypeDescriptor(i->getType());
     if(f.isVarArg())
-        out << "I";
-    out << ')' << getTypeDescriptor(f.getReturnType()) << '\n';
+        methodstrm << "I";
+    methodstrm << ')' << getTypeDescriptor(f.getReturnType());
+    methodstrm.flush();
+    
+    out << method << '\n';
+    if (trace) {
+        printTrc("");
+        printTrc(method);
+    }
 
     usedRegisters = 1;  //First register is a reference to this
     if(debug >= 2)

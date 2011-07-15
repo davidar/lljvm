@@ -30,13 +30,23 @@ char JVMWriter::id = 0;
  * @param td   the target data for the platform
  * @param o    the output stream to be written to
  * @param cls  the binary name of the class to generate
+ * @param src  the name of the source file, to use in the '.source'
+ *             directive.  If empty, one will be generated
  * @param dbg  the debugging level
+ * @param trc  stream to output trace lines too.  JVMWriter takes
+ *             ownership of the pointer
  */
 JVMWriter::JVMWriter(const TargetData *td, formatted_raw_ostream &o,
                      const std::string &cls, const std::string &src,
-                     unsigned int dbg)
+                     unsigned int dbg, raw_fd_ostream *trc)
     : FunctionPass(&id), targetData(td), out(o), classname(cls)
-    , sourcename(src), debug(dbg) {}
+    , sourcename(src), debug(dbg), trace(trc) {}
+
+
+JVMWriter::~JVMWriter() {
+    if (trace)
+        delete trace;
+}
 
 /**
  * Register required analysis information.
@@ -70,6 +80,7 @@ bool JVMWriter::runOnFunction(Function &f) {
 bool JVMWriter::doInitialization(Module &m) {
     module = &m;
     instNum = 0;
+    trcLineNum = 0;
     
     if (sourcename.empty()) {
         std::string modID = module->getModuleIdentifier();
@@ -106,5 +117,7 @@ bool JVMWriter::doInitialization(Module &m) {
  * @return   whether the module was modified (always false)
  */
 bool JVMWriter::doFinalization(Module &m) {
+    if (trace)
+        trace->close();
     return false;
 }

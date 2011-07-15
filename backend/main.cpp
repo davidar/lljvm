@@ -32,6 +32,7 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/MemoryBuffer.h>
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetData.h>
 #include <llvm/Transforms/Scalar.h>
 
@@ -43,6 +44,8 @@ static cl::opt<std::string> classname(
     "classname", cl::desc("Binary name of the generated class"));
 static cl::opt<std::string> sourcename(
     "sourcename", cl::desc("Name of source file to be included in the generated class"));
+static cl::opt<std::string> tracefile(
+    "tracefile", cl::desc("Name of the trace file to generate (must use -g3)"));
 
 
 enum DebugLevel {g0 = 0, g1 = 1, g2 = 2, g3 = 3};
@@ -70,6 +73,21 @@ int main(int argc, char **argv) {
         std::cerr << "Unable to parse bitcode file: " << err << std::endl;
         return 1;
     }
+
+    llvm::raw_fd_ostream *trace_stream(0);
+    if (!tracefile.empty()) {
+        if (debugLevel < 3) {
+            std::cerr << "May only specify a trace file if generating -g3 debugging information" << std::endl;
+            return 1;
+        }
+        err = "";
+        trace_stream = new llvm::raw_fd_ostream(tracefile.c_str(), err);
+        if (!err.empty()) {
+            std::cerr << "Unable to open tracefile " << tracefile << " : " << err << std::endl;
+            return 1;
+        }
+    }
+
     
     PassManager pm;
     TargetData td("e-p:32:32:32"
@@ -80,8 +98,13 @@ int main(int argc, char **argv) {
     pm.add(createGCLoweringPass());
     // TODO: fix switch generation so the following pass is not needed
     pm.add(createLowerSwitchPass());
+    pm.add(createIndVarSimplifyPass());
+    pm.add(createPromoteMemoryToRegisterPass());  //good
+    pm.add(createDeadStoreEliminationPass());
+    pm.add(createAggressiveDCEPass());
     pm.add(createCFGSimplificationPass());
-    pm.add(new JVMWriter(&td, fouts(), classname, sourcename, debugLevel));
+    pm.add(new JVMWriter(&td, fouts(), classname
+            , sourcename, debugLevel, trace_stream));
     pm.add(createGCInfoDeleter());
     pm.run(*mod);
     return 0;
