@@ -28,7 +28,7 @@ all: ../thirdparty/newlib ../java/build/lljvm/lib/c.class
 ../thirdparty/jasmin/jasmin.jar:
 	cd ../thirdparty && $(MAKE) jasmin
 
-../java/build/lljvm/lib/c.class: ../thirdparty/jasmin/jasmin.jar
+../java/build/lljvm/lib/c.class: ../thirdparty/jasmin/jasmin.jar ../lljvm-backend
 	for d in ${DIRS}; do (cd $$d && $(MAKE) all); done
 	mkdir -p ../java/build/libc
 	$(CC) -link-as-library ${CFLAGS} ${OBJS} -o ../java/build/libc
