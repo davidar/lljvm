@@ -117,7 +117,7 @@ public final class IO implements Module {
     public void initialize(Context context) {
         this.memory = context.getModule(Memory.class);
         this.error = context.getModule(Error.class);
-        this.fileSystem = new NativeFileSystem(context);  //TODO - Make pluggable..
+        this.fileSystem = context.getModule(FileSystem.class);
         putFileHandle(new InputStreamFileHandle(context,System.in));
         putFileHandle(new OutputStreamFileHandle(context,System.out));
         putFileHandle(new OutputStreamFileHandle(context,System.err));

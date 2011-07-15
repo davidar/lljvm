@@ -22,6 +22,9 @@
 
 package lljvm.runtime;
 
+import lljvm.io.FileSystem;
+import lljvm.io.NativeFileSystem;
+
 /**
  * Standard context implementation used by LLJVM generated {@code main} methods.  May
  * also be used to invoke LLJVM code directly. 
@@ -29,6 +32,19 @@ package lljvm.runtime;
 public class DefaultContext extends AbstractContext {
 
     public DefaultContext() {
+    }
+
+    @Override
+    public <T> void setModule(Class<T> clazz, T instance) {
+        super.setModule(clazz, instance);
+    }
+
+    @Override
+    protected <T> T createModule(Class<T> clazz) {
+        if (FileSystem.class.equals(clazz)) {
+            return clazz.cast(new NativeFileSystem());
+        }
+        return super.createModule(clazz);
     }
 
 }

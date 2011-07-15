@@ -45,12 +45,11 @@ public abstract class AbstractContext implements Context {
 
     private final Object instantiationLock = new Object();
 
-    public AbstractContext() {
-
+    protected AbstractContext() {
     }
-
+    
     @Override
-    public <T> T getModule(Class<? extends T> clazz) {
+    public <T> T getModule(Class<T> clazz) {
         ModuleReference mod = instances.get(clazz);
         if (mod != null && mod.initialized)
             return clazz.cast(mod.module);
@@ -58,35 +57,39 @@ public abstract class AbstractContext implements Context {
             if (closed)
                 throw new IllegalStateException("Context is closed");
             mod = instances.get(clazz);
-            if (mod != null)
-                return clazz.cast(mod.module);
-            mod = new ModuleReference(newInstance(clazz), false);
-
-            Map<Class<?>, ModuleReference> update = new HashMap<Class<?>, ModuleReference>(
-                    instances);
-            update.put(clazz, mod);
-            instances = update;
-            try {
-                if (mod.module instanceof Module) {
-                    ((Module) mod.module).initialize(this);
-                }
-            } finally {
-                mod = mod.initialized();
-                update = new HashMap<Class<?>, ModuleReference>(instances);
-                update.put(clazz, mod);
-                instances = update;
+            if (mod==null) {
+                mod = setAndInitializeNewModule(clazz);
             }
-
         }
         return clazz.cast(mod.module);
     }
 
-    // void
 
     @Override
-    public <T> T getOptionalModule(Class<? extends T> clazz) {
+    public <T> T getOptionalModule(Class<T> clazz) {
         ModuleReference mod = instances.get(clazz);
         return mod != null && mod.initialized ? clazz.cast(mod.module) : null;
+    }
+    
+    /**
+     * Explicitly sets the instance for the specified module.
+     * @param <T> the type of the module
+     * @param clazz the module's class
+     * @param instance the module's instance.  Note that if {@code instance} implements {@link Module} then the 
+     * {@link Module} life cycle methods will be called on it automatically.
+     * @throws IllegalArgumentException if {@code instance} is <code>null</code>.
+     * @throws IllegalStateException if the context is closed or it already has an instance for {@code clazz}.
+     */
+    protected <T> void setModule(Class<T> clazz, T instance) {
+        if (instance==null)
+            throw new IllegalArgumentException();
+        synchronized(instantiationLock) {
+            if (closed)
+                throw new IllegalStateException("Context is closed");
+            if (instances.containsKey(clazz))
+                throw new IllegalStateException("There is already an instance for "+clazz);
+            setAndInitializeModule(clazz, instance);            
+        }        
     }
 
     public void close() {
@@ -118,7 +121,23 @@ public abstract class AbstractContext implements Context {
         throw new RuntimeException(first);
     }
 
-    private static Object newInstance(Class<?> clazz) {
+    /**
+     * Instantiates the default implementation of the specified module.
+     * <p>
+     * This implementation attempts to instantiate the specified class by invoking its
+     * no-argument constructor.  If no such constructor is accessible, an appropriate
+     * {@link LinkageError} is thrown.  Subclasses may override this method to return
+     * alternative implementations.
+     * </p>
+     * <p>
+     * Note that if the returned instance implements {@link Module}, then {@code AbstractContext} will invoke
+     * the {@link Module} life cycle methods on it.  
+     * </p>
+     * @param <T> the module's type
+     * @param clazz the module's class.
+     * @return an instance of {@code T}, or <code>null</code> to have {@code AbstractContext} attempt to instantiate {@code clazz} directly.
+     */
+    protected <T> T createModule(Class<T> clazz) {
         try {
             return clazz.getConstructor().newInstance();
         } catch (IllegalAccessException e) {
@@ -135,8 +154,37 @@ public abstract class AbstractContext implements Context {
                 throw (java.lang.Error) e.getCause();
             throw new RuntimeException(e);
         }
-
     }
+    
+    
+    private <T> ModuleReference setAndInitializeNewModule(Class<T> clazz) {
+        return setAndInitializeModule(clazz, createModule(clazz));
+    }
+    
+    private <T> ModuleReference setAndInitializeModule(Class<T> clazz, T inst) {
+        ModuleReference mod = new ModuleReference(inst, false);
+        synchronized(instantiationLock) {
+            setModuleRef(clazz,mod);
+            try {
+                if (mod.module instanceof Module) {
+                    ((Module) mod.module).initialize(this);
+                }
+            } finally {
+                mod = mod.initialized();
+                setModuleRef(clazz,mod);
+            }
+        }
+        return mod;
+    }
+    
+    private void setModuleRef(Class<?> clazz, ModuleReference ref) {
+        synchronized(instantiationLock) {
+            HashMap<Class<?>, ModuleReference> cpy = new HashMap<Class<?>, AbstractContext.ModuleReference>(instances);
+            cpy.put(clazz, ref);
+            instances = cpy;
+        }
+    }    
+    
 
     private static final class ModuleReference {
         final Object module;

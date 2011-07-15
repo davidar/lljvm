@@ -60,7 +60,7 @@ public interface Context extends Closeable {
      * @throws IllegalStateException
      *             if the context is closed.
      */
-    <T> T getModule(Class<? extends T> clazz);
+    <T> T getModule(Class<T> clazz);
 
     /**
      * Returns the instance associated with the specified module, but only if the instance already
@@ -76,7 +76,7 @@ public interface Context extends Closeable {
      *            the class that defines the module
      * @return the module instance.
      */
-    <T> T getOptionalModule(Class<? extends T> clazz);
+    <T> T getOptionalModule(Class<T> clazz);
 
     /**
      * Shuts down the context.
