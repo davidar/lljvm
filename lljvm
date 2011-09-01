@@ -40,6 +40,9 @@ java_tools = ('ld',  'ldbatch',  'info',  'jasmin')
 default_classpath = (os.path.join(lljvm_dir, 'lib',  'lljvm-' + __version__ + '.jar'),
                      os.path.join(lljvm_dir,  'lib',  'jasmin.jar'))
 
+runtime_classpath = (os.path.join(lljvm_dir, 'lib',  'lljvm-' + __version__ + '.jar'),)
+
+runtime_sourcepath = (os.path.join(lljvm_dir, 'lib',  'lljvm-sources-' + __version__ + '.jar'),)
 
 
 def split_java_args(args):
@@ -93,6 +96,10 @@ def main():
         call_e([lljvm_dir+'/lljvm-cc'] + sys.argv[1:])
     elif "backend"==sys.argv[0]:
         call_e([lljvm_dir+'/lljvm-backend'] + sys.argv[1:])
+    elif "runtime-classpath"==sys.argv[0]:
+        print(os.pathsep.join(runtime_classpath))
+    elif "runtime-sourcepath"==sys.argv[0]:
+        print(os.pathsep.join(runtime_sourcepath))
     elif sys.argv[0] in java_tools:
         call_java_tool(sys.argv[0],  sys.argv[1:])
     else:
