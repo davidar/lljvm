@@ -43,9 +43,9 @@ public final class Function implements Module {
     /** Map of function signatures to function pointers */
     private final Map<String, Integer> functionPointers
         = new HashMap<String, Integer>();
-    /** Map of function pointers to Method objects */
-    private final Map<Integer, Method> functionObjects
-        = new HashMap<Integer, Method>();
+    /** Map of function pointers to Target objects */
+    private final Map<Integer, Target> functionObjects
+        = new HashMap<Integer, Target>();
     
     private Memory memory;
     private Context context;
@@ -83,7 +83,7 @@ public final class Function implements Module {
             final int addr = memory.allocateData();
             final String sig = ReflectionUtils.getQualifiedSignature(method);
             functionPointers.put(sig, addr);
-            functionObjects.put(addr, method);
+            functionObjects.put(addr, new Target(method));
             method.setAccessible(true);
         }
         registeredClasses.add(classname);
@@ -120,16 +120,12 @@ public final class Function implements Module {
      * @return      the return value of the method
      */
     private Object invoke(int f, int args) {
-        final Method method = functionObjects.get(f);
-        if(method == null)
+        final Target target = functionObjects.get(f);
+        if(target == null)
             throw new IllegalArgumentException("Invalid function pointer: "+f);
-        final Object instance;
-        if (Modifier.isStatic(method.getModifiers()))
-        	instance = null;
-        else {
-        	//TODO - Think about inheritance
-        	instance = context.getModule(method.getDeclaringClass());
-        }
+        final Method method = target.getMethod();
+        final Object instance = target.getInstance(context);
+
         final Class<?>[] paramTypes = method.getParameterTypes();
         final Object[] params = memory.unpack(args, paramTypes);
         try {
@@ -239,5 +235,30 @@ public final class Function implements Module {
      */
     public double invoke_f64(int f, int args) {
         return (Double) invoke(f, args);
+    }
+    
+    private static final class Target {
+        private final Method method;
+        private Object instance;
+        private boolean init;
+        Target(Method method) {
+            super();
+            this.method = method;
+        }
+        Object getInstance(Context context) {
+            if (!init) {
+                if (Modifier.isStatic(method.getModifiers()))
+                    instance = null;
+                else {
+                    //TODO - Think about inheritance
+                    instance = context.getModule(method.getDeclaringClass());
+                }
+                init = true;
+            }
+            return instance;
+        }
+        Method getMethod() {
+            return method;
+        }        
     }
 }
