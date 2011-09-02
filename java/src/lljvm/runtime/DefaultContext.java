@@ -22,8 +22,10 @@
 
 package lljvm.runtime;
 
+import lljvm.io.DefaultStandardHandleFactory;
 import lljvm.io.FileSystem;
 import lljvm.io.NativeFileSystem;
+import lljvm.io.StandardHandleFactory;
 
 /**
  * Standard context implementation used by LLJVM generated {@code main} methods.  May
@@ -41,9 +43,10 @@ public class DefaultContext extends AbstractContext {
 
     @Override
     protected <T> T createModule(Class<T> clazz) {
-        if (FileSystem.class.equals(clazz)) {
+        if (FileSystem.class.equals(clazz))
             return clazz.cast(new NativeFileSystem());
-        }
+        if (StandardHandleFactory.class.equals(clazz))
+            return clazz.cast(new DefaultStandardHandleFactory());
         return super.createModule(clazz);
     }
 

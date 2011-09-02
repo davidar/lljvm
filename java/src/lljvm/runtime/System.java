@@ -22,6 +22,8 @@
 
 package lljvm.runtime;
 
+import java.util.concurrent.Callable;
+
 // TODO: proper environ support
 
 /**
@@ -35,14 +37,14 @@ public final class System implements Module {
 	private IO io;
 	
     /** Throw an exception instead of calling System.exit? */
-    public static boolean throwExit = false;
+    private boolean throwExit = false;
     
 
     /**
      * Thrown to indicate that a call has been made to the _exit syscall.
      */
     @SuppressWarnings("serial")
-    public static class Exit extends RuntimeException {
+    public static class Exit extends java.lang.Error {
         /** Exit status code */
         public final int status;
         public Exit(int status) {
@@ -56,6 +58,16 @@ public final class System implements Module {
     }
     
     
+    public boolean isThrowExit() {
+        return throwExit;
+    }
+
+
+    public void setThrowExit(boolean throwExit) {
+        this.throwExit = throwExit;
+    }
+
+
     @Override
     public void initialize(Context context) {
         this.error = context.getModule(Error.class);
@@ -149,5 +161,13 @@ public final class System implements Module {
     public int wait(int status) {
         // TODO: implement
         return error.errno(Error.ECHILD);
+    }
+    
+    public int catchExits(Callable<Integer> f) throws Exception {
+        try {
+            return f.call();
+        } catch (Exit e) {
+            return e.status;
+        }
     }
 }

@@ -42,8 +42,8 @@ public class OutputStreamFileHandle extends AbstractFileHandle {
      * @param outputStream  the output stream
      */
     public OutputStreamFileHandle(Context context, OutputStream outputStream) {
-        super(context, false, true, true);
-        this.outputStream = outputStream;
+        super(context, false, true, false);
+        this.outputStream = outputStream; 
     }
     
     protected void write(int b) throws IOException {

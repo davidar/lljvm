@@ -108,6 +108,8 @@ public abstract class AbstractContext implements Context {
                 }
             }
         }
+        if (errs.isEmpty())
+            return;
         if (errs.size() > 1) {
             for (Throwable t : errs) {
                 logger.log(Level.SEVERE, "Multiple errors occurred during close", t);

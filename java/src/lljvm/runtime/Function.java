@@ -140,6 +140,8 @@ public final class Function implements Module {
             Throwable cause = e.getCause();
             if(cause instanceof RuntimeException)
                 throw (RuntimeException) cause;
+            if (cause instanceof java.lang.Error)
+                throw (java.lang.Error)cause;
             throw new RuntimeException(cause);
         }
     }

@@ -28,8 +28,8 @@ import java.lang.System;
 import lljvm.io.FileHandle;
 import lljvm.io.FileSystem;
 import lljvm.io.InputStreamFileHandle;
-import lljvm.io.NativeFileSystem;
 import lljvm.io.OutputStreamFileHandle;
+import lljvm.io.StandardHandleFactory;
 
 /**
  * Provides methods and constants related to I/O.
@@ -118,26 +118,17 @@ public final class IO implements Module {
         this.memory = context.getModule(Memory.class);
         this.error = context.getModule(Error.class);
         this.fileSystem = context.getModule(FileSystem.class);
-        putFileHandle(new InputStreamFileHandle(context,System.in));
-        putFileHandle(new OutputStreamFileHandle(context,System.out));
-        putFileHandle(new OutputStreamFileHandle(context,System.err));
+        StandardHandleFactory shf = context.getModule(StandardHandleFactory.class);
+        putFileHandle(shf.createStdin());
+        putFileHandle(shf.createStdout());
+        putFileHandle(shf.createStderr());
     }
 
     @Override
     public void destroy(Context context) {
         close();
-    }
+    }    
 
-    
-
-    public FileHandle[] setStdHandles(FileHandle stdIn, FileHandle stdOut, FileHandle stdErr) {
-    	FileHandle[] result = new FileHandle[] {fileDescriptors[0], fileDescriptors[1], fileDescriptors[2]};
-    	fileDescriptors[0] = stdIn;
-    	fileDescriptors[1] = stdOut;
-    	fileDescriptors[2] = stdErr;
-    	return result;
-    }
-    
     /**
      * Open and possibly create a file or device.
      * 
