@@ -100,33 +100,93 @@ public class RandomAccessFileHandle extends AbstractFileHandle {
         if(!write)
             return error.errno(Error.EINVAL);
         
-        class Consumer implements Memory.PageConsumer {
-            IOException ioExc;
-            int count;
-            @Override
-            public boolean next(ByteBuffer buf) {
-                while(buf.hasRemaining()) {
-                    try {
-                        count += file.getChannel().write(buf);
-                    } catch (IOException e) {
-                        ioExc = e;
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-        
+        final int result;
         try {
-            Consumer consumer = new Consumer();
-            memory.getPages(consumer, buf, count);
-            if (consumer.ioExc!=null)
-                throw consumer.ioExc;
+            if (count==0) {
+                result = 0;
+            } else if (count==1) {
+                file.writeByte(memory.load_i8(buf));
+                result = 1;
+            } else {
+                PageWriter writer = new PageWriter();
+                memory.getPages(writer, buf, count);
+                if (writer.ioExc!=null)
+                    throw writer.ioExc;                
+                result = writer.count;
+            }
             if(synchronous)
                 flush();
-            return consumer.count;
         } catch(IOException e) {
             return error.errno(Error.EIO);
+        }
+        return result;
+    }
+    
+    private class PageWriter implements Memory.PageConsumer {
+        IOException ioExc;
+        int count;
+        PageWriter() {}
+        @Override
+        public boolean next(ByteBuffer buf) {
+            while(buf.hasRemaining()) {
+                try {
+                    count += file.getChannel().write(buf);
+                } catch (IOException e) {
+                    ioExc = e;
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+    
+    @Override
+    public int read(int buf, int count) {
+        if(!read)
+            return error.errno(Error.EINVAL);
+        final int result;
+        try {
+            if (count==0) {
+                result = 0;
+            } else if (count==1) {
+                int val = file.read();
+                if (val>=0) {
+                    memory.store(buf,(byte)val);
+                    result = 1;
+                } else {
+                    result = 0;
+                }
+            } else {
+                PageReader reader = new PageReader();
+                memory.getPages(reader, buf, count);
+                if (reader.ioExc!=null)
+                    return error.errno(Error.EIO);
+                result = reader.count;
+            }
+        } catch (IOException e) {
+            return error.errno(Error.EIO);
+        }
+        return result;        
+    }
+    
+    class PageReader implements Memory.PageConsumer {
+        IOException ioExc;
+        int count;
+        PageReader() {}
+        @Override
+        public boolean next(ByteBuffer buf) {
+            while(buf.hasRemaining()) {
+                try {
+                    int r = file.getChannel().read(buf);
+                    if (r<0)
+                        return false;
+                    count += r;
+                } catch (IOException e) {
+                    ioExc = e;
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

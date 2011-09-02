@@ -23,12 +23,9 @@
 package lljvm.runtime;
 
 import java.io.IOException;
-import java.lang.System;
 
 import lljvm.io.FileHandle;
 import lljvm.io.FileSystem;
-import lljvm.io.InputStreamFileHandle;
-import lljvm.io.OutputStreamFileHandle;
 import lljvm.io.StandardHandleFactory;
 
 /**
@@ -247,7 +244,8 @@ public final class IO implements Module {
     public int isatty(int fd) {
         if(fd < 0 || fd > 2)
             return 0;
-        return System.console() != null ? 1 : 0;
+        //TODO - Can we do better than this?
+        return java.lang.System.console() != null ? 1 : 0;
     }
     
     /**

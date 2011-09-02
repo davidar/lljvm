@@ -778,40 +778,6 @@ public final class Memory implements Module {
         throw new IllegalArgumentException("Unrecognised type");
     }
     
-    /*
-    public void read(int addr, byte[] dest, int off, int len) {
-        final int end = off+len;
-        if (off<0 || len<0 || end<0 || end>dest.length)
-            throw new IndexOutOfBoundsException();
-        while(len>0) {
-            ByteBuffer page = getPage(addr);
-            int pageOff = getOffset(addr);
-            int chunkLen = java.lang.Math.min(PAGE_SIZE - pageOff, len);
-            page.position(pageOff);
-            page.get(dest, off, chunkLen);
-            len -= chunkLen;
-            off += chunkLen;
-            addr += chunkLen;
-        }
-    }
-    
-    public void write(int addr, byte[] src, int off, int len) {
-        final int end = off+len;
-        if (off<0 || len<0 || end<0 || end>src.length)
-            throw new IndexOutOfBoundsException();
-        while(len>0) {
-            ByteBuffer page = getPage(addr);
-            int pageOff = getOffset(addr);
-            int chunkLen = java.lang.Math.min(PAGE_SIZE - pageOff, len);
-            page.position(pageOff);
-            page.put(src, off, chunkLen);
-            len -= chunkLen;
-            off += chunkLen;
-            addr += chunkLen;
-        }
-    }
-    */
-    
     public void getPages(PageConsumer scanner, int addr, int len) {
         while(len>0) {
             ByteBuffer page = getPage(addr).duplicate();
