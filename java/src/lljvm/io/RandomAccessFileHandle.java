@@ -25,10 +25,12 @@ package lljvm.io;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 
 import lljvm.runtime.Context;
 import lljvm.runtime.Error;
 import lljvm.runtime.IO;
+import lljvm.runtime.Memory;
 
 /**
  * Implements the FileHandle interface, backed by a RandomAccessFile.
@@ -38,7 +40,6 @@ import lljvm.runtime.IO;
 public class RandomAccessFileHandle extends AbstractFileHandle {
     /** The file */
     private final RandomAccessFile file;
-    
     /**
      * Construct a new instance for the given file, with the given flags.
      * 
@@ -92,5 +93,40 @@ public class RandomAccessFileHandle extends AbstractFileHandle {
         if(n > Integer.MAX_VALUE)
             return error.errno(Error.EOVERFLOW);
         return (int) n;
+    }
+    
+    @Override
+    public int write(int buf, int count) {
+        if(!write)
+            return error.errno(Error.EINVAL);
+        
+        class Consumer implements Memory.PageConsumer {
+            IOException ioExc;
+            int count;
+            @Override
+            public boolean next(ByteBuffer buf) {
+                while(buf.hasRemaining()) {
+                    try {
+                        count += file.getChannel().write(buf);
+                    } catch (IOException e) {
+                        ioExc = e;
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        
+        try {
+            Consumer consumer = new Consumer();
+            memory.getPages(consumer, buf, count);
+            if (consumer.ioExc!=null)
+                throw consumer.ioExc;
+            if(synchronous)
+                flush();
+            return consumer.count;
+        } catch(IOException e) {
+            return error.errno(Error.EIO);
+        }
     }
 }
