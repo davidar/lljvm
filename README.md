@@ -17,7 +17,7 @@ doc/backend.pdf. A zip archive containing all of the documentation can be
 created by calling `make doc-zip`.
 
 
-C COMPILER
+# C COMPILER
 The lljvm-cc frontend ties together several components to provide a C source
 code to JVM class file compiler.
 
@@ -82,7 +82,7 @@ required):
     make CCLD='lljvm-cc -link'
 
 
-DEMO
+# DEMO
 To demonstrate the capabilities of LLJVM, several common software packages can
 be compiled with lljvm-cc by entering the demo/ subdirectory and calling
 `make`. To verify that all of these compiled correctly, call `make check`.
@@ -93,7 +93,7 @@ JAR in the project root directory with no arguments:
     java -jar lljvm-demo.jar
 
 
-BACKEND
+# BACKEND
 The LLJVM Backend transforms LLVM IR into Jasmin assembly code.
 It can be invoked by:
     lljvm-backend foo.bc > foo.j
@@ -106,14 +106,14 @@ assembled into a class file by Jasmin[2]:
     java -jar jasmin.jar foo.j
 
 
-RUNTIME
+# RUNTIME
 The LLVJM Runtime has three components, the Core Runtime (lljvm.runtime), the
 I/O Support Library (lljvm.io), and the C Standard Library (lljvm.lib.c). See
 the JavaDoc documentation for further details on the former two. The latter is
 Newlib[3] compiled to JVM bytecode by lljvm-cc.
 
 
-TOOLS
+# TOOLS
 There are two command-line tools available: the linker, and the info utility.
 There are several ways to invoke these tools. The simplest way is to call them
 directly from the jar archive:
@@ -125,7 +125,7 @@ can be used:
     java lljvm.tools.<cmd>.Main args...
 
 
-LINKER
+# LINKER
 The LLJVM Linker qualifies references to external methods and fields in Jasmin
 assembly code. At the top of the code (before any .method directives), external
 references should be specified through the .extern pseudo-directive, such as:
@@ -151,7 +151,7 @@ would produce:
     ldc "java/lang/Math"
 
 
-INFO
+# INFO
 The info utility lists the type signatures of the public static fields and
 methods provided by a class. For example, to list those provided by libc:
     java -jar lljvm.jar info lljvm.lib.c
