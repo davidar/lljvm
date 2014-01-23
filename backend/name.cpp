@@ -22,6 +22,7 @@
 
 #include "backend.h"
 
+#include <llvm/MC/MCContext.h>
 #include <llvm/MC/MCAsmInfo.h>
 #include <llvm/Target/Mangler.h>
 
@@ -45,8 +46,15 @@ std::string JVMWriter::sanitizeName(std::string name) {
  * @return   the name of the value
  */
 std::string JVMWriter::getValueName(const Value *v) {
-    if(const GlobalValue *gv = dyn_cast<GlobalValue>(v))
-        return sanitizeName(Mangler(MCAsmInfo()).getNameWithPrefix(gv));
+#if 0
+    if(const GlobalValue *gv = dyn_cast<GlobalValue>(v)) {
+		const DataLayout td;
+		MCContext mc;
+		SmallVectorImpl<char> name;
+        Mangler(mc, td).getNameWithPrefix(name, gv, false);
+        return sanitizeName(name.data());
+	}
+#endif
     if(v->hasName())
         return '_' + sanitizeName(v->getName());
     if(localVars.count(v))
