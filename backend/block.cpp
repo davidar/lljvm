@@ -79,6 +79,7 @@ void JVMWriter::printInstruction(const Instruction *inst) {
             printSimpleInstruction("return");
         }
         break;
+#if 0
     case Instruction::Unwind:
         printSimpleInstruction("getstatic",
             "lljvm/runtime/Instruction$Unwind/instance "
@@ -86,6 +87,7 @@ void JVMWriter::printInstruction(const Instruction *inst) {
         printSimpleInstruction("athrow");
         // TODO: need to destroy stack frames
         break;
+#endif
     case Instruction::Unreachable:
         printSimpleInstruction("getstatic",
             "lljvm/runtime/Instruction$Unreachable/instance "
