@@ -119,6 +119,8 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
             printLabel("setjmp$" + utostr(varNum));
         }
     } else { // indirect call
+        const CallInst *ci = cast<CallInst>(inst);
+        functionVal = ci->getCalledValue();
         printValueLoad(functionVal);
         const FunctionType *ty = cast<FunctionType>(
             cast<PointerType>(functionVal->getType())->getElementType());
