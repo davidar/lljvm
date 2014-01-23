@@ -68,7 +68,7 @@ void JVMWriter::printExternalMethods() {
             out << ".extern method "
                 << getValueName(f) << getCallSignature(ty);
             if(debug >= 3)
-                out << " ; " << *ty;
+                out << " ; " << ty;
             out << '\n';
             externRefs.insert(f);
         }

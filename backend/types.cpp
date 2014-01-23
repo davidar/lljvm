@@ -78,7 +78,7 @@ char JVMWriter::getTypeID(const Type *ty, bool expand) {
     case Type::VectorTyID:
         return 'I';
     default:
-        errs() << "Type = " << *ty << '\n';
+        errs() << "Type = " << ty << '\n';
         llvm_unreachable("Invalid type");
     }
 }
