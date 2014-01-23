@@ -22,7 +22,7 @@
 
 #include "backend.h"
 
-char JVMWriter::id = 0;
+char JVMWriter::ID = 0;
 
 /**
  * Constructor.
@@ -32,9 +32,15 @@ char JVMWriter::id = 0;
  * @param cls  the binary name of the class to generate
  * @param dbg  the debugging level
  */
-JVMWriter::JVMWriter(const TargetData *td, formatted_raw_ostream &o,
-                     const std::string &cls, unsigned int dbg)
-    : FunctionPass(&id), targetData(td), out(o), classname(cls), debug(dbg) {}
+
+JVMWriter::JVMWriter() : FunctionPass(ID), out(fouts()) {}
+
+void JVMWriter::Setup(const DataLayout *td, const std::string &cls,
+	unsigned int dbg) {
+	targetData = td;
+	classname = cls;
+	debug = dbg;
+}
 
 /**
  * Register required analysis information.
