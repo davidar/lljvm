@@ -62,10 +62,11 @@ void JVMWriter::printConstLoad(const APInt &i) {
     }
 }
 
-char *ftostr(float myfloat) {
-	char ans[20];
-	snprintf(ans, 20, "%f", myfloat);
-	return ans;
+static inline std::string ftostr(double V) {
+	char Buffer[200], *B = Buffer;
+	sprintf(Buffer, "%20.6e", V);
+	while (*B == ' ') ++B;
+	return B;
 }
 
 /**
