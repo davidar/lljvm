@@ -42,15 +42,17 @@ static uint64_t getUID() {
  * @return    the call signature
  */
 std::string JVMWriter::getCallSignature(const FunctionType *ty) {
-    if(ty->isVarArg() && ty->getNumParams() == 0)
-        // non-prototyped function
-        return "";
     std::string sig;
+    if(ty->isVarArg() && ty->getNumParams() == 0) {
+        // non-prototyped function
+		sig = "()";
+	} else {
     sig += '(';
     for(unsigned int i = 0, e = ty->getNumParams(); i < e; i++)
         sig += getTypeDescriptor(ty->getParamType(i));
     if(ty->isVarArg()) sig += "I";
     sig += ')';
+	}
     sig += getTypeDescriptor(ty->getReturnType());
     return sig;
 }
