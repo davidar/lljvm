@@ -25,6 +25,7 @@
 #include <llvm/MC/MCContext.h>
 #include <llvm/MC/MCAsmInfo.h>
 #include <llvm/Target/Mangler.h>
+#include <llvm/ADT/SmallString.h>
 
 /**
  * Replace any non-alphanumeric characters with underscores.
@@ -46,15 +47,11 @@ std::string JVMWriter::sanitizeName(std::string name) {
  * @return   the name of the value
  */
 std::string JVMWriter::getValueName(const Value *v) {
-#if 0
     if(const GlobalValue *gv = dyn_cast<GlobalValue>(v)) {
-		const DataLayout td;
-		MCContext mc;
-		SmallVectorImpl<char> name;
-        Mangler(mc, td).getNameWithPrefix(name, gv, false);
-        return sanitizeName(name.data());
+		SmallString<10> name;
+        mangler->getNameWithPrefix(name, gv, false);
+        return sanitizeName(name.str().str());
 	}
-#endif
     if(v->hasName())
         return '_' + sanitizeName(v->getName());
     if(localVars.count(v))

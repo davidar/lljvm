@@ -21,6 +21,10 @@
 */
 
 #include "backend.h"
+#include <llvm/MC/MCAsmInfo.h>
+#include <llvm/MC/MCContext.h>
+#include <llvm/MC/MCRegisterInfo.h>
+#include <llvm/MC/MCObjectFileInfo.h>
 
 char JVMWriter::ID = 0;
 
@@ -93,6 +97,12 @@ bool JVMWriter::doInitialization(Module &m) {
             if(*i == '.') *i = '_';
     }
     
+	const MCAsmInfo *mcAsm = new MCAsmInfo();
+	const MCRegisterInfo *mcRegisterInfo = new MCRegisterInfo();
+	const MCObjectFileInfo *mcObjectFileInfo = new MCObjectFileInfo();
+	MCContext *mcc = new MCContext(*mcAsm, *mcRegisterInfo, mcObjectFileInfo);
+	mangler = new Mangler(*mcc, *targetData);
+
     printHeader();
     printFields();
     printExternalMethods();

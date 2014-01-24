@@ -35,6 +35,7 @@
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/GetElementPtrTypeIterator.h>
 #include <llvm/IR/DataLayout.h>
+#include <llvm/Target/Mangler.h>
 
 
 using namespace llvm;
@@ -57,6 +58,7 @@ class JVMWriter : public FunctionPass {
     Module *module;
     /** The target data for the platform */
     const DataLayout *targetData;
+	Mangler *mangler;
     
     /** Set of external references */
     DenseSet<const Value*> externRefs;
