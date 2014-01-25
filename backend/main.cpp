@@ -92,9 +92,9 @@ int main(int argc, char **argv) {
     pm.add(new DataLayout(td));
     pm.add(createVerifierPass());
     pm.add(createGCLoweringPass());
+    pm.add(createCFGSimplificationPass());
     // TODO: fix switch generation so the following pass is not needed
     pm.add(createLowerSwitchPass());
-    pm.add(createCFGSimplificationPass());
 	jvw = (JVMWriter *)tmp.createPass();
 	jvw->Setup(&td, classname, debugLevel);
     pm.add(jvw);
