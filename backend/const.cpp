@@ -193,7 +193,7 @@ void JVMWriter::printStaticConstant(const Constant *c) {
             "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
         break;
     case Type::ArrayTyID:
-        if(const ConstantDataSequential *ca = dyn_cast<ConstantDataSequential>(c))
+        if(const ConstantDataSequential *ca = dyn_cast<ConstantDataSequential>(c)) {
             if(ca->isString()) {
                 bool cstring = ca->isCString();
                 printConstLoad(ca->getAsString(), cstring);
@@ -210,7 +210,9 @@ void JVMWriter::printStaticConstant(const Constant *c) {
                 for(unsigned int i = 0, e = ca->getNumElements(); i < e; i++)
                     printStaticConstant(ca->getElementAsConstant(i));
             }
-        break;
+            break;
+        }
+        // else fall through
     case Type::VectorTyID:
     case Type::StructTyID:
         for(unsigned int i = 0, e = c->getNumOperands(); i < e; i++)
