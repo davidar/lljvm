@@ -206,9 +206,11 @@ void JVMWriter::printStaticConstant(const Constant *c) {
                     printSimpleInstruction("invokestatic",
                                            "lljvm/runtime/Memory/pack(I[C)I");
                 }
-                break;
+            } else {
+                for(unsigned int i = 0, e = ca->getNumElements(); i < e; i++)
+                    printStaticConstant(ca->getElementAsConstant(i));
             }
-        // else fall through
+        break;
     case Type::VectorTyID:
     case Type::StructTyID:
         for(unsigned int i = 0, e = c->getNumOperands(); i < e; i++)
