@@ -68,9 +68,9 @@ std::string JVMWriter::getCallSignature(const FunctionType *ty) {
 void JVMWriter::printOperandPack(const Instruction *inst,
                                  unsigned int minOperand,
                                  unsigned int maxOperand) {
-    unsigned int size = 0, max = maxOperand - minOperand;
-	ImmutableCallSite cs = ImmutableCallSite(inst);
-    for(unsigned int i = 0; i < max; i++)
+    unsigned int size = 0;
+    ImmutableCallSite cs = ImmutableCallSite(inst);
+    for(unsigned int i = minOperand; i < maxOperand; i++)
         size += targetData->getTypeAllocSize(
             cs.getArgument(i)->getType());
 
@@ -79,7 +79,7 @@ void JVMWriter::printOperandPack(const Instruction *inst,
                            "lljvm/runtime/Memory/allocateStack(I)I");
     printSimpleInstruction("dup");
 
-    for(unsigned int i = 0; i < max; i++) {
+    for(unsigned int i = minOperand; i < maxOperand; i++) {
         const Value *v = cs.getArgument(i);
         printValueLoad(v);
         printSimpleInstruction("invokestatic",
@@ -109,8 +109,8 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
         for(unsigned int i = 0, e = ty->getNumParams(); i < e; i++)
             printValueLoad(ImmutableCallSite(inst).getArgument(i));
         if(ty->isVarArg() && inst)
-            printOperandPack(inst, ty->getNumParams() + origin,
-                                   inst->getNumOperands());
+            printOperandPack(inst, ty->getNumParams(),
+                                   inst->getNumOperands() - origin);
         
         if(externRefs.count(f))
             printSimpleInstruction("invokestatic",
