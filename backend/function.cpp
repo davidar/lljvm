@@ -129,7 +129,7 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
         printValueLoad(functionVal);
         const FunctionType *ty = cast<FunctionType>(
             cast<PointerType>(functionVal->getType())->getElementType());
-        printOperandPack(inst, origin, inst->getNumOperands());
+        printOperandPack(inst, origin, inst->getNumOperands() - origin);
         printSimpleInstruction("invokestatic",
             "lljvm/runtime/Function/invoke_"
             + getTypePostfix(ty->getReturnType()) + "(II)"
@@ -165,6 +165,12 @@ void JVMWriter::printIntrinsicCall(const IntrinsicInst *inst) {
         printMathIntrinsic(inst); break;
     case Intrinsic::bswap:
         printBitIntrinsic(inst); break;
+    case Intrinsic::lifetime_start:
+    case Intrinsic::lifetime_end:
+    case Intrinsic::invariant_start:
+    case Intrinsic::invariant_end:
+        // ignore lifetime intrinsics
+        break;
     default:
         errs() << "Intrinsic = " << *inst << '\n';
         llvm_unreachable("Invalid intrinsic function");
