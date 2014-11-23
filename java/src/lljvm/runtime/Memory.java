@@ -756,7 +756,7 @@ public final class Memory implements Module {
         int i = 0;
         while((bytes[i++] = load_i8(addr++)) != 0)
             if(i >= bytes.length) bytes = Arrays.copyOf(bytes, i*2);
-        return new String(Arrays.copyOf(bytes, i));
+        return new String(Arrays.copyOf(bytes, i - 1));
     }
     
     /**
