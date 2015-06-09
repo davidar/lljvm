@@ -1,8 +1,20 @@
 **LLJVM** provides a set of tools and libraries for running comparatively low level
 languages (such as C) on the JVM.
 
-Homepage: http://da.vidr.cc/projects/lljvm/
+The C to JVM bytecode compilation provided by LLJVM involves several steps. Source code is first compiled to [LLVM][llvm] intermediate representation (IR) by a frontend such as `llvm-gcc` or [clang][clang]. LLVM IR is then translated to [Jasmin][jasmin] assembly code, linked against other Java classes, and then assembled to JVM bytecode.
 
+The use of LLVM IR as the intermediate representation allows more information about the source program to be preserved, compared to other methods which use MIPS binary as the intermediate representation (such as [NestedVM][nestedvm] and [Cibyl][cibyl]). For example, functions are mapped to individual JVM methods, and all function calls are made with native JVM invocation instructions. This allows compiled code to be linked against arbitrary Java classes, and Java programs to natively call individual functions in the compiled code. It also allows programs to be split across multiple classes (comparable to dynamic linking), rather than statically linking everything into a single class.
+
+Also note that while C is currently the only supported input language, any language with a compiler targeting LLVM IR could potentially be supported.
+
+For a **quick demonstration** of some pre-compiled classes, download the [runtime library][lljvm-jar] and the [demo package][lljvm-demo-jar] to a directory on your machine, and run `java -jar lljvm-demo-0.2.jar`.
+
+To compile LLJVM from source, follow the instructions below. If you have problems compiling from source and are running Linux on an i386-compatible platform, download the [binary release][lljvm-bin], extract it, and download the [runtime library][lljvm-jar] into the resulting directory.
+
+[HN comments][hn-lljvm]
+
+
+## INSTALLATION
 [LLVM 2.7][llvm] must be installed to compile and run LLJVM. [Jasmin][jasmin] is needed for
 assembling JVM bytecode.
 
@@ -181,3 +193,10 @@ disable this behaviour, pass the `-v` flag:
 [llvm]: http://llvm.org/
 [jasmin]: http://jasmin.sf.net/
 [newlib]: http://sourceware.org/newlib/
+[hn-lljvm]: http://news.ycombinator.com/item?id=961834
+[lljvm-jar]: https://github.com/davidar/lljvm/releases/download/0.2/lljvm-0.2.jar
+[lljvm-demo-jar]: https://github.com/davidar/lljvm/releases/download/0.2/lljvm-demo-0.2.jar
+[lljvm-bin]: https://github.com/davidar/lljvm/releases/download/0.2/lljvm-bin-linux-i386-0.2.tar.gz
+[clang]: http://clang.llvm.org/
+[nestedvm]: http://nestedvm.ibex.org/
+[cibyl]: https://github.com/SimonKagstrom/cibyl
