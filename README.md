@@ -9,6 +9,8 @@ Also note that while C is currently the only supported input language, any langu
 
 For a **quick demonstration** of some pre-compiled classes, download the [runtime library][lljvm-jar] and the [demo package][lljvm-demo-jar] to a directory on your machine, and run `java -jar lljvm-demo-0.2.jar`.
 
+To **quickly start** translating your own programs you might want to use [Docker][docker]. Getting LLJVM to run on modern machines (and keeping it running) can be quite tricky as it depends heavily on an old version of LLVM. As an alternative, Martin Haye has set up a virtual machine image [here][mhaye-lljvm] that is pre-configured for and includes LLJVM. Install Docker (you may need Boot2Docker) and start it this way: `docker run -i -v /your/project/dir:/project -t mhaye/lljvm /bin/bash`
+
 To compile LLJVM from source, follow the instructions below. If you have problems compiling from source and are running Linux on an i386-compatible platform, download the [binary release][lljvm-bin], extract it, and download the [runtime library][lljvm-jar] into the resulting directory.
 
 [HN comments][hn-lljvm]
@@ -195,6 +197,8 @@ disable this behaviour, pass the `-v` flag:
 [newlib]: http://sourceware.org/newlib/
 [hn-lljvm]: http://news.ycombinator.com/item?id=961834
 [lljvm-jar]: https://github.com/davidar/lljvm/releases/download/0.2/lljvm-0.2.jar
+[docker]: https://www.docker.com/
+[mhaye-lljvm]: https://registry.hub.docker.com/u/mhaye/lljvm/
 [lljvm-demo-jar]: https://github.com/davidar/lljvm/releases/download/0.2/lljvm-demo-0.2.jar
 [lljvm-bin]: https://github.com/davidar/lljvm/releases/download/0.2/lljvm-bin-linux-i386-0.2.tar.gz
 [clang]: http://clang.llvm.org/
