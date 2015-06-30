@@ -37,7 +37,7 @@ code to JVM class file compiler.
 
 In order to use the frontend, either `llvm-gcc` or `clang` must be installed.
 `llvm-gcc` is recommended, and is used instead of `clang` if both are available.
-It is also required that the classpath contain [jasmin.jar][jasmin].
+It is also required that the classpath contain [jasmin.jar][jasmin-jar].
 
 To compile a small number of source files to a class file, the following style
 of command can be used:
@@ -193,7 +193,8 @@ disable this behaviour, pass the `-v` flag:
 
 
 [llvm]: http://llvm.org/
-[jasmin]: http://jasmin.sf.net/
+[jasmin]: https://github.com/davidar/jasmin
+[jasmin-jar]: https://github.com/davidar/jasmin/raw/master/jasmin.jar
 [newlib]: http://sourceware.org/newlib/
 [hn-lljvm]: http://news.ycombinator.com/item?id=961834
 [lljvm-jar]: https://github.com/davidar/lljvm/releases/download/0.2/lljvm-0.2.jar
