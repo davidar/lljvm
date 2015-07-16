@@ -13,7 +13,8 @@ To **quickly start** translating your own programs you might want to use [Docker
 
 To compile LLJVM from source, follow the instructions below. If you have problems compiling from source and are running Linux on an i386-compatible platform, download the [binary release][lljvm-bin], extract it, and download the [runtime library][lljvm-jar] into the resulting directory.
 
-[HN comments][hn-lljvm]
+- [HN comments][hn-lljvm]
+- 2009-2015 [David A Roberts](https://davidar.io)
 
 
 ## INSTALLATION
