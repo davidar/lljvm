@@ -1,3 +1,5 @@
+# LLJVM
+
 **LLJVM** provides a set of tools and libraries for running comparatively low level
 languages (such as C) on the JVM.
 
@@ -6,6 +8,14 @@ The C to JVM bytecode compilation provided by LLJVM involves several steps. Sour
 The use of LLVM IR as the intermediate representation allows more information about the source program to be preserved, compared to other methods which use MIPS binary as the intermediate representation (such as [NestedVM][nestedvm] and [Cibyl][cibyl]). For example, functions are mapped to individual JVM methods, and all function calls are made with native JVM invocation instructions. This allows compiled code to be linked against arbitrary Java classes, and Java programs to natively call individual functions in the compiled code. It also allows programs to be split across multiple classes (comparable to dynamic linking), rather than statically linking everything into a single class.
 
 Also note that while C is currently the only supported input language, any language with a compiler targeting LLVM IR could potentially be supported.
+
+This project is currently unmaintained. You may be interested in:
+
+- [one of the forks](https://github.com/davidar/lljvm/network)
+- [LLJVM Translator](https://github.com/maropu/lljvm-translator)
+
+
+## QUICKSTART
 
 For a **quick demonstration** of some pre-compiled classes, download the [runtime library][lljvm-jar] and the [demo package][lljvm-demo-jar] to a directory on your machine, and run `java -jar lljvm-demo-0.2.jar`.
 
