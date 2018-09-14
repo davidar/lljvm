@@ -31,21 +31,22 @@ void JVMWriter::printValueLoad(const Value *v) {
     if(const Function *f = dyn_cast<Function>(v)) {
         std::string sig = getValueName(f)
                         + getCallSignature(f->getFunctionType());
+        printStartInvocationTag();
         if(externRefs.count(v))
-            printSimpleInstruction("CLASSFORMETHOD", sig);
+            printLoadClassNameForMethod(sig);
         else
             printSimpleInstruction("ldc", '"' + classname + '"');
         printSimpleInstruction("ldc", '"' + sig + '"');
-        printSimpleInstruction("invokestatic",
-            "lljvm/runtime/Function/getFunctionPointer"
-            "(Ljava/lang/String;Ljava/lang/String;)I");
+        printEndInvocationTag(
+                "lljvm/runtime/Function/getFunctionPointer"
+                "(Ljava/lang/String;Ljava/lang/String;)I");
     } else if(isa<GlobalVariable>(v)) {
         const Type *ty = cast<PointerType>(v->getType())->getElementType();
         if(externRefs.count(v))
-            printSimpleInstruction("getstatic", getValueName(v) + " I");
-        else
-            printSimpleInstruction("getstatic",
-                classname + "/" + getValueName(v) + " I");
+            printGetField(getValueName(v)+" I");
+        else {
+            printGetField(classname + "/" + getValueName(v) + " I",true);
+        }
     } else if(isa<ConstantPointerNull>(v)) {
         printPtrLoad(0);
     } else if(const ConstantExpr *ce = dyn_cast<ConstantExpr>(v)) {
@@ -118,7 +119,8 @@ void JVMWriter::printIndirectLoad(const Value *v) {
  * @param ty  the type of the value
  */
 void JVMWriter::printIndirectLoad(const Type *ty) {
-    printSimpleInstruction("invokestatic", "lljvm/runtime/Memory/load_"
+    printStartInvocationTag(1);
+    printEndInvocationTag("lljvm/runtime/Memory/load_"
         + getTypePostfix(ty) + "(I)" + getTypeDescriptor(ty));
 }
 
@@ -129,17 +131,9 @@ void JVMWriter::printIndirectLoad(const Type *ty) {
  * @param val  the value to store
  */
 void JVMWriter::printIndirectStore(const Value *ptr, const Value *val) {
+    printStartInvocationTag();
     printValueLoad(ptr);
     printValueLoad(val);
-    printIndirectStore(val->getType());
+    printEndInvocationTag("lljvm/runtime/Memory/store(I" + getTypeDescriptor(val->getType()) + ")V");
 }
 
-/**
- * Indirectly store a value of the given type.
- * 
- * @param ty  the type of the value
- */
-void JVMWriter::printIndirectStore(const Type *ty) {
-    printSimpleInstruction("invokestatic",
-        "lljvm/runtime/Memory/store(I" + getTypeDescriptor(ty) + ")V");
-}

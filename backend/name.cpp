@@ -49,8 +49,16 @@ std::string JVMWriter::getValueName(const Value *v) {
         return sanitizeName(Mangler(MCAsmInfo()).getNameWithPrefix(gv));
     if(v->hasName())
         return '_' + sanitizeName(v->getName());
-    if(localVars.count(v))
-        return '_' + utostr(getLocalVarNumber(v));
+    if(localVars.count(v)) {
+		unsigned int tid;		
+		if (temporaryNames.count(v))
+			tid = temporaryNames[v];
+		else {
+			tid = temporaryNames.size();
+			temporaryNames[v] = tid;
+		}
+		return "$" + utostr(tid);
+	}
     return "_";
 }
 /**

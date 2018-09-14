@@ -60,23 +60,22 @@ default_java_libs = (
     'lljvm.runtime.Posix',
     'lljvm.runtime.Error',
     'lljvm.runtime.Memory',
-    'lljvm.runtime.Jump',
+    'lljvm.runtime.JumpFunctions',
 )
 
 # (partial) list of flags that take an argument
 # TODO: complete list
-takes_argument = ('-MF', '-MT', '-MQ', '-include')
+takes_argument = ('-MF', '-MT', '-MQ', '-include', '-cp')
 
 # (partial) list of flags not recognised by llvm-ld
 # TODO: need a better way of filtering out invalid flags
 invalid_ld_flags = ('-pthread', '-shared', '-nostdlib', '-lgcc',
-                    '-static-libgcc', '-link', '-MF', '-MT', '-MQ', '-include')
+                    '-static-libgcc', '-link', '-MF', '-MT', '-MQ', '-include', '-cp',  '-jlisting', '--verbose')
 
 # template for the launcher script
 script_template = \
     '#!/bin/sh\n' \
-    'export CLASSPATH="`dirname "$0"`:%s:${CLASSPATH-.}"\n' \
-    'exec java %s "$0" ${1+"$@"}\n'
+    'exec java -cp `dirname "$0"`:%s %s "$0" ${1+"$@"}\n'
 
 def die(message, status=1):
     """Print the given message to stderr and terminate with the given
@@ -146,7 +145,7 @@ def filter_cc_flags(flags):
     """Remove arguments from the given list that should be passed to the
     backend instead of cc, and return the new list of arguments."""
     return filter_flags(flags,
-        lambda x: not startswith_element(x, ('-classname','-g','-l')))
+        lambda x: not startswith_element(x, ('-classname','-g','-l',  '-cp',  '-jlisting')))
 
 def filter_ld_flags(flags):
     """Remove arguments not recognised by llvm-ld from the given list, and
@@ -162,9 +161,29 @@ def filter_backend_flags(flags):
     return filter_flags(flags,
         lambda x: startswith_element(x, ('-classname','-g')))
 
+def filter_java_ld_flags(flags):
+    """Return a list of only those flags accepted by lljvm-backend."""
+    return filter_flags(flags,
+        lambda x:  x == '--verbose')
+
+def argument_vals(flags,  arg_flag):
+    fnd = False
+    for flag in flags:
+        if fnd:
+            fnd = False
+            yield flag
+        elif flag == arg_flag:
+            fnd = True
+    
 def bc2class(output, flags):
     """Generate {output}.class from {output}.bc and unlink {output}.bc"""
-    classpath = [os.path.join(lljvm_dir, 'lljvm-' + __version__ + '.jar')]
+    if '-cp' in flags:
+        linkerpath = list(argument_vals(flags, '-cp'))
+    else:
+        linkerpath = [os.path.join(lljvm_dir, 'lib',  'lljvm-' + __version__ + '.jar'),  
+                 os.path.join(lljvm_dir,  'lib',  'jasmin.jar')]
+                 
+    classpath = list(linkerpath)
     java_libs = list(default_java_libs)
     if '-nostdlib' not in flags:
         java_libs.append('lljvm.lib.c')
@@ -173,6 +192,10 @@ def bc2class(output, flags):
             classpath.append(os.path.abspath(flag[2:]))
         elif flag == '-lm':
             java_libs += ['java.lang.Math', 'lljvm.runtime.Math']
+        elif flag.startswith('-l~'):
+        	java_libs.append(flag[2:])
+        elif flag.startswith('-l+'):
+        	java_libs.append(flag[3:])
         elif flag.startswith('-l') \
          and flag not in ('-link','-link-as-library'):
             java_libs.append('lib' + flag[2:])
@@ -182,10 +205,10 @@ def bc2class(output, flags):
         [os.path.join(lljvm_dir, 'lljvm-backend'), output + '.bc']
         + filter_backend_flags(flags),
         stdout=subprocess.PIPE)
-    env = {'CLASSPATH': ':'.join(classpath+[os.environ.get('CLASSPATH','.')])}
     linker_returncode = subprocess.Popen(
-        ['java', 'lljvm.tools.ld.Main'] + java_libs,
-        env=env, stdin=backend_process.stdout, stdout=output_j).wait()
+        ['java', '-cp',  os.pathsep.join(classpath),  'lljvm.tools.ld.Main'] + java_libs +
+        filter_java_ld_flags(flags),
+        stdin=backend_process.stdout, stdout=output_j).wait()
     output_j.close()
     
     if linker_returncode != 0:
@@ -196,8 +219,9 @@ def bc2class(output, flags):
     os.unlink(output + '.bc')
     
     outpath = os.path.dirname(output) or '.'
-    call_e(['java', 'jasmin.Main', '-d', outpath, output + '.j'], stdout=fnull)
-    if '-g3' not in flags:
+    call_e(['java',  '-cp',  os.pathsep.join(linkerpath), 'jasmin.Main', 
+            '-d', outpath, output + '.j'], stdout=fnull)
+    if ('-g3' not in flags) and ('-jlisting' not in flags):
         os.unlink(output + '.j')
     
     if '-link-as-library' not in flags:

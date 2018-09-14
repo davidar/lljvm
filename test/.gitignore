@@ -1,0 +1,8 @@
+/expected/
+/actual/
+/*
+!/*.*
+/*.class
+/*.output
+/Makefile
+

@@ -24,6 +24,7 @@ package lljvm.io;
 
 import java.io.IOException;
 
+import lljvm.runtime.Context;
 import lljvm.runtime.Error;
 import lljvm.runtime.Memory;
 
@@ -40,6 +41,10 @@ public abstract class AbstractFileHandle implements FileHandle {
     /** Specifies whether to enable synchronous I/O */
     protected final boolean synchronous;
     
+    protected final Context context;
+    protected final Memory memory;
+    protected final Error error;
+    
     /**
      * Construct a new instance with the given read/write capabilities.
      * 
@@ -48,8 +53,11 @@ public abstract class AbstractFileHandle implements FileHandle {
      * @param write  specifies whether this file descriptor supports
      *               writing
      */
-    protected AbstractFileHandle(boolean read, boolean write,
+    protected AbstractFileHandle(Context context, boolean read, boolean write,
                                  boolean synchronous) {
+    	this.context = context;
+    	this.memory = context.getModule(Memory.class);
+    	this.error = context.getModule(Error.class);
         this.read = read;
         this.write = write;
         this.synchronous = synchronous;
@@ -76,22 +84,23 @@ public abstract class AbstractFileHandle implements FileHandle {
         return false;
     }
     
+    @Override
     public int read(int buf, int count) {
         if(!read)
-            return Error.errno(Error.EINVAL);
+            return error.errno(Error.EINVAL);
         int num_bytes = 0;
         try {
             while(num_bytes < count) {
                 int b = read();
                 if(b < 0)
                     break;
-                Memory.store(buf++, (byte) b);
+                memory.store(buf++, (byte) b);
                 num_bytes++;
                 if(!available())
                     break;
             }
         } catch(IOException e) {
-            return Error.errno(Error.EIO);
+            return error.errno(Error.EIO);
         }
         return num_bytes;
     }
@@ -113,22 +122,22 @@ public abstract class AbstractFileHandle implements FileHandle {
     
     public int write(int buf, int count) {
         if(!write)
-            return Error.errno(Error.EINVAL);
+            return error.errno(Error.EINVAL);
         int num_bytes = 0;
         try {
             while(num_bytes < count) {
-                write(Memory.load_i8(buf++));
+                write(memory.load_i8(buf++));
                 num_bytes++;
             }
             if(synchronous)
                 flush();
         } catch(IOException e) {
-            return Error.errno(Error.EIO);
+            return error.errno(Error.EIO);
         }
         return num_bytes;
     }
     
     public int seek(int offset, int whence) {
-        return Error.errno(Error.ESPIPE);
+        return error.errno(Error.ESPIPE);
     }
 }

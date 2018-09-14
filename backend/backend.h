@@ -46,6 +46,8 @@ using namespace llvm;
 class JVMWriter : public FunctionPass {
     /** The output stream */
     formatted_raw_ostream &out;
+    /** Optional stream for generating trace file*/
+    raw_fd_ostream * const trace;
     /** The name of the source file */
     std::string sourcename;
     /** The binary name of the generated class */
@@ -65,17 +67,26 @@ class JVMWriter : public FunctionPass {
     DenseMap<const BasicBlock*, unsigned int> blockIDs;
     /** Mapping of values to local variable numbers */
     DenseMap<const Value*, unsigned int> localVars;
+    /** Mapping of unnamed values to number used to generate a temporary name */
+    DenseMap<const Value*, unsigned int> temporaryNames;
     /** Number of registers allocated for the function */
     unsigned int usedRegisters;
     /** Local variable number of the pointer to the packed list of varargs */
     unsigned int vaArgNum;
     /** Current instruction number */
     unsigned int instNum;
+    /** Current line num of trace file" */
+    unsigned int trcLineNum;
 
 public:
+    //Note that JVMWriter takes ownership of trc and will
+    //delete it once it is destroyed
     JVMWriter(const TargetData *td, formatted_raw_ostream &o,
-              const std::string &cls, unsigned int dbg);
+              const std::string &cls, const std::string &src, 
+              unsigned int dbg, raw_fd_ostream *trc);
 
+    virtual ~JVMWriter();
+    
 private:
     // backend.cpp
     void getAnalysisUsage(AnalysisUsage &au) const;
@@ -154,7 +165,6 @@ private:
     void printIndirectLoad(const Value *v);
     void printIndirectLoad(const Type *ty);
     void printIndirectStore(const Value *ptr, const Value *val);
-    void printIndirectStore(const Type *ty);
     
     // name.cpp
     std::string sanitizeName(std::string name);
@@ -186,12 +196,19 @@ private:
     void printLabel(const char *label);
     void printLabel(const std::string &label);
     
+    void printStartInvocationTag(int includeStackSize = 0);
+    void printEndInvocationTag(const std::string &sig, bool local=false);
+    void printGetField(const std::string &sig, bool local=false);
+    void printLoadClassNameForMethod(const std::string &sig);
+    void printDeclareLinkerFields();
+    void printInitLinkerFields();
+    void printTrc(const std::string &sig);
+
     // sections.cpp
     void printHeader();
     void printFields();
     void printExternalMethods();
     void printConstructor();
-    void printClInit();
     void printMainMethod();
     
     // types.cpp

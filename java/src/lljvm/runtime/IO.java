@@ -23,20 +23,17 @@
 package lljvm.runtime;
 
 import java.io.IOException;
-import java.lang.System;
 
 import lljvm.io.FileHandle;
 import lljvm.io.FileSystem;
-import lljvm.io.InputStreamFileHandle;
-import lljvm.io.NativeFileSystem;
-import lljvm.io.OutputStreamFileHandle;
+import lljvm.io.StandardHandleFactory;
 
 /**
  * Provides methods and constants related to I/O.
  * 
  * @author  David Roberts
  */
-public final class IO {
+public final class IO implements Module {
     /** Open for reading only */
     public static final int O_RDONLY   = 0x0000;
     /** Open for writing only */
@@ -94,25 +91,41 @@ public final class IO {
     public static final int OPEN_MAX = 1<<10;
     
     /** File descriptor table */
-    private static final FileHandle[] fileDescriptors =
+    private final FileHandle[] fileDescriptors =
         new FileHandle[OPEN_MAX];
     /** Number of file descriptors that have been opened */
-    private static int numFileDescriptors = 0;
+    private int numFileDescriptors = 0;
     
     /** The file system interface */
-    private static FileSystem fileSystem = new NativeFileSystem();
+    private FileSystem fileSystem;
     
-    static {
-        putFileHandle(new InputStreamFileHandle(System.in));
-        putFileHandle(new OutputStreamFileHandle(System.out));
-        putFileHandle(new OutputStreamFileHandle(System.err));
-    }
+    private Memory memory;
+    private Error error;
     
     /**
      * Prevent this class from being instantiated.
      */
-    private IO() {}
+    public IO() {
+    	
+    }
     
+    
+    @Override
+    public void initialize(Context context) {
+        this.memory = context.getModule(Memory.class);
+        this.error = context.getModule(Error.class);
+        this.fileSystem = context.getModule(FileSystem.class);
+        StandardHandleFactory shf = context.getModule(StandardHandleFactory.class);
+        putFileHandle(shf.createStdin());
+        putFileHandle(shf.createStdout());
+        putFileHandle(shf.createStderr());
+    }
+
+    @Override
+    public void destroy(Context context) {
+        close();
+    }    
+
     /**
      * Open and possibly create a file or device.
      * 
@@ -123,10 +136,10 @@ public final class IO {
      *                  for the newly created file (if applicable)
      * @return          the new file descriptor on success, -1 on error
      */
-    public static int open(int pathname, int flags, int args) {
-        String name = Memory.load_string(pathname);
+    public int open(int pathname, int flags, int args) {
+        String name = memory.load_string(pathname);
         FileHandle fileHandle = ((flags & O_CREAT) != 0)
-            ? fileSystem.open(name, flags, Memory.load_i32(args))
+            ? fileSystem.open(name, flags, memory.load_i32(args))
             : fileSystem.open(name, flags);
         if(fileHandle == null)
             return -1;
@@ -139,9 +152,9 @@ public final class IO {
      * @param fileHandle  the FileHandle
      * @return            the new file descriptor on success, -1 on error
      */
-    private static int putFileHandle(FileHandle fileHandle) {
+    private int putFileHandle(FileHandle fileHandle) {
         if(numFileDescriptors >= OPEN_MAX)
-            return Error.errno(Error.ENFILE);
+            return error.errno(Error.ENFILE);
         int fd = numFileDescriptors++;
         fileDescriptors[fd] = fileHandle;
         return fd;
@@ -153,7 +166,7 @@ public final class IO {
      * @param fd  the file descriptor
      * @return    the FileHandle
      */
-    private static FileHandle getFileHandle(int fd) {
+    private FileHandle getFileHandle(int fd) {
         return fileDescriptors[fd];
     }
     
@@ -165,7 +178,7 @@ public final class IO {
      * @param count  the maximum number of bytes to read
      * @return       the number of bytes read on success, -1 on error
      */
-    public static int read(int fd, int buf, int count) {
+    public int read(int fd, int buf, int count) {
         return getFileHandle(fd).read(buf, count);
     }
     
@@ -177,7 +190,7 @@ public final class IO {
      * @param count  the maximum number of bytes to write
      * @return       the number of bytes written on success, -1 on error
      */
-    public static int write(int fd, int buf, int count) {
+    public int write(int fd, int buf, int count) {
         return getFileHandle(fd).write(buf, count);
     }
     
@@ -190,7 +203,7 @@ public final class IO {
      * @param whence  specifies the reference point to which offset refers
      * @return        the resulting offset on success, -1 on error
      */
-    public static int lseek(int fd, int offset, int whence) {
+    public int lseek(int fd, int offset, int whence) {
         return getFileHandle(fd).seek(offset, whence);
     }
     
@@ -200,14 +213,14 @@ public final class IO {
      * @param fd  the file descriptor
      * @return    0 on success, -1 on error
      */
-    public static int close(int fd) {
+    public int close(int fd) {
         if(fd < 0 || fd >= OPEN_MAX || fileDescriptors[fd] == null)
-            return Error.errno(Error.EBADF);
+            return error.errno(Error.EBADF);
         try {
             fileDescriptors[fd].close();
             fileDescriptors[fd] = null;
         } catch(IOException e) {
-            return Error.errno(Error.EIO);
+            return error.errno(Error.EIO);
         }
         return 0;
     }
@@ -217,7 +230,7 @@ public final class IO {
      * output and standard error streams. This method should only be called
      * during an exit.
      */
-    public static void close() {
+    public void close() {
         for(int fd = 0; fd < numFileDescriptors; fd++)
             close(fd);
     }
@@ -228,10 +241,11 @@ public final class IO {
      * @param fd  the file descriptor to test
      * @return    1 if fd refers to a terminal, 0 otherwise
      */
-    public static int isatty(int fd) {
+    public int isatty(int fd) {
         if(fd < 0 || fd > 2)
             return 0;
-        return System.console() != null ? 1 : 0;
+        //TODO - Can we do better than this?
+        return java.lang.System.console() != null ? 1 : 0;
     }
     
     /**
@@ -241,10 +255,10 @@ public final class IO {
      * @param newpath  the new path of the file
      * @return         0 on success, -1 on error
      */
-    public static int _rename(int oldpath, int newpath) {
-        if(!fileSystem.rename(Memory.load_string(oldpath),
-                              Memory.load_string(newpath)))
-            return Error.errno(Error.EACCES);
+    public int _rename(int oldpath, int newpath) {
+        if(!fileSystem.rename(memory.load_string(oldpath),
+                              memory.load_string(newpath)))
+            return error.errno(Error.EACCES);
         return 0;
     }
     
@@ -255,10 +269,10 @@ public final class IO {
      * @param newpath  the link to be created, unless newpath already exists
      * @return         0 on success, -1 on error
      */
-    public static int link(int oldpath, int newpath) {
-        if(!fileSystem.link(Memory.load_string(oldpath),
-                            Memory.load_string(newpath)))
-            return Error.errno(Error.EMLINK);
+    public int link(int oldpath, int newpath) {
+        if(!fileSystem.link(memory.load_string(oldpath),
+                            memory.load_string(newpath)))
+            return error.errno(Error.EMLINK);
         return 0;
     }
     
@@ -268,9 +282,9 @@ public final class IO {
      * @param pathname  the name to delete
      * @return          0 on success, -1 on error
      */
-    public static int unlink(int pathname) {
-        if(!fileSystem.unlink(Memory.load_string(pathname)))
-            return Error.errno(Error.ENOENT);
+    public int unlink(int pathname) {
+        if(!fileSystem.unlink(memory.load_string(pathname)))
+            return error.errno(Error.ENOENT);
         return 0;
     }
     
@@ -281,7 +295,7 @@ public final class IO {
      * @param buf   a pointer to the stat structure to be filled in
      * @return      0 on success, -1 on error
      */
-    public static int stat(int path, int buf) {
+    public int stat(int path, int buf) {
         // TODO: st->st_mode = S_IFCHR;
         return 0;
     }
@@ -293,7 +307,7 @@ public final class IO {
      * @param buf  a pointer to the stat structure to be filled in
      * @return     0 on success, -1 on error
      */
-    public static int fstat(int fd, int buf) {
+    public int fstat(int fd, int buf) {
         // TODO: buf->st_mode = S_IFCHR;
         return 0;
     }
@@ -304,9 +318,9 @@ public final class IO {
      * @param path  the new working directory
      * @return      0 on success, -1 on error
      */
-    public static int chdir(int path) {
-        if(!fileSystem.chdir(Memory.load_string(path)))
-            return Error.errno(Error.ENOENT);
+    public int chdir(int path) {
+        if(!fileSystem.chdir(memory.load_string(path)))
+            return error.errno(Error.ENOENT);
         return 0;
     }
     
@@ -318,7 +332,7 @@ public final class IO {
      * @param size  the size of the buffer
      * @return      buf on success, NULL on error
      */
-    public static int getcwd(int buf, int size) {
-        return Memory.store(buf, fileSystem.getcwd(), size);
+    public int getcwd(int buf, int size) {
+        return memory.store(buf, fileSystem.getcwd(), size);
     }
 }

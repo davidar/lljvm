@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 David Roberts <d@vidr.cc>
+* Copyright (c) 2011 Joshua Arnold
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -19,188 +19,263 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 */
-
 package lljvm.tools.ld;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-/**
- * Class for linking assembly files.
- * 
- * @author  David Roberts
- */
+import lljvm.util.ClassInfo;
+import lljvm.util.ClassName;
+import lljvm.util.ReflectionUtils;
+
 public class AsmLinker {
-    /** The reader to read input assembly code */
-    private BufferedReader in;
-    /** The writer to write linked assembly code */
-    private BufferedWriter out;
+    private static final Logger logger = Logger.getLogger(AsmLinker.class.getName());
     
-    /** External fields */
-    private List<String> externFields = new ArrayList<String>();
-    /** External methods */
-    private List<String> externMethods = new ArrayList<String>();
+    private final List<AsmSource> sources;
+    private final ClassName unresolvedTarget;
+    private final ClassLoader loader;      
+    private final List<String> libraries;
     
-    /**
-     * Construct a new AsmLinker with the specified input and output sources.
-     * 
-     * @param in   the reader to read input assembly code
-     * @param out  the writer to write linked assembly code
-     */
-    public AsmLinker(BufferedReader in, BufferedWriter out) {
-        this.in = in;
-        this.out = out;
+    
+    private final UncaughtExceptionHandler uncaughtExceptions = new UncaughtExceptionHandler();
+    
+    
+    
+    public AsmLinker(LinkerParameters params) {
+        this(params,AsmLinker.class.getClassLoader());
     }
     
-    /**
-     * Read external reference directives from the input reader.
-     * 
-     * @throws IOException  if there is a problem reading or writing
-     */
-    private void readExtern() throws IOException {
-        String line;
-        while((line = in.readLine()) != null) {
-            String[] args = line.trim().split("\\s+");
-            if(args[0].equals(".extern")) {
-                if(args[1].equals("field"))
-                    externFields.add(args[2] + " " + args[3]);
-                else if(args[1].equals("method"))
-                    externMethods.add(args[2]);
-                out.write(';');
-            }
-            out.write(line);
-            out.write('\n');
-            if(args[0].equals(".method"))
-                break;
-        }
+    public AsmLinker(LinkerParameters params, ClassLoader loader) {
+        
+        unresolvedTarget = params.getUnresolvedTarget() != null ? ClassName.from(params.getUnresolvedTarget()) : null;
+        this.loader = loader;
+        
+        this.sources = params.getSources();
+        this.libraries = params.getLibraryClasses();
+        
     }
     
-    /**
-     * Print an invokestatic instruction for the given method.
-     * 
-     * @param methodName    Operand of the instruction.
-     * @param methodMap     Mapping of external methods to classes.
-     * @throws IOException  if there is a problem reading or writing
-     * @throws LinkError    if there is a problem linking external references
-     */
-    private void printInvokeStatic(String methodName,
-                                   Map<String, String> methodMap)
-    throws IOException, LinkError {
-        if(!methodName.contains("(")) // non-prototyped function
-            for(String name : methodMap.keySet())
-                if(name.startsWith(methodName + "(")) {
-                    // TODO: throw error unless specified otherwise
-                    System.err.println(
-                            "WARNING: Function '" + methodName + "' should " +
-                            "be declared with a prototype. Linking will " +
-                            "succeed, but a runtime error will be thrown.");
-                    out.write("\tinvokestatic ");
-                    out.write(methodMap.get(name));
-                    out.write("/__non_prototyped__");
-                    out.write(methodName);
-                    out.write("()V\n");
-                    return;
+    
+    
+    public void run() {
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThrdFac(uncaughtExceptions));
+        try {
+            try {
+                run(executor);
+            } finally {                
+                executor.shutdown();
+                boolean didShutdown;
+                try {
+                    didShutdown = executor.awaitTermination(5,TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    didShutdown = false;
                 }
-        String className = methodMap.get(methodName);
-        if(className == null)
-            throw new LinkError(
-                    "Unable to find external method " + methodName);
-        out.write("\tinvokestatic ");
-        out.write(className);
-        out.write('/');
-        out.write(methodName);
-        out.write('\n');
+                if (!didShutdown) {
+                    logger.warning("Timeout waiting for executor service to shut down");
+                }
+            }
+        } finally {
+            executor.shutdownNow();
+            for(Throwable t : uncaughtExceptions.drainUncaughtExceptions()) {
+                logger.log(Level.SEVERE,"There was an uncaught exception in a worker thread", t);
+            }
+        }
+    }
+
+    private void run(ExecutorService executor) {
+        //Run the inspection pass in the background
+        List<Future<ClassInfo>> inspectionFutures = new ArrayList<Future<ClassInfo>>();
+        for(AsmSource source : sources) {
+            inspectionFutures.add(executor.submit(new InspectionPass(source)));
+        }
+        
+        //Resolve libraries on this thread while the inspection pass takes place.
+        List<ClassInfo> libInfos = resolveLibs();
+        
+        //Get results for inspection pass.
+        List<ClassInfo> inspectionResults = waitFor(inspectionFutures);        
+        checkForDuplicates(inspectionResults);
+        
+        //Prep the resolver
+        List<ClassInfo> preResolved = concat(inspectionResults,libInfos);
+        List<ClassName> implicitNames = toNames(preResolved);        
+        Resolver resolver = new DefaultResolver(preResolved, implicitNames, unresolvedTarget, loader);
+        
+        //Run the resolution passes
+        List<Future<Object>> linkFutures = new ArrayList<Future<Object>>();
+        for(int i=0;i<sources.size();i++) {
+            ResolvePass pass = new ResolvePass(sources.get(i), inspectionResults.get(i), resolver);
+            linkFutures.add(executor.submit(pass));
+        }        
+        waitFor(linkFutures);
+        
+        
     }
     
-    /**
-     * Print an getstatic instruction for the given method.
-     * 
-     * @param fieldName     Operand of the instruction.
-     * @param fieldMap      Mapping of external fields to classes.
-     * @throws IOException  if there is a problem reading or writing
-     * @throws LinkError    if there is a problem linking external references
-     */
-    private void printGetStatic(String fieldName,
-                                Map<String, String> fieldMap)
-    throws IOException, LinkError {
-        String className = fieldMap.get(fieldName);
-        if(className == null)
-            throw new LinkError(
-                    "Unable to find external field " + fieldName);
-        out.write("\tgetstatic ");
-        out.write(className);
-        out.write('/');
-        out.write(fieldName);
-        out.write('\n');
+    
+    private List<ClassInfo> resolveLibs() {
+        List<ClassInfo> libInfos = new ArrayList<ClassInfo>(libraries.size());
+        Set<ClassName> libsSeen = new HashSet<ClassName>();
+        for(String lib : libraries) {
+            ClassName libName = ClassName.from(lib);
+            if (!libsSeen.add(libName))
+                continue;
+            Class<?> libClass;
+            try {
+                libClass = Class.forName(libName.getJavaName(), false, loader);
+            } catch (ClassNotFoundException e) {
+                throw new AsmLinkerException("Library class "+libName+" not found",e);
+            } catch (LinkageError e) {
+                throw new AsmLinkerException("Library class "+libName+" could not be loaded",e);
+            }
+            libInfos.add(ReflectionUtils.infoFor(libClass));
+        }
+        return libInfos;
     }
     
-    /**
-     * Print an ldc instruction to load the binary name of the parent class
-     * of the given method.
-     * 
-     * @param methodName    the method whose parent class to load
-     * @param methodMap     Mapping of external methods to classes.
-     * @throws IOException  if there is a problem reading or writing
-     * @throws LinkError    if there is a problem linking external references
-     */
-    private void printClassForMethod(String methodName,
-                                     Map<String, String> methodMap)
-    throws IOException, LinkError {
-        String className = methodMap.get(methodName);
-        if(className == null)
-            throw new LinkError(
-                    "Unable to find external method " + methodName);
-        out.write("\tldc \"");
-        out.write(className);
-        out.write("\"\n");
+    
+    private static <T> List<T> waitFor(List<? extends Future<? extends T>> futures) {
+        List<T> res = new ArrayList<T>(futures.size());
+        List<Throwable> exc = new ArrayList<Throwable>();
+        for(Future<? extends T> future : futures) {
+            T oneRes = null;
+            Throwable oneExc = null;
+            try {
+                oneRes = future.get();
+            } catch (ExecutionException e) {
+                oneExc = e.getCause()!=null ? e.getCause() : e;
+            } catch (CancellationException e) {
+                oneExc = e;
+            } catch (InterruptedException e) {
+                oneExc = e;
+                Thread.currentThread().interrupt();
+            }
+            res.add(oneRes);
+            if (oneExc!=null)
+                exc.add(oneExc);
+        }
+        throwUnchecked(exc);
+        return Collections.unmodifiableList(res);
     }
     
-    /**
-     * Link references to static methods and fields in the input to the
-     * classes specified in the given maps.
-     * 
-     * @param methodMap     Mapping of external methods to classes.
-     * @param fieldMap      Mapping of external fields to classes.
-     * @throws IOException  if there is a problem reading or writing
-     * @throws LinkError    if there is a problem linking external references
-     */
-    private void linkStatic(Map<String, String> methodMap,
-                            Map<String, String> fieldMap)
-    throws IOException, LinkError {
-        String line;
-        while((line = in.readLine()) != null) {
-            String[] args = line.trim().split("\\s+");
-            if(args[0].equals("invokestatic")
-                    && externMethods.contains(args[1]))
-                printInvokeStatic(args[1], methodMap);
-            else if(args[0].equals("getstatic")
-                    && externFields.contains(args[1] + " " + args[2]))
-                printGetStatic(args[1] + " " + args[2], fieldMap);
-            else if(args[0].equals("CLASSFORMETHOD")
-                    && externMethods.contains(args[1]))
-                printClassForMethod(args[1], methodMap);
-            else
-                out.write(line + '\n');
+    private static void throwUnchecked(Collection<? extends Throwable> exceptions) {
+        if (exceptions==null || exceptions.isEmpty())
+            return;
+        Iterator<? extends Throwable> iter = exceptions.iterator();
+        Throwable t = iter.next();
+        while(iter.hasNext()) {
+            logger.log(Level.SEVERE,"One of multiple exceptions",iter.next());
+        }
+        throwUnchecked(t);
+        throw new AssertionError(); //Can't get here
+    }
+    
+    
+    private static void throwUnchecked(Throwable t) {
+        if (t instanceof RuntimeException)
+            throw (RuntimeException)t;
+        if (t instanceof Error)
+            throw (Error)t;
+        throw new RuntimeException(t);
+    }
+    
+    private static <T> List<T> concat(Collection<? extends T> c1, Collection<? extends T> c2) {
+        ArrayList<T> res = new ArrayList<T>(c1.size()+c2.size());
+        res.addAll(c1);
+        res.addAll(c2);
+        return res;
+    }
+    
+    private static List<ClassName> toNames(Collection<? extends ClassInfo> infos) {
+        ArrayList<ClassName> res = new ArrayList<ClassName>(infos.size());
+        for(ClassInfo info : infos)
+            res.add(info.getName());
+        return res;
+    }
+    
+    private static void checkForDuplicates(Collection<? extends ClassInfo> infos) {
+        HashSet<ClassName> namesSeen = new HashSet<ClassName>();
+        for(ClassInfo info : infos) {
+            if (!namesSeen.add(info.getName()))
+                throw new AsmLinkerException("Duplicate class : "+info.getName().getBinaryName());
         }
     }
     
-    /**
-     * Link references to methods and fields in the input to the classes
-     * specified in the given maps.
-     * 
-     * @param methodMap     Mapping of external methods to classes.
-     * @param fieldMap      Mapping of external fields to classes.
-     * @throws IOException  if there is a problem reading or writing
-     * @throws LinkError    if there is a problem linking external references
-     */
-    public void link(Map<String, String> methodMap,
-                     Map<String, String> fieldMap)
-    throws IOException, LinkError {
-        readExtern();
-        linkStatic(methodMap, fieldMap);
+    
+    private static class ResolvePass implements Callable<Object> {
+        private final AsmSource source;
+        private final ClassInfo classInfo;
+        private final Resolver resolver;
+        ResolvePass(AsmSource source, ClassInfo classInfo, Resolver resolver) {
+            super();
+            this.source = source;
+            this.classInfo = classInfo;
+            this.resolver = resolver;
+        }
+        @Override
+        public Object call() {
+            ResolutionPass p2 = new ResolutionPass(source,classInfo,resolver);
+            ResolvedTargets targets = p2.call();
+            WriterPass p3 = new WriterPass(source,classInfo,targets);
+            p3.call();
+            try {
+                source.close();
+            } catch (IOException e) {
+                throw new AsmLinkerException(e).withFileName(source.getName());
+            }
+            return null;
+        }
+        
+    }
+    
+    private static class UncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
+        private List<Throwable> uncaughts = new ArrayList<Throwable>(4);
+        UncaughtExceptionHandler() {}
+        @Override
+        public synchronized void uncaughtException(Thread t, Throwable e) {
+            uncaughts.add(e);
+        }
+        synchronized List<Throwable> drainUncaughtExceptions() {
+            List<Throwable> res = Collections.unmodifiableList(uncaughts);
+            uncaughts = new ArrayList<Throwable>(4);
+            return res;
+        }
+    }
+    
+    private static class ThrdFac implements ThreadFactory {
+        private static final AtomicInteger threadCounter = new AtomicInteger();
+        private final Thread.UncaughtExceptionHandler uncaughtHandler;
+        
+        ThrdFac(java.lang.Thread.UncaughtExceptionHandler uncaughtHandler) {
+            super();
+            this.uncaughtHandler = uncaughtHandler;
+        }
+
+        @Override
+        public Thread newThread(final Runnable r) {
+            Thread t = new Thread(r,"Linker-"+threadCounter.getAndIncrement());
+            t.setUncaughtExceptionHandler(uncaughtHandler);
+            t.setDaemon(true);
+            return t;
+        }
+        
     }
 }

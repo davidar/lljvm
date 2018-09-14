@@ -29,22 +29,37 @@
  */
 void JVMWriter::printBasicBlock(const BasicBlock *block) {
     printLabel(getLabelName(block));
+    if (trace) {
+        if (block->hasName()) {
+            std::string n = block->getName();
+            printTrc(n + ":");
+        }
+    }
     for(BasicBlock::const_iterator i = block->begin(), e = block->end();
         i != e; i++) {
         instNum++;
-        if(debug >= 3) {
+        
+        if (trace)
+            printSimpleInstruction(".line", utostr(trcLineNum+1));
+        else if(debug >= 1)
+            printSimpleInstruction(".line", utostr(instNum));
+            
+        if(debug >= 3 || trace) {
             // print current instruction as comment
             // note that this block of code significantly increases
             // code generation time
             std::string str;
             raw_string_ostream ss(str); ss << *i;
-            std::string::size_type pos = 0;
-            while((pos = str.find("\n", pos)) != std::string::npos)
-                str.replace(pos++, 1, "\n;");
-            out << ';' << str << '\n';
+            ss.flush();
+            if (trace)
+                printTrc(str);
+            if (debug >= 3) {
+                std::string::size_type pos = 0;
+                while((pos = str.find("\n", pos)) != std::string::npos)
+                    str.replace(pos++, 1, "\n;");
+                out << ';' << str << '\n';
+            }
         }
-        if(debug >= 1)
-            printSimpleInstruction(".line", utostr(instNum));
         
         if(i->getOpcode() == Instruction::PHI)
             // don't handle phi instruction in current block
@@ -69,8 +84,8 @@ void JVMWriter::printInstruction(const Instruction *inst) {
     if(inst->getNumOperands() >= 2) right = inst->getOperand(1);
     switch(inst->getOpcode()) {
     case Instruction::Ret:
-        printSimpleInstruction("invokestatic",
-                               "lljvm/runtime/Memory/destroyStackFrame()V");
+        printStartInvocationTag();
+        printEndInvocationTag("lljvm/runtime/Memory/destroyStackFrame()V");
         if(inst->getNumOperands() >= 1) {
             printValueLoad(left);
             printSimpleInstruction(

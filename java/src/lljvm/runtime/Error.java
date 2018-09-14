@@ -28,7 +28,7 @@ package lljvm.runtime;
  * 
  * @author  David Roberts
  */
-public final class Error {
+public final class Error implements Module {
     /** Not super-user */
     public static final int EPERM = 1;
     /** No such file or directory */
@@ -280,21 +280,31 @@ public final class Error {
     /** Previous owner died */
     public static final int EOWNERDEAD = 142;
     
+    private Memory memory;
+    
     /** Pointer to errno */
-    public static int errno = Memory.allocateData(4);
+    public int errno;
     
-    /**
-     * Prevent this class from being instantiated.
-     */
-    private Error() {}
+    public Error() {
+    }
     
+    @Override
+    public void initialize(Context context) {
+        this.memory = context.getModule(Memory.class);
+        errno = memory.allocateData(4);
+    }
+
+    @Override
+    public void destroy(Context context) {
+    }
+
     /**
      * Returns the value of errno.
      * 
      * @return  the value of errno
      */
-    public static int errno() {
-        return Memory.load_i32(errno);
+    public int errno() {
+        return memory.load_i32(errno);
     }
     
     /**
@@ -303,8 +313,8 @@ public final class Error {
      * @param value  the new value of errno
      * @return       -1
      */
-    public static int errno(int value) {
-        Memory.store(errno, value);
+    public int errno(int value) {
+        memory.store(errno, value);
         return -1;
     }
 }

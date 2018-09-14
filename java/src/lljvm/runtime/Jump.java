@@ -29,21 +29,18 @@ package lljvm.runtime;
  */
 @SuppressWarnings("serial")
 public class Jump extends RuntimeException {
-    /** The number of setjmp calls that have been made so far */
-    private static int numJumps = 0;
-    
     /** The ID of this Jump */
     public final int id;
     /** The return value of this Jump */
     public final int value;
-    
+        
     /**
      * Create a new Jump with the given ID and return value.
      * 
      * @param id     the ID
      * @param value  the return value
      */
-    private Jump(int id, int value) {
+    Jump(int id, int value) {
         this.id = id;
         this.value = (value == 0 ? 1 : value);
     }
@@ -56,32 +53,5 @@ public class Jump extends RuntimeException {
         return this;
     }
     
-    /**
-     * Save the stack context in env for later use by longjmp.
-     * 
-     * @param env  where to store the stack context
-     * @return     the unique ID of this jump target
-     */
-    public static int setjmp(int env) {
-        int id = ++numJumps;
-        int stackDepth = Memory.getStackDepth();
-        Memory.store(env, id);
-        Memory.store(env+4, stackDepth);
-        return id;
-    }
-    
-    /**
-     * Jump to the last call of setjmp with the corresponding env argument,
-     * causing setjmp to return the given value.
-     * If the return value is 0, 1 will be returned instead.
-     * 
-     * @param env  the stack context stored by setjmp
-     * @param val  the return value
-     */
-    public static void longjmp(int env, int val) {
-        int id = Memory.load_i32(env);
-        int stackDepth = Memory.load_i32(env+4);
-        Memory.destroyStackFrames(Memory.getStackDepth() - stackDepth);
-        throw new Jump(id, val);
-    }
+
 }

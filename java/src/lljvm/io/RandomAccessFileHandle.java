@@ -25,9 +25,12 @@ package lljvm.io;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 
+import lljvm.runtime.Context;
 import lljvm.runtime.Error;
 import lljvm.runtime.IO;
+import lljvm.runtime.Memory;
 
 /**
  * Implements the FileHandle interface, backed by a RandomAccessFile.
@@ -37,7 +40,6 @@ import lljvm.runtime.IO;
 public class RandomAccessFileHandle extends AbstractFileHandle {
     /** The file */
     private final RandomAccessFile file;
-    
     /**
      * Construct a new instance for the given file, with the given flags.
      * 
@@ -45,9 +47,9 @@ public class RandomAccessFileHandle extends AbstractFileHandle {
      * @param flags         the file status flags
      * @throws IOException  if an error occurs while opening the file
      */
-    public RandomAccessFileHandle(File file, int flags)
+    public RandomAccessFileHandle(Context context, File file, int flags)
     throws IOException {
-        super((flags & IO.O_WRONLY) == 0,
+        super(context, (flags & IO.O_WRONLY) == 0,
               (flags & (IO.O_WRONLY|IO.O_RDWR)) != 0,
               (flags & IO.O_SYNC) != 0);
         this.file = new RandomAccessFile(file, this.write ? "rw" : "r");
@@ -82,14 +84,109 @@ public class RandomAccessFileHandle extends AbstractFileHandle {
             case IO.SEEK_SET: break;
             case IO.SEEK_CUR: n += file.getFilePointer(); break;
             case IO.SEEK_END: n += file.length(); break;
-            default: return Error.errno(Error.EINVAL);
+            default: return error.errno(Error.EINVAL);
             }
             file.seek(n);
         } catch(IOException e) {
-            return Error.errno(Error.EINVAL);
+            return error.errno(Error.EINVAL);
         }
         if(n > Integer.MAX_VALUE)
-            return Error.errno(Error.EOVERFLOW);
+            return error.errno(Error.EOVERFLOW);
         return (int) n;
+    }
+    
+    @Override
+    public int write(int buf, int count) {
+        if(!write)
+            return error.errno(Error.EINVAL);
+        
+        final int result;
+        try {
+            if (count==0) {
+                result = 0;
+            } else if (count==1) {
+                file.writeByte(memory.load_i8(buf));
+                result = 1;
+            } else {
+                PageWriter writer = new PageWriter();
+                memory.getPages(writer, buf, count);
+                if (writer.ioExc!=null)
+                    throw writer.ioExc;                
+                result = writer.count;
+            }
+            if(synchronous)
+                flush();
+        } catch(IOException e) {
+            return error.errno(Error.EIO);
+        }
+        return result;
+    }
+    
+    private class PageWriter implements Memory.PageConsumer {
+        IOException ioExc;
+        int count;
+        PageWriter() {}
+        @Override
+        public boolean next(ByteBuffer buf) {
+            while(buf.hasRemaining()) {
+                try {
+                    count += file.getChannel().write(buf);
+                } catch (IOException e) {
+                    ioExc = e;
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+    
+    @Override
+    public int read(int buf, int count) {
+        if(!read)
+            return error.errno(Error.EINVAL);
+        final int result;
+        try {
+            if (count==0) {
+                result = 0;
+            } else if (count==1) {
+                int val = file.read();
+                if (val>=0) {
+                    memory.store(buf,(byte)val);
+                    result = 1;
+                } else {
+                    result = 0;
+                }
+            } else {
+                PageReader reader = new PageReader();
+                memory.getPages(reader, buf, count);
+                if (reader.ioExc!=null)
+                    return error.errno(Error.EIO);
+                result = reader.count;
+            }
+        } catch (IOException e) {
+            return error.errno(Error.EIO);
+        }
+        return result;        
+    }
+    
+    class PageReader implements Memory.PageConsumer {
+        IOException ioExc;
+        int count;
+        PageReader() {}
+        @Override
+        public boolean next(ByteBuffer buf) {
+            while(buf.hasRemaining()) {
+                try {
+                    int r = file.getChannel().read(buf);
+                    if (r<0)
+                        return false;
+                    count += r;
+                } catch (IOException e) {
+                    ioExc = e;
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 }

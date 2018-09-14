@@ -170,9 +170,9 @@ void JVMWriter::printConstLoad(const std::string &str, bool cstring) {
 void JVMWriter::printStaticConstant(const Constant *c) {
     if(isa<ConstantAggregateZero>(c) || c->isNullValue()) {
         // zero initialised constant
+        printStartInvocationTag(1);
         printPtrLoad(targetData->getTypeAllocSize(c->getType()));
-        printSimpleInstruction("invokestatic",
-                               "lljvm/runtime/Memory/zero(II)I");
+        printEndInvocationTag("lljvm/runtime/Memory/zero(II)I");
         return;
     }
     std::string typeDescriptor = getTypeDescriptor(c->getType());
@@ -180,23 +180,22 @@ void JVMWriter::printStaticConstant(const Constant *c) {
     case Type::IntegerTyID:
     case Type::FloatTyID:
     case Type::DoubleTyID:
+        printStartInvocationTag(1);
         printConstLoad(c);
-        printSimpleInstruction("invokestatic",
-            "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
+        printEndInvocationTag("lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
         break;
     case Type::ArrayTyID:
         if(const ConstantArray *ca = dyn_cast<ConstantArray>(c))
             if(ca->isString()) {
+                printStartInvocationTag(1);
                 bool cstring = ca->isCString();
                 printConstLoad(ca->getAsString(), cstring);
                 if(cstring)
-                    printSimpleInstruction("invokestatic",
-                        "lljvm/runtime/Memory/pack(ILjava/lang/String;)I");
+                    printEndInvocationTag("lljvm/runtime/Memory/pack(ILjava/lang/String;)I");
                 else {
                     printSimpleInstruction("invokevirtual", 
                                            "java/lang/String/toCharArray()[C");
-                    printSimpleInstruction("invokestatic",
-                                           "lljvm/runtime/Memory/pack(I[C)I");
+                    printEndInvocationTag("lljvm/runtime/Memory/pack(I[C)I");
                 }
                 break;
             }
@@ -207,6 +206,7 @@ void JVMWriter::printStaticConstant(const Constant *c) {
             printStaticConstant(cast<Constant>(c->getOperand(i)));
         break;
     case Type::PointerTyID:
+        printStartInvocationTag(1);
         if(const Function *f = dyn_cast<Function>(c))
             printValueLoad(f);
         else if(const GlobalVariable *g = dyn_cast<GlobalVariable>(c))
@@ -220,8 +220,7 @@ void JVMWriter::printStaticConstant(const Constant *c) {
             errs() << "Constant = " << *c << '\n';
             llvm_unreachable("Invalid static initializer");
         }
-        printSimpleInstruction("invokestatic",
-            "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
+        printEndInvocationTag( "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
         break;
     default:
         errs() << "TypeID = " << c->getType()->getTypeID() << '\n';

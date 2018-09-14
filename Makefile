@@ -9,7 +9,11 @@ all:
 	cd java && $(MAKE) all
 	cd libc && $(MAKE) all
 	cd java && $(MAKE) dist
-	cp java/dist/lljvm.jar lljvm-${VERSION}.jar
+	mkdir -p lib
+	cp java/dist/lljvm.jar lib/lljvm-${VERSION}.jar
+	cp java/dist/lljvm-sources.jar lib/lljvm-sources-${VERSION}.jar
+	cp thirdparty/jasmin/jasmin.jar lib/
+
 
 doc:
 	cd java && $(MAKE) doc
@@ -43,8 +47,8 @@ clean:
 	cd libc && $(MAKE) clean
 	cd demo && $(MAKE) clean
 	rm -rf doc
-	rm -f lljvm-${VERSION}.jar lljvm-demo-${VERSION}.jar \
-	      lljvm-doc-${VERSION}.zip lljvm-backend
+	rm -f lljvm-backend lib/lljvm-${VERSION}.jar lib/lljvm-sources-${VERSION}.jar lib/jasmin.jar
+
 
 distclean: clean
 	cd thirdparty && $(MAKE) distclean

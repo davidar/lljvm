@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 David Roberts <d@vidr.cc>
+* Copyright (c) 2011 Joshua Arnold
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -19,29 +19,17 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 */
-
 package lljvm.tools.ld;
 
-/**
- * Thrown when there is an error linking an assembly file.
- * 
- * @author  David Roberts
- */
-@SuppressWarnings("serial")
-public class LinkError extends Exception {
-    /**
-     * Constructs a LinkError with no detail message.
-     */
-    public LinkError() {
-        super();
-    }
+import java.util.Collection;
+
+interface ResolvedTargets {
+
+    MethodReference getTargetMethod(int lineNum);
     
-    /**
-     * Constructs a LinkError with the specified detail message.
-     * 
-     * @param s  the detail message
-     */
-    public LinkError(String s) {
-        super(s);
-    }
+    FieldReference getTargetField(int lineNum);
+    
+    String getModuleInstanceField(String moduleClassBinaryName);
+    
+    Collection<String> getReferencedModules();
 }

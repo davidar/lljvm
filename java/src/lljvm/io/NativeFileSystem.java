@@ -25,20 +25,38 @@ package lljvm.io;
 import java.io.File;
 import java.io.IOException;
 
+import lljvm.runtime.Context;
 import lljvm.runtime.Error;
 import lljvm.runtime.IO;
+import lljvm.runtime.Module;
 
 /**
  * Implements the FileSystem interface using the native Java I/O operations.
  * 
  * @author  David Roberts
  */
-public class NativeFileSystem implements FileSystem {
+public class NativeFileSystem implements FileSystem, Module {
     /** User working directory system property */
     private static final String USER_DIR = System.getProperty("user.dir");
     /** Current working directory */
     private File cwd = (USER_DIR == null ? new File("") : new File(USER_DIR));
     
+    private Error error;
+    private Context context;
+    
+    public NativeFileSystem() {
+    }
+    
+    @Override
+    public void initialize(Context context) {
+        this.error = context.getModule(Error.class);
+        this.context = context;
+    }
+
+    @Override
+    public void destroy(Context context) {
+    }
+
     /**
      * Return the File object representing the file with the given name,
      * relative to the current working directory if applicable.
@@ -68,12 +86,12 @@ public class NativeFileSystem implements FileSystem {
                         (mode & (IO.S_IXGRP|IO.S_IXOTH)) == 0);
             } else { // file already exists
                 if((flags & IO.O_EXCL) != 0) {
-                    Error.errno(Error.EEXIST);
+                    error.errno(Error.EEXIST);
                     return null;
                 }
             }
         } catch(IOException e) {
-            Error.errno(Error.EACCES);
+            error.errno(Error.EACCES);
             return null;
         }
         return open(file, flags);
@@ -92,9 +110,9 @@ public class NativeFileSystem implements FileSystem {
      */
     private FileHandle open(File file, int flags) {
         try {
-            return new RandomAccessFileHandle(file, flags);
+            return new RandomAccessFileHandle(context, file, flags);
         } catch(IOException e) {
-            Error.errno(Error.EACCES);
+            error.errno(Error.EACCES);
             return null;
         }
     }
