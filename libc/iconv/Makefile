@@ -8,7 +8,7 @@ all: ../iconv.o
 
 ../iconv.o: ${OBJS}
 	for d in ${DIRS}; do (cd $$d && $(MAKE) all); done
-	llvm-ld -link-as-library $^ -o $@
+	llvm-link $^ -o $@
 
 clean:
 	for d in ${DIRS}; do (cd $$d && $(MAKE) clean); done

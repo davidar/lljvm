@@ -22,8 +22,10 @@
 
 #include "backend.h"
 
+#include <llvm/MC/MCContext.h>
 #include <llvm/MC/MCAsmInfo.h>
 #include <llvm/Target/Mangler.h>
+#include <llvm/ADT/SmallString.h>
 
 /**
  * Replace any non-alphanumeric characters with underscores.
@@ -45,8 +47,11 @@ std::string JVMWriter::sanitizeName(std::string name) {
  * @return   the name of the value
  */
 std::string JVMWriter::getValueName(const Value *v) {
-    if(const GlobalValue *gv = dyn_cast<GlobalValue>(v))
-        return sanitizeName(Mangler(MCAsmInfo()).getNameWithPrefix(gv));
+    if(const GlobalValue *gv = dyn_cast<GlobalValue>(v)) {
+		SmallString<10> name;
+        mangler->getNameWithPrefix(name, gv, false);
+        return sanitizeName(name.str().str());
+	}
     if(v->hasName())
         return '_' + sanitizeName(v->getName());
     if(localVars.count(v))

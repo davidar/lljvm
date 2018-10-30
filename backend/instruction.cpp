@@ -22,6 +22,8 @@
 
 #include "backend.h"
 
+#include <llvm/Support/CallSite.h>
+
 /**
  * Align the given offset.
  * 
@@ -328,15 +330,16 @@ void JVMWriter::printVAArgInstruction(const VAArgInst *inst) {
 void JVMWriter::printVAIntrinsic(const IntrinsicInst *inst) {
     const Type *valistTy = PointerType::getUnqual(
         IntegerType::get(inst->getContext(), 8));
+    ImmutableCallSite cs = ImmutableCallSite(inst);
     switch(inst->getIntrinsicID()) {
     case Intrinsic::vastart:
-        printValueLoad(inst->getOperand(1));
+        printValueLoad(cs.getArgument(0));
         printSimpleInstruction("iload", utostr(vaArgNum) + " ; varargptr");
         printIndirectStore(valistTy);
         break;
     case Intrinsic::vacopy:
-        printValueLoad(inst->getOperand(1));
-        printValueLoad(inst->getOperand(2));
+        printValueLoad(cs.getArgument(0));
+        printValueLoad(cs.getArgument(1));
         printIndirectLoad(valistTy);
         printIndirectStore(valistTy);
         break;

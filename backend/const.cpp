@@ -21,6 +21,7 @@
 */
 
 #include "backend.h"
+#include <cstdio>
 
 /**
  * Load the given pointer.
@@ -59,6 +60,13 @@ void JVMWriter::printConstLoad(const APInt &i) {
         else
             printSimpleInstruction("ldc2_w", i.toString(10, true));
     }
+}
+
+static inline std::string ftostr(double V) {
+	char Buffer[200], *B = Buffer;
+	sprintf(Buffer, "%20.6e", V);
+	while (*B == ' ') ++B;
+	return B;
 }
 
 /**
@@ -185,7 +193,7 @@ void JVMWriter::printStaticConstant(const Constant *c) {
             "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
         break;
     case Type::ArrayTyID:
-        if(const ConstantArray *ca = dyn_cast<ConstantArray>(c))
+        if(const ConstantDataSequential *ca = dyn_cast<ConstantDataSequential>(c)) {
             if(ca->isString()) {
                 bool cstring = ca->isCString();
                 printConstLoad(ca->getAsString(), cstring);
@@ -198,8 +206,12 @@ void JVMWriter::printStaticConstant(const Constant *c) {
                     printSimpleInstruction("invokestatic",
                                            "lljvm/runtime/Memory/pack(I[C)I");
                 }
-                break;
+            } else {
+                for(unsigned int i = 0, e = ca->getNumElements(); i < e; i++)
+                    printStaticConstant(ca->getElementAsConstant(i));
             }
+            break;
+        }
         // else fall through
     case Type::VectorTyID:
     case Type::StructTyID:

@@ -21,8 +21,12 @@
 */
 
 #include "backend.h"
+#include <llvm/MC/MCAsmInfo.h>
+#include <llvm/MC/MCContext.h>
+#include <llvm/MC/MCRegisterInfo.h>
+#include <llvm/MC/MCObjectFileInfo.h>
 
-char JVMWriter::id = 0;
+char JVMWriter::ID = 0;
 
 /**
  * Constructor.
@@ -32,9 +36,15 @@ char JVMWriter::id = 0;
  * @param cls  the binary name of the class to generate
  * @param dbg  the debugging level
  */
-JVMWriter::JVMWriter(const TargetData *td, formatted_raw_ostream &o,
-                     const std::string &cls, unsigned int dbg)
-    : FunctionPass(&id), targetData(td), out(o), classname(cls), debug(dbg) {}
+
+JVMWriter::JVMWriter() : FunctionPass(ID), out(fouts()) {}
+
+void JVMWriter::Setup(const DataLayout *td, const std::string &cls,
+	unsigned int dbg) {
+	targetData = td;
+	classname = cls;
+	debug = dbg;
+}
 
 /**
  * Register required analysis information.
@@ -87,6 +97,12 @@ bool JVMWriter::doInitialization(Module &m) {
             if(*i == '.') *i = '_';
     }
     
+	const MCAsmInfo *mcAsm = new MCAsmInfo();
+	const MCRegisterInfo *mcRegisterInfo = new MCRegisterInfo();
+	const MCObjectFileInfo *mcObjectFileInfo = new MCObjectFileInfo();
+	MCContext *mcc = new MCContext(*mcAsm, *mcRegisterInfo, mcObjectFileInfo);
+	mangler = new Mangler(*mcc, *targetData);
+
     printHeader();
     printFields();
     printExternalMethods();

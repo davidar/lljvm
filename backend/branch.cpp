@@ -147,8 +147,10 @@ void JVMWriter::printSwitchInstruction(const SwitchInst *inst) {
     // fixed the switch lowering pass should be removed.
     
     std::map<int, unsigned int> cases;
-    for(unsigned int i = 1, e = inst->getNumCases(); i < e; i++)
-        cases[(int) inst->getCaseValue(i)->getValue().getSExtValue()] = i;
+	SwitchInst::ConstCaseIt it = inst->case_begin();
+    for(unsigned int i = 0, e = inst->getNumCases(); i < e; i++, it++) {
+        cases[(int) it.getCaseValue()->getValue().getSExtValue()] = i;
+	}
     
     // TODO: tableswitch in cases where it won't increase the size of the
     //       class file

@@ -22,6 +22,8 @@
 
 #include "backend.h"
 
+#include <llvm/Support/CallSite.h>
+
 /**
  * Return a unique ID.
  * 
@@ -40,15 +42,17 @@ static uint64_t getUID() {
  * @return    the call signature
  */
 std::string JVMWriter::getCallSignature(const FunctionType *ty) {
-    if(ty->isVarArg() && ty->getNumParams() == 0)
-        // non-prototyped function
-        return "";
     std::string sig;
+    if(ty->isVarArg() && ty->getNumParams() == 0) {
+        // non-prototyped function
+		sig = "()";
+	} else {
     sig += '(';
     for(unsigned int i = 0, e = ty->getNumParams(); i < e; i++)
         sig += getTypeDescriptor(ty->getParamType(i));
     if(ty->isVarArg()) sig += "I";
     sig += ')';
+	}
     sig += getTypeDescriptor(ty->getReturnType());
     return sig;
 }
@@ -65,9 +69,10 @@ void JVMWriter::printOperandPack(const Instruction *inst,
                                  unsigned int minOperand,
                                  unsigned int maxOperand) {
     unsigned int size = 0;
+    ImmutableCallSite cs = ImmutableCallSite(inst);
     for(unsigned int i = minOperand; i < maxOperand; i++)
         size += targetData->getTypeAllocSize(
-            inst->getOperand(i)->getType());
+            cs.getArgument(i)->getType());
 
     printSimpleInstruction("bipush", utostr(size));
     printSimpleInstruction("invokestatic",
@@ -75,7 +80,7 @@ void JVMWriter::printOperandPack(const Instruction *inst,
     printSimpleInstruction("dup");
 
     for(unsigned int i = minOperand; i < maxOperand; i++) {
-        const Value *v = inst->getOperand(i);
+        const Value *v = cs.getArgument(i);
         printValueLoad(v);
         printSimpleInstruction("invokestatic",
             "lljvm/runtime/Memory/pack(I"
@@ -93,6 +98,8 @@ void JVMWriter::printOperandPack(const Instruction *inst,
 void JVMWriter::printFunctionCall(const Value *functionVal,
                                   const Instruction *inst) {
     unsigned int origin = isa<InvokeInst>(inst) ? 3 : 1;
+    const CallInst *ci = cast<CallInst>(inst);
+    functionVal = ci->getCalledValue();
     if(const Function *f = dyn_cast<Function>(functionVal)) { // direct call
         const FunctionType *ty = f->getFunctionType();
         
@@ -100,10 +107,10 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
         //    printValueLoad(inst->getOperand(i));
         
         for(unsigned int i = 0, e = ty->getNumParams(); i < e; i++)
-            printValueLoad(inst->getOperand(i + origin));
+            printValueLoad(ImmutableCallSite(inst).getArgument(i));
         if(ty->isVarArg() && inst)
-            printOperandPack(inst, ty->getNumParams() + origin,
-                                   inst->getNumOperands());
+            printOperandPack(inst, ty->getNumParams(),
+                                   inst->getNumOperands() - origin);
         
         if(externRefs.count(f))
             printSimpleInstruction("invokestatic",
@@ -122,7 +129,7 @@ void JVMWriter::printFunctionCall(const Value *functionVal,
         printValueLoad(functionVal);
         const FunctionType *ty = cast<FunctionType>(
             cast<PointerType>(functionVal->getType())->getElementType());
-        printOperandPack(inst, origin, inst->getNumOperands());
+        printOperandPack(inst, origin, inst->getNumOperands() - origin);
         printSimpleInstruction("invokestatic",
             "lljvm/runtime/Function/invoke_"
             + getTypePostfix(ty->getReturnType()) + "(II)"
@@ -158,6 +165,12 @@ void JVMWriter::printIntrinsicCall(const IntrinsicInst *inst) {
         printMathIntrinsic(inst); break;
     case Intrinsic::bswap:
         printBitIntrinsic(inst); break;
+    case Intrinsic::lifetime_start:
+    case Intrinsic::lifetime_end:
+    case Intrinsic::invariant_start:
+    case Intrinsic::invariant_end:
+        // ignore lifetime intrinsics
+        break;
     default:
         errs() << "Intrinsic = " << *inst << '\n';
         llvm_unreachable("Invalid intrinsic function");
@@ -333,7 +346,7 @@ void JVMWriter::printFunction(const Function &f) {
             printLocalVariable(f, &*i);
         if(const CallInst *inst = dyn_cast<CallInst>(&*i))
             if(!isa<IntrinsicInst>(inst)
-            && getValueName(inst->getOperand(0)) == "setjmp")
+            && getValueName(inst->getCalledValue()) == "setjmp")
                 numJumps++;
     }
     

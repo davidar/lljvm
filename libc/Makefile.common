@@ -6,7 +6,8 @@ CFLAGS := -DMISSING_SYSCALL_NAMES -DHAVE_RENAME -I${SOURCE_DIR}/${DIR}
 all: ${LEVEL}/${DIR}.o
 
 ${LEVEL}/${DIR}.o: ${OBJS}
-	llvm-ld -link-as-library ${OBJS} -o ${LEVEL}/${DIR}.o
+#	llvm-ld -link-as-library ${OBJS} -o ${LEVEL}/${DIR}.o
+	llvm-link $(OBJS)  > ${LEVEL}/${DIR}.o
 
 clean:
 	rm -f ${OBJS} ${LEVEL}/${DIR}.o

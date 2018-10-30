@@ -28,13 +28,15 @@
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Analysis/ConstantsScanner.h>
 #include <llvm/Analysis/LoopInfo.h>
-#include <llvm/Instructions.h>
-#include <llvm/IntrinsicInst.h>
-#include <llvm/Module.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/IntrinsicInst.h>
+#include <llvm/IR/Module.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/GetElementPtrTypeIterator.h>
-#include <llvm/Target/TargetData.h>
+#include <llvm/IR/DataLayout.h>
+#include <llvm/Target/Mangler.h>
+
 
 using namespace llvm;
 
@@ -55,9 +57,8 @@ class JVMWriter : public FunctionPass {
     /** The current module */
     Module *module;
     /** The target data for the platform */
-    const TargetData *targetData;
-    /** Pass ID */
-    static char id;
+    const DataLayout *targetData;
+	Mangler *mangler;
     
     /** Set of external references */
     DenseSet<const Value*> externRefs;
@@ -73,7 +74,12 @@ class JVMWriter : public FunctionPass {
     unsigned int instNum;
 
 public:
-    JVMWriter(const TargetData *td, formatted_raw_ostream &o,
+    /** Pass ID */
+    static char ID;
+
+	JVMWriter();
+
+    void Setup(const DataLayout *td,
               const std::string &cls, unsigned int dbg);
 
 private:

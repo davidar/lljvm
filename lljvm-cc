@@ -106,6 +106,31 @@ def call_e(*popenargs, **kwargs):
     p = subprocess.Popen(*popenargs, **kwargs)
     if p.wait() != 0: sys.exit(p.returncode)
 
+def call_x(*popenargs, **kwargs):
+    """Call the given command, exiting if it has a non-zero return code."""
+    foundFile = False
+    args = list(*popenargs)
+    compiler = args[0]
+    outputFile = ''
+    del args[0]
+    ccargs = [compiler]
+
+    for arg in args:
+      if arg.startswith('-o'):
+        foundFile = True
+      elif foundFile:
+        outputFile = arg
+        foundFile = False
+        arg = '-'
+      ccargs.append(arg)
+
+    p = subprocess.Popen(ccargs, stdout=subprocess.PIPE)
+    q = subprocess.Popen(['llvm-as', '-f', '-o=' + outputFile], stdin=p.stdout)
+    stdout, stderr = q.communicate()
+    i = p.wait()
+    q.wait()
+    if i != 0: sys.exit(p.returncode)
+
 def parse_argv(separate_sources=True):
     """Parse sys.argv, returning the flags and the output file, and separating
     the sources from the flags if required."""
@@ -155,7 +180,7 @@ def filter_ld_flags(flags):
         lambda x: x not in invalid_ld_flags
             and not startswith_element(x,
                 ('-classname','-f','-g','-D','-I','-L','-O','-W'))
-            and (not x.startswith('-l') or x in ('-link','-link-as-library')))
+            and (not x.startswith('-l')))
 
 def filter_backend_flags(flags):
     """Return a list of only those flags accepted by lljvm-backend."""
@@ -214,7 +239,7 @@ def link(flags, output):
     """Call llvm-ld with the given flags, and call bc2class on the output."""
     if '-link-as-library' in flags: flags += ['-o', output + '.bc']
     else:                           flags += ['-o', output]
-    call_e(['llvm-ld', '-disable-opt'] + filter_ld_flags(flags))
+    call_e(['llvm-link'] + filter_ld_flags(flags))
     if '-link-as-library' not in flags:
         os.unlink(output)
     bc2class(output, flags)
@@ -225,10 +250,11 @@ def main():
         link(*parse_argv(False)); return
     if '-c' in sys.argv or '-E' in sys.argv:
         flags = filter_cc_flags(sys.argv)
-        call_e([cc, '-emit-llvm'] + list(default_cflags) + flags); return
+        call_x([cc, "-flto", "-S"] + list(default_cflags) + flags); return
+#        call_e([cc, "-flto", "-S"] + list(default_cflags) + flags); return
     flags, output, srcs = parse_argv()
     objs = map(lambda src: remove_filext(os.path.basename(src)) + '.o', srcs)
-    call_e([cc, '-emit-llvm', '-c'] + list(default_cflags)
+    call_x([cc, '-flto', '-c'] + list(default_cflags)
            + filter_cc_flags(flags) + srcs)
     link(flags + objs, output)
     map(os.unlink, objs)
