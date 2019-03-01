@@ -24,6 +24,8 @@ package lljvm.io;
 
 import java.io.Closeable;
 
+import lljvm.runtime.Environment;
+
 /**
  * Interface for performing operations on a file descriptor.
  * 
@@ -37,7 +39,7 @@ public interface FileHandle extends Closeable {
      * @param count  the maximum number of bytes to read
      * @return       the number of bytes read on success, -1 on error
      */
-    public int read(int buf, int count);
+    public int read(Environment env, int buf, int count);
     
     /**
      * Write to this file descriptor.
@@ -46,7 +48,7 @@ public interface FileHandle extends Closeable {
      * @param count  the maximum number of bytes to write
      * @return       the number of bytes written on success, -1 on error
      */
-    public int write(int buf, int count);
+    public int write(Environment env, int buf, int count);
     
     /**
      * Reposition file descriptor offset.
@@ -56,5 +58,5 @@ public interface FileHandle extends Closeable {
      * @param whence  specifies the reference point to which offset refers
      * @return        the resulting offset on success, -1 on error
      */
-    public int seek(int offset, int whence);
+    public int seek(Environment env, int offset, int whence);
 }

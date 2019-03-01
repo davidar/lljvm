@@ -24,10 +24,12 @@ package lljvm.runtime;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.security.AccessControlException;
 
 import lljvm.util.ReflectionUtils;
 
@@ -36,20 +38,29 @@ import lljvm.util.ReflectionUtils;
  * 
  * @author  David Roberts
  */
-public final class Function {
+public final class Function implements CustomLibrary {
     /** Set of registered classes */
-    private static Set<String> registeredClasses = new HashSet<String>();
+    private Set<String> registeredClasses = new HashSet<String>();
     /** Map of function signatures to function pointers */
-    private static Map<String, Integer> functionPointers
+    private Map<String, Integer> functionPointers
         = new HashMap<String, Integer>();
     /** Map of function pointers to Method objects */
-    private static Map<Integer, Method> functionObjects
+    private Map<Integer, Method> functionObjects
         = new HashMap<Integer, Method>();
     
+    private Environment env;
+    
     /**
-     * Prevent this class from being instantiated.
+     * Initialiser for use when loaded into an Environment
      */
-    private Function() {}
+    public void initialiseEnvironment( Environment env ) {
+        this.env = env;
+    }
+    
+    /**
+     * 
+     */
+    public Function() {}
     
     /**
      * If the class specified by the given binary name has not yet been
@@ -60,17 +71,23 @@ public final class Function {
      * @throws ClassNotFoundException
      *                   if no class with the given name can be found
      */
-    private static void registerClass(String classname)
+    private void registerClass(String classname)
     throws ClassNotFoundException {
         if(registeredClasses.contains(classname))
             return;
         Class<?> cls = ReflectionUtils.getClass(classname);
-        for(Method method : ReflectionUtils.getStaticMethods(cls)) {
-            final int addr = Memory.allocateData();
+        for(Method method : ReflectionUtils.getCallableMethods(cls)) {
+            final int addr = env.memory.allocateData();
             final String sig = ReflectionUtils.getQualifiedSignature(method);
             functionPointers.put(sig, addr);
             functionObjects.put(addr, method);
-            method.setAccessible(true);
+            try {
+                method.setAccessible(true);
+            } catch ( AccessControlException e ) {
+                // thrown if we're in an applet sandbox, ignore
+            }
+            
+            //java.lang.System.err.println( "Registering " + sig + " at " + addr );
         }
         registeredClasses.add(classname);
     }
@@ -83,7 +100,7 @@ public final class Function {
      * @param methodSignature  the signature of the method
      * @return                 a function pointer for the specified method
      */
-    public static int getFunctionPointer(String classname,
+    public int getFunctionPointer(String classname,
                                          String methodSignature) {
         try {
             registerClass(classname);
@@ -105,14 +122,22 @@ public final class Function {
      * @param args  a pointer to the packed list of arguments
      * @return      the return value of the method
      */
-    private static Object invoke(int f, int args) {
+    private Object invoke(int f, int args) {
         final Method method = functionObjects.get(f);
         if(method == null)
             throw new IllegalArgumentException("Invalid function pointer: "+f);
         final Class<?>[] paramTypes = method.getParameterTypes();
-        final Object[] params = Memory.unpack(args, paramTypes);
+        final Object[] params = env.memory.unpack(args, paramTypes);
+        Object obj = null;
+        
+        if ( !Modifier.isStatic(method.getModifiers()) ) {
+            // we need to find the 'this' for the invoke
+            Class<?> owner = method.getDeclaringClass( );
+            obj = env.getInstanceForClass( owner );
+        }
+        
         try {
-            return method.invoke(null, params);
+            return method.invoke(obj, params);
         } catch(IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch(InvocationTargetException e) {
@@ -130,7 +155,7 @@ public final class Function {
      * @param f     the function pointer
      * @param args  a pointer to the packed list of arguments
      */
-    public static void invoke_void(int f, int args) {
+    public void invoke_void(int f, int args) {
         invoke(f, args);
     }
     
@@ -142,7 +167,7 @@ public final class Function {
      * @param args  a pointer to the packed list of arguments
      * @return      the return value of the method
      */
-    public static boolean invoke_i1(int f, int args) {
+    public boolean invoke_i1(int f, int args) {
         return (Boolean) invoke(f, args);
     }
     
@@ -154,7 +179,7 @@ public final class Function {
      * @param args  a pointer to the packed list of arguments
      * @return      the return value of the method
      */
-    public static byte invoke_i8(int f, int args) {
+    public byte invoke_i8(int f, int args) {
         return (Byte) invoke(f, args);
     }
     
@@ -166,7 +191,7 @@ public final class Function {
      * @param args  a pointer to the packed list of arguments
      * @return      the return value of the method
      */
-    public static short invoke_i16(int f, int args) {
+    public short invoke_i16(int f, int args) {
         return (Short) invoke(f, args);
     }
     
@@ -178,7 +203,7 @@ public final class Function {
      * @param args  a pointer to the packed list of arguments
      * @return      the return value of the method
      */
-    public static int invoke_i32(int f, int args) {
+    public int invoke_i32(int f, int args) {
         return (Integer) invoke(f, args);
     }
     
@@ -190,7 +215,7 @@ public final class Function {
      * @param args  a pointer to the packed list of arguments
      * @return      the return value of the method
      */
-    public static long invoke_i64(int f, int args) {
+    public long invoke_i64(int f, int args) {
         return (Long) invoke(f, args);
     }
     
@@ -202,7 +227,7 @@ public final class Function {
      * @param args  a pointer to the packed list of arguments
      * @return      the return value of the method
      */
-    public static float invoke_f32(int f, int args) {
+    public float invoke_f32(int f, int args) {
         return (Float) invoke(f, args);
     }
     
@@ -214,7 +239,7 @@ public final class Function {
      * @param args  a pointer to the packed list of arguments
      * @return      the return value of the method
      */
-    public static double invoke_f64(int f, int args) {
+    public double invoke_f64(int f, int args) {
         return (Double) invoke(f, args);
     }
 }

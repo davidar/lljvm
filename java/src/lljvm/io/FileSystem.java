@@ -22,6 +22,8 @@
 
 package lljvm.io;
 
+import lljvm.runtime.Environment;
+
 /**
  * An interface for interacting with the file system.
  * 
@@ -36,7 +38,7 @@ public interface FileSystem {
      * @param mode      the permissions for the newly created file
      * @return          the new file handle
      */
-    public FileHandle open(String pathname, int flags, int mode);
+    public FileHandle open(Environment env, String pathname, int flags, int mode);
     
     /**
      * Open a file or device.
@@ -45,7 +47,7 @@ public interface FileSystem {
      * @param flags     the file status flags
      * @return          the new file handle
      */
-    public FileHandle open(String pathname, int flags);
+    public FileHandle open(Environment env, String pathname, int flags);
     
     /**
      * Change the name or location of a file.
@@ -54,7 +56,7 @@ public interface FileSystem {
      * @param newpath  the new path of the file
      * @return         true on success
      */
-    public boolean rename(String oldpath, String newpath);
+    public boolean rename(Environment env, String oldpath, String newpath);
     
     /**
      * Create a new (hard) link to an existing file.
@@ -63,7 +65,7 @@ public interface FileSystem {
      * @param newpath  the link to be created, unless newpath already exists
      * @return         true on success
      */
-    public boolean link(String oldpath, String newpath);
+    public boolean link(Environment env, String oldpath, String newpath);
     
     /**
      * Delete a name from the file system.
@@ -71,7 +73,7 @@ public interface FileSystem {
      * @param pathname  the name to delete
      * @return          true on success
      */
-    public boolean unlink(String pathname);
+    public boolean unlink(Environment env, String pathname);
     
     /**
      * Change the working directory.
@@ -79,12 +81,12 @@ public interface FileSystem {
      * @param path  the new working directory
      * @return      true on success
      */
-    public boolean chdir(String path);
+    public boolean chdir(Environment env, String path);
     
     /**
      * Return the absolute pathname of the current working directory.
      * 
      * @return  the current working directory
      */
-    public String getcwd();
+    public String getcwd(Environment env);
 }

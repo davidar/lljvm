@@ -289,6 +289,8 @@ void JVMWriter::printGepInstruction(const Value *v,
  */
 void JVMWriter::printAllocaInstruction(const AllocaInst *inst) {
     uint64_t size = targetData->getTypeAllocSize(inst->getAllocatedType());
+    
+    printLoadMemoryToStack( );
     if(const ConstantInt *c = dyn_cast<ConstantInt>(inst->getOperand(0))) {
         // constant optimization
         printPtrLoad(c->getZExtValue() * size);
@@ -297,7 +299,7 @@ void JVMWriter::printAllocaInstruction(const AllocaInst *inst) {
         printValueLoad(inst->getOperand(0));
         printSimpleInstruction("imul");
     }
-    printSimpleInstruction("invokestatic",
+    printSimpleInstruction("invokevirtual",
                            "lljvm/runtime/Memory/allocateStack(I)I");
 }
 
@@ -310,13 +312,23 @@ void JVMWriter::printAllocaInstruction(const AllocaInst *inst) {
 void JVMWriter::printVAArgInstruction(const VAArgInst *inst) {
     printIndirectLoad(inst->getOperand(0));
     printSimpleInstruction("dup");
+    // op op
+    printLoadMemoryToStack( );
+    // op op memory
+    printSimpleInstruction("swap");
+    // op memory op
     printConstLoad(
         APInt(32, targetData->getTypeAllocSize(inst->getType()), false));
+    // op memory op const
     printSimpleInstruction("iadd");
+    // op memory added
     printValueLoad(inst->getOperand(0));
+    // op memory added loaded
     printSimpleInstruction("swap");
+    // op memory loaded added
     printIndirectStore(PointerType::getUnqual(
         IntegerType::get(inst->getContext(), 8)));
+    // op
     printIndirectLoad(inst->getType());
 }
 
@@ -330,11 +342,13 @@ void JVMWriter::printVAIntrinsic(const IntrinsicInst *inst) {
         IntegerType::get(inst->getContext(), 8));
     switch(inst->getIntrinsicID()) {
     case Intrinsic::vastart:
+        printLoadMemoryToStack( );
         printValueLoad(inst->getOperand(1));
         printSimpleInstruction("iload", utostr(vaArgNum) + " ; varargptr");
         printIndirectStore(valistTy);
         break;
     case Intrinsic::vacopy:
+        printLoadMemoryToStack( );
         printValueLoad(inst->getOperand(1));
         printValueLoad(inst->getOperand(2));
         printIndirectLoad(valistTy);

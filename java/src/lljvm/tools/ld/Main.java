@@ -71,6 +71,7 @@ public class Main {
             e.printStackTrace();
             System.exit(1);
         } catch(LinkError e) {
+            e.printStackTrace();
             System.err.println(e.getMessage());
             System.exit(1);
         }

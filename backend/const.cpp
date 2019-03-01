@@ -170,8 +170,10 @@ void JVMWriter::printConstLoad(const std::string &str, bool cstring) {
 void JVMWriter::printStaticConstant(const Constant *c) {
     if(isa<ConstantAggregateZero>(c) || c->isNullValue()) {
         // zero initialised constant
+        printLoadMemoryToStack();
+        printSimpleInstruction("swap");
         printPtrLoad(targetData->getTypeAllocSize(c->getType()));
-        printSimpleInstruction("invokestatic",
+        printSimpleInstruction("invokevirtual",
                                "lljvm/runtime/Memory/zero(II)I");
         return;
     }
@@ -180,22 +182,26 @@ void JVMWriter::printStaticConstant(const Constant *c) {
     case Type::IntegerTyID:
     case Type::FloatTyID:
     case Type::DoubleTyID:
+        printLoadMemoryToStack();
+        printSimpleInstruction("swap");
         printConstLoad(c);
-        printSimpleInstruction("invokestatic",
+        printSimpleInstruction("invokevirtual",
             "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
         break;
     case Type::ArrayTyID:
         if(const ConstantArray *ca = dyn_cast<ConstantArray>(c))
             if(ca->isString()) {
                 bool cstring = ca->isCString();
+                printLoadMemoryToStack();
+                printSimpleInstruction("swap");
                 printConstLoad(ca->getAsString(), cstring);
                 if(cstring)
-                    printSimpleInstruction("invokestatic",
+                    printSimpleInstruction("invokevirtual",
                         "lljvm/runtime/Memory/pack(ILjava/lang/String;)I");
                 else {
                     printSimpleInstruction("invokevirtual", 
                                            "java/lang/String/toCharArray()[C");
-                    printSimpleInstruction("invokestatic",
+                    printSimpleInstruction("invokevirtual",
                                            "lljvm/runtime/Memory/pack(I[C)I");
                 }
                 break;
@@ -207,6 +213,8 @@ void JVMWriter::printStaticConstant(const Constant *c) {
             printStaticConstant(cast<Constant>(c->getOperand(i)));
         break;
     case Type::PointerTyID:
+        printLoadMemoryToStack();
+        printSimpleInstruction("swap");
         if(const Function *f = dyn_cast<Function>(c))
             printValueLoad(f);
         else if(const GlobalVariable *g = dyn_cast<GlobalVariable>(c))
@@ -220,7 +228,7 @@ void JVMWriter::printStaticConstant(const Constant *c) {
             errs() << "Constant = " << *c << '\n';
             llvm_unreachable("Invalid static initializer");
         }
-        printSimpleInstruction("invokestatic",
+        printSimpleInstruction("invokevirtual",
             "lljvm/runtime/Memory/pack(I" + typeDescriptor + ")I");
         break;
     default:

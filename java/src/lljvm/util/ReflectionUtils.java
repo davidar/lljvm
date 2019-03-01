@@ -34,6 +34,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.security.AccessControlException;
+
+import lljvm.runtime.CustomLibrary;
 
 /**
  * Provides methods for obtaining reflective information about classes.
@@ -63,6 +66,9 @@ public final class ReflectionUtils {
                     new URL[] { new File(".").toURI().toURL() });
         } catch(MalformedURLException e) {
             classLoader = ClassLoader.getSystemClassLoader();
+        } catch(AccessControlException e) {
+            // we're probbaly in the applet sandbox. use the safer loader
+            return Class.forName(name);
         }
         return classLoader.loadClass(name);
     }
@@ -72,26 +78,33 @@ public final class ReflectionUtils {
      * methods.
      * 
      * @param allMethods  the array of methods to filter
+     * @param instanceMembers whether to include instance members in the result
      * @return            the list of static methods
      */
-    private static List<Method> getStaticMethods(Method[] allMethods) {
+    private static List<Method> getMethods(Method[] allMethods, boolean instanceMembers) {
         List<Method> methods = new ArrayList<Method>();
         for(Method method : allMethods)
-            if(Modifier.isStatic(method.getModifiers()))
+            if(instanceMembers || Modifier.isStatic(method.getModifiers()))
                 methods.add(method);
         return methods;
     }
     
     /**
-     * Returns a list of the public static methods provided by the specified
-     * class.
+     * Returns a list of the public methods provided by the specified class.
      * 
      * @param cls  the class providing the methods
-     * @return     a list of the public static methods provided by the
+     * @param instanceMembers whether to include instance members in the result
+     * @return     a list of the public methods provided by the
      *             specified class
      */
-    public static List<Method> getPublicStaticMethods(Class<?> cls) {
-        return getStaticMethods(cls.getMethods());
+    public static List<Method> getMethods(Class<?> cls, boolean allowPrivate, boolean instanceMembers) {
+        Method[] allMethods;
+        if ( allowPrivate ) {
+            allMethods = cls.getDeclaredMethods();
+        } else {
+            allMethods = cls.getMethods();
+        }
+        return getMethods(allMethods, instanceMembers);
     }
     
     /**
@@ -101,7 +114,22 @@ public final class ReflectionUtils {
      * @return     a list of the static methods provided by the specified class
      */
     public static List<Method> getStaticMethods(Class<?> cls) {
-        return getStaticMethods(cls.getDeclaredMethods());
+        return getMethods(cls, false, false);
+    }
+    
+    public static List<Method> getCallableMethods(Class<?> cls) {
+        if(implementsInterface(cls, CustomLibrary.class)) {
+            return getMethods(cls, true, true);
+        }
+        return getMethods(cls, true, false);
+    }
+    
+    public static List<Field> getPublicStaticFields(Class<?> cls) {
+        return getPublicFields(cls, false);
+    }
+    
+    public static List<Method> getPublicStaticMethods(Class<?> cls) {
+        return getMethods(cls, false, false);
     }
 
     /**
@@ -109,14 +137,15 @@ public final class ReflectionUtils {
      * class.
      * 
      * @param cls  the class providing the fields
+     * @param instanceMembers whether to include instance members in the result
      * @return     a list of the public static fields provided by the
      *             specified class
      */
-    public static List<Field> getPublicStaticFields(Class<?> cls) {
+    public static List<Field> getPublicFields(Class<?> cls, boolean instanceMembers) {
         List<Field> fields = new ArrayList<Field>();
         for(Field field : cls.getFields()) {
             int modifiers = field.getModifiers();
-            if(Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers))
+            if(Modifier.isPublic(modifiers) && (instanceMembers || Modifier.isStatic(modifiers)))
                 fields.add(field);
         }
         return fields;
@@ -140,6 +169,8 @@ public final class ReflectionUtils {
         if(cls == double.class)  return "D";
         if(cls.isArray())
             return cls.getName().replace('.', '/');
+        if(cls.getName().equals("lljvm.runtime.Environment"))
+            return "";
         return "L"+cls.getName().replace('.', '/')+";";
     }
     
@@ -198,6 +229,61 @@ public final class ReflectionUtils {
                 "Only Field and Method objects allowed");
     }
     
+    
+    private static boolean implementsInterface( Class<?> cls, Class<?> targetIface ) {
+        boolean implemented = false;
+        
+        //System.err.println( "XXX: " + cls );
+        
+        for ( Class iface : cls.getInterfaces( ) ) {
+            if ( iface == targetIface ) {
+                implemented = true;
+            }
+        }
+        
+        return implemented;
+    }
+    
+    
+    private static Map<String, String> buildMap(List<String> classNames,
+        boolean includeMethods, boolean includeFields)
+    throws ClassNotFoundException
+    {
+        Map<String, String> map = new HashMap<String, String>();
+        
+        for(String className : classNames) {
+            Class<?> cls = getClass(className);
+            className = className.replace('.', '/');
+            
+            boolean instanceMembers = false;
+            
+            // also import instance members in CustomLibrary classes
+            if(implementsInterface(cls, CustomLibrary.class)) {
+                instanceMembers = true;
+            }
+            
+            if ( includeMethods ) {
+                for(Method method : getMethods(cls, false, instanceMembers)) {
+                    String methodSig = getSignature(method);
+                    if(!map.containsKey(methodSig)) {
+                        map.put(methodSig, className);
+                    }
+                }
+            }
+            
+            if ( includeFields ) {
+                for(Field field : getPublicFields(cls, instanceMembers)) {
+                    String fieldSig = getSignature(field);
+                    if(!map.containsKey(fieldSig)) {
+                        map.put(fieldSig, className);
+                    }
+                }
+            }
+        }
+        return map;
+    }
+    
+    
     /**
      * Given a list of binary names of classes, returns a mapping of type
      * signatures of methods provided by these classes to the binary name of
@@ -210,17 +296,7 @@ public final class ReflectionUtils {
      */
     public static Map<String, String> buildMethodMap(List<String> classNames)
     throws ClassNotFoundException {
-        Map<String, String> map = new HashMap<String, String>();
-        for(String className : classNames) {
-            Class<?> cls = getClass(className);
-            className = className.replace('.', '/');
-            for(Method method : getPublicStaticMethods(cls)) {
-                String methodSig = getSignature(method);
-                if(!map.containsKey(methodSig))
-                    map.put(methodSig, className);
-            }
-        }
-        return map;
+        return buildMap(classNames, true, false);
     }
 
     /**
@@ -235,17 +311,7 @@ public final class ReflectionUtils {
      */
     public static Map<String, String> buildFieldMap(List<String> classNames)
     throws ClassNotFoundException {
-        Map<String, String> map = new HashMap<String, String>();
-        for(String className : classNames) {
-            Class<?> cls = getClass(className);
-            className = className.replace('.', '/');
-            for(Field field : getPublicStaticFields(cls)) {
-                String fieldSig = getSignature(field);
-                if(!map.containsKey(fieldSig))
-                    map.put(fieldSig, className);
-            }
-        }
-        return map;
+        return buildMap(classNames, false, true);
     }
     
     public static int sizeOf(Class<?> cls) {

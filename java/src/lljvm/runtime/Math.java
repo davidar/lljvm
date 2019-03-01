@@ -156,13 +156,13 @@ public final class Math {
      * @param exp  where to store the exponent
      * @return     the normalised fraction
      */
-    public static double frexp(double x, int exp) {
+    public static double frexp(Environment env, double x, int exp) {
         if(x == 0.0)
-            Memory.store(exp, 0);
+            env.memory.store(exp, 0);
         if(Double.isNaN(x) || Double.isInfinite(x) || x == 0.0)
             return x;
         long bits = Double.doubleToRawLongBits(x);
-        Memory.store(exp, (int) ((bits & 0x7ff0000000000000L) >>> 52) - 1022);
+        env.memory.store(exp, (int) ((bits & 0x7ff0000000000000L) >>> 52) - 1022);
         return Double.longBitsToDouble(
                 (bits & 0x800fffffffffffffL) | 0x3fe0000000000000L);
     }
@@ -174,13 +174,13 @@ public final class Math {
      * @param exp  where to store the exponent
      * @return     the normalised fraction
      */
-    public static float frexpf(float x, int exp) {
+    public static float frexpf(Environment env, float x, int exp) {
         if(x == 0.0)
-            Memory.store(exp, 0);
+            env.memory.store(exp, 0);
         if(Float.isNaN(x) || Float.isInfinite(x) || x == 0.0)
             return x;
         int bits = Float.floatToRawIntBits(x);
-        Memory.store(exp, ((bits & 0x7f800000) >>> 23) - 126);
+        env.memory.store(exp, ((bits & 0x7f800000) >>> 23) - 126);
         return Float.intBitsToFloat((bits & 0x7fffff) | 0x3f000000);
     }
     
@@ -213,9 +213,9 @@ public final class Math {
      * @param iptr  where to store the integral part
      * @return      the fractional part
      */
-    public static double modf(double x, int iptr) {
+    public static double modf(Environment env, double x, int iptr) {
         double i = (double) (int) x;
-        Memory.store(iptr, i);
+        env.memory.store(iptr, i);
         return x - i;
     }
     
@@ -226,9 +226,9 @@ public final class Math {
      * @param iptr  where to store the integral part
      * @return      the fractional part
      */
-    public static float modff(float x, int iptr) {
+    public static float modff(Environment env, float x, int iptr) {
         float i = (float) (int) x;
-        Memory.store(iptr, i);
+        env.memory.store(iptr, i);
         return x - i;
     }
     
